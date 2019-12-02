@@ -1,0 +1,871 @@
+package org.tdf.lotusvm.runtime;
+
+
+import com.google.common.primitives.UnsignedInteger;
+import com.google.common.primitives.UnsignedLong;
+import org.tdf.lotusvm.Instruction;
+import org.tdf.lotusvm.OpCode;
+import org.tdf.lotusvm.types.FunctionType;
+import org.tdf.lotusvm.types.ResultType;
+
+import java.math.BigDecimal;
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.tdf.lotusvm.Constants.MEMORY_GROW_GAS_USAGE;
+
+
+public class Frame {
+    public static final long MAXIMUM_UNSIGNED_I32 = 0xFFFFFFFFL;
+    public static final BigDecimal MAXIMUM_UNSIGNED_LONG = BigDecimal.valueOf(Long.MAX_VALUE)
+            .multiply(BigDecimal.ONE.add(BigDecimal.ONE));
+
+    private long getInstructionGas(Instruction ins){
+        if(ins.getCode() != OpCode.GROW_MEMORY) return  10;
+        return stack.getU32(stack.size() - 1) * MEMORY_GROW_GAS_USAGE;
+    }
+
+    private List<Instruction> body;
+
+    private FunctionType type;
+
+    private ModuleInstance module;
+
+    private Register localVariables;
+
+    private Register stack;
+
+    private LinkedList<Label> labels;
+
+    public Frame(List<Instruction> body, FunctionType type, ModuleInstance module, Register localVariables, Register stack) {
+        this.body = body;
+        this.type = type;
+        this.module = module;
+        this.localVariables = localVariables;
+        this.stack = stack;
+        this.labels = new LinkedList<>();
+    }
+
+    // A result is the outcome of a computation. It is either a sequence of values or a trap.
+    // In the current version of WebAssembly, a result can consist of at most one value.
+    long[] execute() throws RuntimeException {
+        pushLabel(new Label(type.getResultTypes().size() != 0, body));
+        while (!labels.isEmpty()) {
+            Label label = labels.getFirst();
+            if (label.getPc() >= label.getBody().size()) {
+                popLabel();
+                continue;
+            }
+            Instruction ins = label.getBody().get(label.getPc());
+            if (ins.getCode().equals(OpCode.RETURN)) {
+                return returns();
+            }
+            label.incrementAndGet();
+            invoke(ins);
+        }
+        return returns();
+        // clear stack and local variables
+    }
+
+    private long[] returns(){
+        long[] res = stack.popN(type.getResultTypes().size());
+        for(int i = 0; i < res.length; i++){
+            switch (type.getResultTypes().get(i)){
+                case F32:
+                case I32:
+                    // shadow bits
+                    res[i] = Integer.toUnsignedLong((int) res[i]);
+            }
+        }
+        return res;
+    }
+
+    private void pushLabel(Label label) {
+        labels.push(label);
+        stack.pushLabel();
+    }
+
+    private void popLabel() {
+        stack.popLabel();
+        labels.pop();
+    }
+
+    private void popAndClearLabel() {
+        stack.popAndClearLabel();
+        labels.pop();
+    }
+
+    private void invoke(Instruction ins) throws RuntimeException {
+        module.gas += getInstructionGas(ins);
+        switch (ins.getCode()) {
+            // these operations are essentially no-ops.
+            case NOP:
+            case I32_REINTERPRET_F32:
+            case I64_REINTERPRET_F64:
+            case F32_REINTERPRET_I32:
+            case F64_REINTERPRET_I64:
+            case I64_EXTEND_UI32:
+                break;
+            case UNREACHABLE:
+                throw new RuntimeException("exec: reached unreachable");
+                // parametric instructions
+            case BLOCK:
+                pushLabel(new Label(ins.getBlockType() != ResultType.EMPTY, ins.getBranch0()));
+                break;
+            case LOOP:
+                pushLabel(new Label(false, ins.getBranch0()).withLoop());
+                break;
+            case IF: {
+                long c = stack.pop();
+                if (c != 0) {
+                    pushLabel(new Label(ins.getBlockType() != ResultType.EMPTY, ins.getBranch0()));
+                    break;
+                }
+                if (ins.getBranch1() != null) {
+                    pushLabel(new Label(ins.getBlockType() != ResultType.EMPTY, ins.getBranch1()));
+                }
+                break;
+            }
+            case BR: {
+                // the l is non-negative here
+                int l = ins.getOperands().getI32(0);
+                branch(l);
+                break;
+            }
+            case BR_IF: {
+                long c = stack.pop();
+                if (c == 0) {
+                    break;
+                }
+                // the l is non-negative here
+                int l = ins.getOperands().getI32(0);
+                branch(l);
+                break;
+            }
+            case BR_TABLE: {
+                Register operands = ins.getOperands();
+                // n is non-negative
+                int n = operands.getI32(ins.getOperands().cap() - 1);
+                // cannot determine sign of i
+                int i = stack.popI32();
+                // length of l* is operands.cap() - 1
+                if (Integer.compareUnsigned(i, operands.cap() - 1) < 0) {
+                    n = operands.getI32(i);
+                }
+                branch(n);
+                break;
+            }
+            case DROP:
+                // Pop the value val from the stack.
+                stack.pop();
+                break;
+//            case RETURN:
+//                break;
+            case CALL: {
+                FunctionInstance function = module.functions.get(ins.getOperands().getI32(0));
+                module.gas += function.getGas();
+                long[] res = function.execute(
+                        stack.popN(function.parametersLength())
+                );
+                int resLength = res == null ? 0: res.length;
+                if(resLength != function.getArity()){
+                    throw new RuntimeException("the result of function " + function + " is not equals to its arity");
+                }
+                if(res != null){
+                    stack.pushAll(
+                        res
+                    );
+                }
+                break;
+            }
+            case CALL_INDIRECT: {
+                int elementIndex = stack.popI32();
+                if (elementIndex < 0 || elementIndex >= module.table.getFunctions().length) {
+                    throw new RuntimeException("undefined element index");
+                }
+                FunctionInstance function = module.table.getFunctions()[elementIndex];
+                if (!function.getType().equals(module.types.get(ins.getOperands().getI32(0)))) {
+                    throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
+                }
+                module.gas += function.getGas();
+                stack.pushAll(
+                        function.execute(
+                                stack.popN(function.parametersLength())
+                        )
+                );
+                break;
+            }
+            case SELECT: {
+                int c = stack.popI32();
+                long val2 = stack.pop();
+                long val1 = stack.pop();
+                if (c != 0) {
+                    stack.push(val1);
+                    break;
+                }
+                stack.push(val2);
+                break;
+            }
+            // variable instructions
+            case GET_LOCAL:
+                stack.push(localVariables.get(ins.getOperands().getI32(0)));
+                break;
+            case SET_LOCAL:
+                localVariables.set(ins.getOperands().getI32(0), stack.pop());
+                break;
+            case TEE_LOCAL: {
+                long val = stack.pop();
+                stack.push(val);
+                stack.push(val);
+                localVariables.set(ins.getOperands().getI32(0), stack.pop());
+                break;
+            }
+            case GET_GLOBAL:
+                stack.push(module.globals.get(ins.getOperands().getI32(0)));
+                break;
+            case SET_GLOBAL:
+                if (!module.globalTypes.get(
+                        ins.getOperands().getI32(0)
+                ).isMutable()) throw new RuntimeException("modify a immutable global");
+                module.globals.set(ins.getOperands().getI32(0), stack.pop());
+                break;
+            // memory instructions
+            case I32_LOAD:
+            case F32_LOAD:
+            case I64_LOAD32_U:
+                stack.pushI32(
+                        module.memory.load32(stack.popU32() + ins.getOperands().getI32(1))
+                );
+                break;
+            case I64_LOAD:
+            case F64_LOAD:
+                stack.push(
+                        module.memory.load64(stack.popU32() + ins.getOperands().getI32(1))
+                );
+                break;
+            case I32_LOAD8_S:
+                stack.pushI32(module.memory.load8(stack.popU32() + ins.getOperands().getI32(1)));
+                break;
+            case I64_LOAD8_S: {
+                stack.push(module.memory.load8(stack.popU32() + ins.getOperands().getI32(1)));
+                break;
+            }
+            case I32_LOAD8_U:
+            case I64_LOAD8_U:
+                stack.pushI8(module.memory.load8(stack.popU32() + ins.getOperands().getI32(1)));
+                break;
+            case I32_LOAD16_S: {
+                stack.pushI32(module.memory.load16(stack.popU32() + ins.getOperands().getI32(1)));
+                break;
+            }
+            case I64_LOAD16_S:
+                stack.push(module.memory.load16(stack.popU32() + ins.getOperands().getI32(1)));
+                break;
+            case I32_LOAD16_U:
+            case I64_LOAD16_U:
+                stack.pushI16(module.memory.load16(stack.popU32() + ins.getOperands().getI32(1)));
+                break;
+            case I64_LOAD32_S:
+                stack.push(module.memory.load32(stack.popU32() + ins.getOperands().getI32(1)));
+                break;
+            case I32_STORE8:
+            case I64_STORE8: {
+                byte c = stack.popI8();
+                module.memory.storeI8(stack.popU32() + ins.getOperands().getI32(1), c);
+                break;
+            }
+            case I32_STORE16:
+            case I64_STORE16: {
+                short c = stack.popI16();
+                module.memory.storeI16(stack.popU32() + ins.getOperands().getI32(1), c);
+                break;
+            }
+            case I32_STORE:
+            case F32_STORE:
+            case I64_STORE32: {
+                int c = stack.popI32();
+                module.memory.storeI32(stack.popU32() + ins.getOperands().getI32(1), c);
+                break;
+            }
+            case I64_STORE:
+            case F64_STORE: {
+                long c = stack.pop();
+                module.memory.storeI64(stack.popU32() + ins.getOperands().getI32(1), c);
+                break;
+            }
+            case CURRENT_MEMORY:
+                stack.pushI32(module.memory.getPageSize());
+                break;
+            case GROW_MEMORY: {
+                int n = stack.popU32();
+                stack.pushI32(module.memory.grow(n));
+                break;
+            }
+            case I32_CONST:
+            case I64_CONST:
+            case F32_CONST:
+            case F64_CONST:
+                stack.push(ins.getOperands().get(0));
+                break;
+            case I32_CLZ:
+                stack.pushI32(Integer.numberOfLeadingZeros(stack.popI32()));
+                break;
+            case I32_CTZ:
+                stack.pushI32(Integer.numberOfTrailingZeros(stack.popI32()));
+                break;
+            case I32_POPCNT:
+                stack.pushI32(Integer.bitCount(stack.popI32()));
+                break;
+            case I32_ADD:
+                stack.pushI32(stack.popI32() + stack.popI32());
+                break;
+            case I32_MUL:
+                stack.pushI32(stack.popI32() * stack.popI32());
+                break;
+            case I32_DIVS: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushI32(v1 / v2);
+                break;
+            }
+            case I32_DIVU: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushI32(Integer.divideUnsigned(v1, v2));
+                break;
+            }
+            case I32_REMS: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushI32(v1 % v2);
+                break;
+            }
+            case I32_REMU: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushI32(Integer.remainderUnsigned(v1, v2));
+                break;
+            }
+            case I32_SUB: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushI32(v1 - v2);
+                break;
+            }
+            case I32_AND:
+                stack.pushI32(stack.popI32() & stack.popI32());
+                break;
+            case I32_OR:
+                stack.pushI32(stack.popI32() | stack.popI32());
+                break;
+            case I32_XOR:
+                stack.pushI32(stack.popI32() ^ stack.popI32());
+                break;
+            case I32_SHL: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushI32(v1 << v2);
+                break;
+            }
+            case I32_SHRU: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushI32(v1 >>> v2);
+                break;
+            }
+            case I32_SHRS: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushI32(v1 >> v2);
+                break;
+            }
+            case I32_ROTL: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushI32(Integer.rotateLeft(v1, v2));
+                break;
+            }
+
+            case I32_ROTR: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushI32(Integer.rotateLeft(v1, -v2));
+                break;
+            }
+
+            case I32_LES: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushBoolean(v1 <= v2);
+                break;
+            }
+            case I32_LEU: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushBoolean(Integer.compareUnsigned(v1, v2) <= 0);
+                break;
+            }
+
+            case I32_LTS: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushBoolean(v1 < v2);
+                break;
+            }
+            case I32_LTU: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushBoolean(Integer.compareUnsigned(v1, v2) < 0);
+                break;
+            }
+            case I32_GTS: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushBoolean(v1 > v2);
+                break;
+            }
+            case I32_GTU: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushBoolean(Integer.compareUnsigned(v1, v2) > 0);
+                break;
+            }
+            case I32_GES: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushBoolean(v1 >= v2);
+                break;
+            }
+            case I32_GEU: {
+                int v2 = stack.popI32();
+                int v1 = stack.popI32();
+                stack.pushBoolean(Integer.compareUnsigned(v1, v2) >= 0);
+                break;
+            }
+            case I32_EQZ:
+                stack.pushBoolean(stack.popI32() == 0);
+                break;
+            case I32_EQ:
+                stack.pushBoolean(stack.popI32() == stack.popI32());
+                break;
+            case I32_NE:
+                stack.pushBoolean(stack.popI32() != stack.popI32());
+                break;
+            case I64_CLZ:
+                stack.pushI64(Long.numberOfLeadingZeros(stack.popI64()));
+                break;
+            case I64_CTZ:
+                stack.pushI64(Long.numberOfTrailingZeros(stack.popI64()));
+                break;
+            case I64_POPCNT:
+                stack.pushI64(Long.bitCount(stack.popI64()));
+                break;
+            case I64_ADD:
+                stack.pushI64(stack.popI64() + stack.popI64());
+                break;
+            case I64_SUB: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushI64(v1 - v2);
+                break;
+            }
+            case I64_MUL:
+                stack.pushI64(stack.popI64() * stack.popI64());
+                break;
+            case I64_DIVS: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushI64(v1 / v2);
+                break;
+            }
+            case I64_DIVU: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushI64(Long.divideUnsigned(v1, v2));
+                break;
+            }
+            case I64_REMS: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushI64(v1 % v2);
+                break;
+            }
+            case I64_REMU: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushI64(Long.remainderUnsigned(v1, v2));
+                break;
+            }
+            case I64_AND:
+                stack.pushI64(stack.popI64() & stack.popI64());
+                break;
+            case I64_OR:
+                stack.pushI64(stack.popI64() | stack.popI64());
+                break;
+            case I64_XOR:
+                stack.pushI64(stack.popI64() ^ stack.popI64());
+                break;
+            case I64_SHL: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushI64(v1 << v2);
+                break;
+            }
+            case I64_SHRS: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushI64(v1 >> v2);
+                break;
+            }
+            case I64_SHRU: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushI64(v1 >>> v2);
+                break;
+            }
+            case I64_ROTL: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushI64(Long.rotateLeft(v1, (int) v2));
+                break;
+            }
+            case I64_ROTR: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushI64(Long.rotateLeft(v1, -(int) v2));
+                break;
+            }
+            case I64_EQ:
+                stack.pushBoolean(stack.popI64() == stack.popI64());
+                break;
+            case I64_EQZ:
+                stack.pushBoolean(stack.popI64() == 0);
+                break;
+            case I64_NE:
+                stack.pushBoolean(stack.popI64() != stack.popI64());
+                break;
+            case I64_LTS: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushBoolean(v1 < v2);
+                break;
+            }
+            case I64_LTU: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushBoolean(Long.compareUnsigned(v1, v2) < 0);
+                break;
+            }
+
+            case I64_GTS: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushBoolean(v1 > v2);
+                break;
+            }
+            case I64_GTU: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushBoolean(Long.compareUnsigned(v1, v2) > 0);
+                break;
+            }
+            case I64_LEU: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushBoolean(Long.compareUnsigned(v1, v2) <= 0);
+                break;
+            }
+            case I64_LES: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushBoolean(v1 <= v2);
+                break;
+            }
+            case I64_GES: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushBoolean(v1 >= v2);
+                break;
+            }
+            case I64_GEU: {
+                long v2 = stack.popI64();
+                long v1 = stack.popI64();
+                stack.pushBoolean(Long.compareUnsigned(v1, v2) >= 0);
+                break;
+            }
+            case F32_ABS:
+                stack.pushF32(Math.abs(stack.popF32()));
+                break;
+            case F32_NEG:
+                stack.pushF32(-stack.popF32());
+                break;
+            case F32_CEIL:
+                stack.pushF32((float) Math.ceil(stack.popF32()));
+                break;
+            case F32_FLOOR:
+                stack.pushF32((float) Math.floor(stack.popF32()));
+                break;
+            case F32_TRUNC: {
+                stack.pushF32(truncFloat(stack.popF32()));
+                break;
+            }
+            case F32_NEAREST: {
+                float f = stack.popF32();
+                stack.pushF32((int) (f + (float) (Math.copySign(0.5, f))));
+                break;
+            }
+            case F32_SQRT: {
+                stack.pushF32((float) Math.sqrt(stack.popF32()));
+                break;
+            }
+            case F32_ADD:
+                stack.pushF32(stack.popF32() + stack.popF32());
+                break;
+            case F32_SUB: {
+                float v2 = stack.popF32();
+                float v1 = stack.popF32();
+                stack.pushF32(v1 - v2);
+                break;
+            }
+            case F32_MUL:
+                stack.pushF32(stack.popF32() * stack.popF32());
+                break;
+            case F32_DIV: {
+                float v2 = stack.popF32();
+                float v1 = stack.popF32();
+                stack.pushF32(v1 / v2);
+                break;
+            }
+            case F32_MIN:
+                stack.pushF32(Math.min(stack.popF32(), stack.popF32()));
+                break;
+            case F32_MAX:
+                stack.pushF32(Math.max(stack.popF32(), stack.popF32()));
+                break;
+            case F32_COPYSIGN:
+                stack.pushF32(Math.copySign(stack.popF32(), stack.popF32()));
+                break;
+            case F32_EQ:
+                stack.pushBoolean(stack.popF32() == stack.popF32());
+                break;
+            case F32_NE:
+                stack.pushBoolean(stack.popF32() != stack.popF32());
+                break;
+            case F32_LT: {
+                float v2 = stack.popF32();
+                float v1 = stack.popF32();
+                stack.pushBoolean(v1 < v2);
+                break;
+            }
+            case F32_GT: {
+                float v2 = stack.popF32();
+                float v1 = stack.popF32();
+                stack.pushBoolean(v1 > v2);
+                break;
+            }
+            case F32_LE: {
+                float v2 = stack.popF32();
+                float v1 = stack.popF32();
+                stack.pushBoolean(v1 <= v2);
+                break;
+            }
+            case F32_GE: {
+                float v2 = stack.popF32();
+                float v1 = stack.popF32();
+                stack.pushBoolean(v1 >= v2);
+                break;
+            }
+            case F64_ABS:
+                stack.pushF64(Math.abs(stack.popF64()));
+                break;
+            case F64_NEG:
+                stack.pushF64(-stack.popF64());
+                break;
+            case F64_CEIL:
+                stack.pushF64(Math.ceil(stack.popF64()));
+                break;
+            case F64_FLOOR:
+                stack.pushF64(Math.floor(stack.popF64()));
+                break;
+            case F64_TRUNC: {
+                double d = stack.popF64();
+                stack.pushF64(truncDouble(d));
+                break;
+            }
+            case F64_NEAREST: {
+                double d = stack.popF64();
+                stack.pushF64((long) (d + Math.copySign(0.5, d)));
+                break;
+            }
+            case F64_SQRT:
+                stack.pushF64(Math.sqrt(stack.popF64()));
+                break;
+            case F64_ADD:
+                stack.pushF64(stack.popF64() + stack.popF64());
+                break;
+            case F64_SUB: {
+                double v2 = stack.popF64();
+                double v1 = stack.popF64();
+                stack.pushF64(v1 - v2);
+                break;
+            }
+            case F64_MUL:
+                stack.pushF64(stack.popF64() * stack.popF64());
+                break;
+            case F64_DIV: {
+                double v2 = stack.popF64();
+                double v1 = stack.popF64();
+                stack.pushF64(v1 / v2);
+                break;
+            }
+            case F64_MIN:
+                stack.pushF64(Math.min(stack.popF64(), stack.popF64()));
+                break;
+            case F64_MAX:
+                stack.pushF64(Math.max(stack.popF64(), stack.popF64()));
+                break;
+            case F64_COPYSIGN:
+                stack.pushF64(Math.copySign(stack.popF64(), stack.popF64()));
+                break;
+            case F64_EQ:
+                stack.pushBoolean(stack.popF64() == stack.popF64());
+                break;
+            case F64_NE:
+                stack.pushBoolean(stack.popF64() != stack.popF64());
+                break;
+            case F64_LT: {
+                double v2 = stack.popF64();
+                double v1 = stack.popF64();
+                stack.pushBoolean(v1 < v2);
+                break;
+            }
+            case F64_GT: {
+                double v2 = stack.popF64();
+                double v1 = stack.popF64();
+                stack.pushBoolean(v1 > v2);
+                break;
+            }
+            case F64_LE: {
+                double v2 = stack.popF64();
+                double v1 = stack.popF64();
+                stack.pushBoolean(v1 <= v2);
+                break;
+            }
+            case F64_GE: {
+                double v2 = stack.popF64();
+                double v1 = stack.popF64();
+                stack.pushBoolean(v1 >= v2);
+                break;
+            }
+            case I32_WRAP_I64:
+                // drop leading bits
+                stack.pushI32((int) stack.popI64());
+                break;
+            case I32_TRUNC_SF32:
+            case I32_TRUNC_SF64: {
+                double src = ins.getCode().equals(OpCode.I32_TRUNC_SF32) ? stack.popF32() : stack.popF64();
+                double f = truncDouble(src);
+                if(f > Integer.MAX_VALUE || f < Integer.MIN_VALUE)
+                    throw new RuntimeException("trunc" + src + " to i32 failed, math overflow");
+                stack.pushI32((int)f);
+                break;
+            }
+            case I32_TRUNC_UF32:
+            case I32_TRUNC_UF64: {
+                double src = ins.getCode().equals(OpCode.I32_TRUNC_UF32) ? stack.popF32() : stack.popF64();
+                double f = truncDouble(src);
+                if(f < 0 || f > MAXIMUM_UNSIGNED_I32)
+                    throw new RuntimeException("trunc " + src + " to u32 failed, math overflow");
+                stack.push((long)f);
+                break;
+            }
+            case I64_EXTEND_SI32:
+                stack.pushI64(stack.popI32());
+                break;
+            case I64_TRUNC_SF32:
+            case I64_TRUNC_SF64:{
+                double src = ins.getCode().equals(OpCode.I64_TRUNC_SF32) ? stack.popF32() : stack.popF64();
+                double f = truncDouble(src);
+                if(f > Long.MAX_VALUE || f < Long.MIN_VALUE)
+                    throw new RuntimeException("trunc" + src + " to i64 failed, math overflow");
+                stack.push((long)f);
+                break;
+            }
+            case I64_TRUNC_UF32:
+            case I64_TRUNC_UF64:{
+                double src = ins.getCode().equals(OpCode.I64_TRUNC_UF32) ? stack.popF32() : stack.popF64();
+                double f = truncDouble(src);
+                BigDecimal d = BigDecimal.valueOf(f);
+                if(f < 0 || d.compareTo(MAXIMUM_UNSIGNED_LONG) > 0)
+                    throw new RuntimeException("trunc " + src + " to u64 failed, math overflow");
+                stack.push(
+                        UnsignedLong.valueOf(
+                                d.toBigInteger()).longValue()
+                );
+                break;
+            }
+            case F32_CONVERT_SI32:
+                stack.pushF32(stack.popI32());
+                break;
+            case F32_CONVERT_UI32:
+                stack.pushF32(UnsignedInteger.fromIntBits(stack.popI32()).floatValue());
+                break;
+            case F32_CONVERT_SI64:
+                stack.pushF32(stack.popI64());
+                break;
+            case F32_CONVERT_UI64:
+                stack.pushF32(UnsignedLong.fromLongBits(stack.popI64()).floatValue());
+                break;
+            case F32_DEMOTE_F64:
+                stack.pushF32((float) stack.popF64());
+                break;
+            // force number conversion
+            case F64_CONVERT_SI32:
+                stack.pushF64(stack.popI32());
+                break;
+            case F64_CONVERT_UI32:
+                stack.pushF64(UnsignedInteger.fromIntBits(stack.popI32()).doubleValue());
+                break;
+            case F64_CONVERT_SI64:
+                stack.pushF64(stack.popI64());
+                break;
+            case F64_CONVERT_UI64:
+                stack.pushF64(UnsignedLong.fromLongBits(stack.popI64()).doubleValue());
+                break;
+            case F64_PROMOTE_F32:
+                stack.pushF64(stack.popF32());
+                break;
+            default:
+                throw new RuntimeException("unknown opcode " + ins.getCode());
+        }
+        if(module.getGas() > module.gasLimit){
+            throw new RuntimeException("gas overflow");
+        }
+    }
+
+    // br l
+    private void branch(int l) {
+        Label label = labels.get(l);
+        long[] valN = stack.popN(label.getArity());
+        // Repeat l+1 times
+        for (int i = 0; i < l + 1; i++) {
+            popAndClearLabel();
+        }
+        stack.pushAll(valN);
+        label.jumpToContinuation();
+        pushLabel(label);
+    }
+
+    // math trunc
+    private double truncDouble(double d) {
+        if (d > 0) {
+            return Math.floor(d);
+        } else {
+            return Math.ceil(d);
+        }
+    }
+
+    private float truncFloat(float f) {
+        return (float) truncDouble(f);
+    }
+}
