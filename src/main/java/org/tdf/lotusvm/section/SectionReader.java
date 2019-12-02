@@ -9,14 +9,14 @@ public class SectionReader {
         this.reader = reader;
     }
 
-    <T extends Section> T readSection(Class<T> clazz) throws RuntimeException {
+    <T extends AbstractSection> T readSection(Class<T> clazz) throws RuntimeException {
         SectionID id = SectionID.values()[reader.read()];
 
         int size = reader.readVarUint32();
-        byte[] contents = reader.read(size);
+        BytesReader contents = reader.readAsReader(size);
         T section = null;
         try {
-            section = clazz.getConstructor(SectionID.class, long.class, byte[].class).newInstance(id, size, contents);
+            section = clazz.getConstructor(SectionID.class, long.class, BytesReader.class).newInstance(id, size, contents);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

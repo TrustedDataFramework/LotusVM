@@ -10,8 +10,8 @@ import org.tdf.lotusvm.Vector;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DataSection extends Section{
-    public DataSection(SectionID id, long size, byte[] payload) {
+public class DataSection extends AbstractSection {
+    public DataSection(SectionID id, long size, BytesReader payload) {
         super(id, size, payload);
     }
 
@@ -46,7 +46,6 @@ public class DataSection extends Section{
 
     @Override
     void readPayload() {
-        BytesReader reader = new BytesReader(getPayload());
-        dataSegments = DataSegment.readDataSegmentsFrom(reader);
+        dataSegments = DataSegment.readDataSegmentsFrom(getReader());
     }
 }

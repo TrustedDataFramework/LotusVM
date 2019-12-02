@@ -257,7 +257,6 @@ public class RuntimeTest {
     @Test
     public void testGlobals() throws Exception {
         testSpecFile("globals.wasm");
-//        testSpecFunctions("globals.wasm", Collections.singletonList("get-x"), 0, 1);
     }
 
     @Test

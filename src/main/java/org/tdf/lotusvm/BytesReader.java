@@ -42,8 +42,8 @@ public class BytesReader extends InputStream{// io.reader
     }
 
     public BytesReader readAsReader(int size){
-        ByteBuffer buf = buffer.slice();
-        buf.limit(buffer.position() + size);
+        ByteBuffer buf = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);
+        buf.limit(size);
         buffer.position(buffer.position() + size);
         return new BytesReader(buf);
     }

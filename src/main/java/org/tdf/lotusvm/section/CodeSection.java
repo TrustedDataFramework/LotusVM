@@ -22,7 +22,7 @@ import java.util.List;
  * a u32 count,
  * a value type,
  */
-public class CodeSection extends Section {
+public class CodeSection extends AbstractSection {
     @AllArgsConstructor
     @Getter
     public static class Local {
@@ -80,12 +80,12 @@ public class CodeSection extends Section {
     @Getter
     private List<Code> codes;
 
-    public CodeSection(SectionID id, long size, byte[] payload) {
+    public CodeSection(SectionID id, long size, BytesReader payload) {
         super(id, size, payload);
     }
 
     @Override
     void readPayload() {
-        codes = Code.readCodesFrom(new BytesReader(getPayload()));
+        codes = Code.readCodesFrom(getReader());
     }
 }

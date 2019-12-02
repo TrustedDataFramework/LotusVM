@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * The global section has the id 6. It decodes into a vector of globals that represent the globals component of a module.
  */
-public class GlobalSection extends Section {
+public class GlobalSection extends AbstractSection {
 
     @Getter
     private List<Global> globals;
@@ -41,13 +41,12 @@ public class GlobalSection extends Section {
         }
     }
 
-    public GlobalSection(SectionID id, long size, byte[] payload) {
+    public GlobalSection(SectionID id, long size, BytesReader payload) {
         super(id, size, payload);
     }
 
     @Override
     void readPayload() throws RuntimeException {
-        BytesReader reader = new BytesReader(getPayload());
-        globals = Global.readLocalsFrom(reader);
+        globals = Global.readLocalsFrom(getReader());
     }
 }

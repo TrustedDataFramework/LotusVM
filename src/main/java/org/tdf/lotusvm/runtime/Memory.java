@@ -115,7 +115,7 @@ public class Memory {
     }
 
     // The memory.grow instruction is non-deterministic.
-    // It may either succeed, returning the old memory size sz, or fail, returning −1
+    // It may either succeed, returning the old memory size sz, or fail, returning -1
     // Failure must occur if the referenced memory instance has a maximum size defined that would be exceeded.
     // However, failure can occur in other cases as well.
     // In practice, the choice depends on the resources available to the embedder.

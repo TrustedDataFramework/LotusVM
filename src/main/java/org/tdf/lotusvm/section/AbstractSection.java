@@ -3,29 +3,30 @@ package org.tdf.lotusvm.section;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.tdf.lotusvm.BytesReader;
 
 /**
  * Each section consists of
- * • a one-byte section id,
- * • the u32 size of the contents, in bytes,
- * • the actual contents, whose structure is depended on the section id.
+ * - a one-byte section id,
+ * - the u32 size of the contents, in bytes,
+ * - the actual contents, whose structure is depended on the section id.
  *
  *
  */
 @AllArgsConstructor
-public abstract class Section {
+public abstract class AbstractSection {
    @Getter
    private SectionID id;
    @Getter
    private long size; // unsigned integer
    @Getter(AccessLevel.PROTECTED)
-   private byte[] payload;
+   private BytesReader reader;
 
 
    abstract void readPayload();
 
    // clean payload after read
    public void clearPayload(){
-       payload = null;
+       reader = null;
    }
 }

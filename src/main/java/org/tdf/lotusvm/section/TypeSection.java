@@ -10,8 +10,8 @@ import java.util.List;
  * The type section has the id 1. It decodes into a vector of function types that represent the types component of a
  * module.
  */
-public class TypeSection extends Section{
-    public TypeSection(SectionID id, long size, byte[] contents) {
+public class TypeSection extends AbstractSection {
+    public TypeSection(SectionID id, long size, BytesReader contents) {
         super(id, size, contents);
     }
 
@@ -20,7 +20,6 @@ public class TypeSection extends Section{
 
     @Override
     void readPayload() {
-        BytesReader reader = new BytesReader(getPayload());
-        functionTypes = FunctionType.readFunctionTypesFrom(reader);
+        functionTypes = FunctionType.readFunctionTypesFrom(getReader());
     }
 }

@@ -16,8 +16,8 @@ import java.util.List;
 /**
  * The import section has the id 2. It decodes into a vector of imports that represent the imports component of a module.
  */
-public class ImportSection extends Section {
-    public ImportSection(SectionID id, long size, byte[] contents) {
+public class ImportSection extends AbstractSection {
+    public ImportSection(SectionID id, long size, BytesReader contents) {
         super(id, size, contents);
     }
 
@@ -86,7 +86,6 @@ public class ImportSection extends Section {
 
     @Override
     void readPayload() throws RuntimeException {
-        BytesReader reader = new BytesReader(getPayload());
-        imports = Import.readImportsFrom(reader);
+        imports = Import.readImportsFrom(getReader());
     }
 }
