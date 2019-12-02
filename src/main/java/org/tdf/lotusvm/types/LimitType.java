@@ -8,8 +8,6 @@ import java.util.List;
 
 /**
  * Limits are encoded with a preceding flag indicating whether a maximum is present.
- * limits ::= 0x00 𝑛:u32 ⇒ {min 𝑛, max 𝜖}
- * | 0x01 𝑛:u32 𝑚:u32 ⇒ {min 𝑛, max 𝑚}
  *
  * also used for memory types
  */

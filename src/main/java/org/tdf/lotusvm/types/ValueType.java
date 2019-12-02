@@ -9,10 +9,10 @@ import static org.tdf.lotusvm.Constants.*;
 
 
 /**
- * valtype ::= 0x7F ⇒ i32
- * 0x7E ⇒ i64
- * 0x7D ⇒ f32
- * 0x7C ⇒ f64
+ * valtype ::= 0x7F -> i32
+ * 0x7E -> i64
+ * 0x7D -> f32
+ * 0x7C ->  f64
  */
 public enum ValueType {
     I32(VALUE_I32),
