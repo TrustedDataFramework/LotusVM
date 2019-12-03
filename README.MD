@@ -6,7 +6,14 @@ git subtree
 
 ```shell script
 git remote add dep https://github.com/TrustedDataFramework/third-party-dependencies # add remote
-git subtree add --prefix=config dep master # add folder MonadJ as subtree code directory
+git subtree add --prefix=config dep master # add folder  as subtree code directory
 git subtree push --prefix=config dep master # push subtree local change to remote
 git subtree pull --prefix=config dep master # pull from remote 
+```
+
+
+build to your local maven repository
+
+```shell script
+.\gradlew publishToMavenLocal
 ```
