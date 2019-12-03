@@ -188,7 +188,7 @@ public class ModuleInstance {
 
 
     private long executeExpression(List<Instruction> instructions, ValueType type) {
-        return new Frame(instructions, new FunctionType(new ArrayList<>(), Collections.singletonList(type)), this,
+        return new Frame(instructions, new FunctionType(Collections.emptyList(), Collections.singletonList(type)), this,
                 new Register(), new Register()).execute()[0];
     }
 }

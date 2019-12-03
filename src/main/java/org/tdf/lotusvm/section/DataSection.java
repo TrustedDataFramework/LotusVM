@@ -33,7 +33,7 @@ public class DataSection extends AbstractSection {
 
         public static List<DataSegment> readDataSegmentsFrom(BytesReader reader){
             int length = reader.readVarUint32();
-            List<DataSegment> res = new ArrayList<>();
+            List<DataSegment> res = new ArrayList<>(length);
             for(int i = 0; i < length; i++){
                 res.add(readFrom(reader));
             }
