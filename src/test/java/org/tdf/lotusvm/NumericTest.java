@@ -4,6 +4,7 @@ import com.google.common.io.ByteStreams;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.lotusvm.runtime.Frame;
 import org.tdf.lotusvm.runtime.ModuleInstance;
 
 import java.util.Collection;
@@ -188,10 +189,5 @@ public class NumericTest {
     @Test
     public void testUnary() throws Exception {
         testSpecFile("unary.wasm");
-    }
-
-    @Test
-    public void test1() throws Exception{
-        System.out.println(3e9 > 0xFFFFFFFFL);
     }
 }

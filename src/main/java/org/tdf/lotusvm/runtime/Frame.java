@@ -6,6 +6,7 @@ import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ResultType;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -792,7 +793,7 @@ public class Frame {
             case I64_TRUNC_UF64: {
                 double src = ins.getCode().equals(OpCode.I64_TRUNC_UF32) ? stack.popF32() : stack.popF64();
                 double f = truncDouble(src);
-                long l = doubleToUnsignedLong(f);
+                long l = (long) (f);
                 if (f < 0 || l != f)
                     throw new RuntimeException("trunc " + src + " to u64 failed, math overflow");
                 stack.push(
@@ -865,7 +866,7 @@ public class Frame {
     }
 
     // math trunc
-    private double truncDouble(double d) {
+    private static double truncDouble(double d) {
         if (d > 0) {
             return Math.floor(d);
         } else {
@@ -873,11 +874,8 @@ public class Frame {
         }
     }
 
-    private float truncFloat(float f) {
+    private static float truncFloat(float f) {
         return (float) truncDouble(f);
     }
 
-    private long doubleToUnsignedLong(double d) {
-        return new BigDecimal(d).longValue();
-    }
 }
