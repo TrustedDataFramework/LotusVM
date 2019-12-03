@@ -10,10 +10,3 @@ git subtree add --prefix=config dep master # add folder  as subtree code directo
 git subtree push --prefix=config dep master # push subtree local change to remote
 git subtree pull --prefix=config dep master # pull from remote 
 ```
-
-
-build to your local maven repository
-
-```shell script
-.\gradlew publishToMavenLocal
-```
