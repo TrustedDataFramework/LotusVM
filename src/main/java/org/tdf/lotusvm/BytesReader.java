@@ -1,8 +1,5 @@
 package org.tdf.lotusvm;
 
-import com.google.common.io.ByteStreams;
-
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -10,10 +7,6 @@ import java.nio.ByteOrder;
 
 public class BytesReader extends InputStream{// io.reader
     private ByteBuffer buffer;
-
-    public static BytesReader fromInputStream(InputStream inputStream) throws IOException {
-        return new BytesReader(ByteStreams.toByteArray(inputStream));
-    }
 
     private BytesReader (ByteBuffer buffer){
         this.buffer = buffer;

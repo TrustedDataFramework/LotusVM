@@ -1,14 +1,10 @@
 package org.tdf.lotusvm.runtime;
 
-
-import com.google.common.primitives.UnsignedInteger;
-import com.google.common.primitives.UnsignedLong;
 import org.tdf.lotusvm.Instruction;
 import org.tdf.lotusvm.OpCode;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ResultType;
 
-import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,8 +13,8 @@ import static org.tdf.lotusvm.Constants.MEMORY_GROW_GAS_USAGE;
 
 public class Frame {
     public static final long MAXIMUM_UNSIGNED_I32 = 0xFFFFFFFFL;
-    public static final BigDecimal MAXIMUM_UNSIGNED_LONG = BigDecimal.valueOf(Long.MAX_VALUE)
-            .multiply(BigDecimal.ONE.add(BigDecimal.ONE));
+
+    private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
 
     private long getInstructionGas(Instruction ins){
         if(ins.getCode() != OpCode.GROW_MEMORY) return  10;
@@ -795,12 +791,11 @@ public class Frame {
             case I64_TRUNC_UF64:{
                 double src = ins.getCode().equals(OpCode.I64_TRUNC_UF32) ? stack.popF32() : stack.popF64();
                 double f = truncDouble(src);
-                BigDecimal d = BigDecimal.valueOf(f);
-                if(f < 0 || d.compareTo(MAXIMUM_UNSIGNED_LONG) > 0)
+                long l = (long) f;
+                if(f < 0 || l != f)
                     throw new RuntimeException("trunc " + src + " to u64 failed, math overflow");
                 stack.push(
-                        UnsignedLong.valueOf(
-                                d.toBigInteger()).longValue()
+                        l
                 );
                 break;
             }
@@ -808,14 +803,20 @@ public class Frame {
                 stack.pushF32(stack.popI32());
                 break;
             case F32_CONVERT_UI32:
-                stack.pushF32(UnsignedInteger.fromIntBits(stack.popI32()).floatValue());
+                stack.pushF32(Integer.toUnsignedLong(stack.popI32()));
                 break;
             case F32_CONVERT_SI64:
                 stack.pushF32(stack.popI64());
                 break;
-            case F32_CONVERT_UI64:
-                stack.pushF32(UnsignedLong.fromLongBits(stack.popI64()).floatValue());
+            case F32_CONVERT_UI64:{
+                long value = stack.popI64();
+                float fValue = (float) (value & UNSIGNED_MASK);
+                if (value < 0) {
+                    fValue += 0x1.0p63f;
+                }
+                stack.pushF32(fValue);
                 break;
+            }
             case F32_DEMOTE_F64:
                 stack.pushF32((float) stack.popF64());
                 break;
@@ -824,13 +825,19 @@ public class Frame {
                 stack.pushF64(stack.popI32());
                 break;
             case F64_CONVERT_UI32:
-                stack.pushF64(UnsignedInteger.fromIntBits(stack.popI32()).doubleValue());
+                stack.pushF64(Integer.toUnsignedLong(stack.popI32()));
                 break;
             case F64_CONVERT_SI64:
                 stack.pushF64(stack.popI64());
                 break;
-            case F64_CONVERT_UI64:
-                stack.pushF64(UnsignedLong.fromLongBits(stack.popI64()).doubleValue());
+            case F64_CONVERT_UI64:{
+                long value = stack.popI64();
+                double dValue = (double) (value & UNSIGNED_MASK);
+                if (value < 0) {
+                    dValue += 0x1.0p63;
+                }
+                stack.pushF64(dValue);
+            }
                 break;
             case F64_PROMOTE_F32:
                 stack.pushF64(stack.popF32());

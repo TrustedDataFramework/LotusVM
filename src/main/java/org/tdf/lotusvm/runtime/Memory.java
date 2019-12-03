@@ -1,6 +1,5 @@
 package org.tdf.lotusvm.runtime;
 
-import com.google.common.primitives.Bytes;
 import lombok.Getter;
 import org.tdf.lotusvm.LittleEndian;
 import org.tdf.lotusvm.types.LimitType;
@@ -10,6 +9,27 @@ import java.util.Arrays;
 
 // TODO: limit memory size in block chain
 public class Memory {
+    /**
+     * Returns the values from each provided array combined into a single array. For example, {@code
+     * concat(new byte[] {a, b}, new byte[] {}, new byte[] {c}} returns the array {@code {a, b, c}}.
+     *
+     * @param arrays zero or more {@code byte} arrays
+     * @return a single array containing all the values from the source arrays, in order
+     */
+    public static byte[] concat(byte[]... arrays) {
+        int length = 0;
+        for (byte[] array : arrays) {
+            length += array.length;
+        }
+        byte[] result = new byte[length];
+        int pos = 0;
+        for (byte[] array : arrays) {
+            System.arraycopy(array, 0, result, pos, array.length);
+            pos += array.length;
+        }
+        return result;
+    }
+
     public static final int PAGE_SIZE = 64 * (1 << 10); // 64 KB
     @Getter
     private byte[] data;
@@ -67,7 +87,7 @@ public class Memory {
             return new byte[n];
         }
         byte[] bytes0 = Arrays.copyOfRange(data, offset, data.length);
-        return Bytes.concat(bytes0, new byte[n - bytes0.length]);
+        return concat(bytes0, new byte[n - bytes0.length]);
     }
 
     public int load32(int offset) {
