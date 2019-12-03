@@ -5,6 +5,7 @@ import org.tdf.lotusvm.OpCode;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.ResultType;
 
+import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -16,8 +17,8 @@ public class Frame {
 
     private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
 
-    private long getInstructionGas(Instruction ins){
-        if(ins.getCode() != OpCode.GROW_MEMORY) return  10;
+    private long getInstructionGas(Instruction ins) {
+        if (ins.getCode() != OpCode.GROW_MEMORY) return 10;
         return stack.getU32(stack.size() - 1) * MEMORY_GROW_GAS_USAGE;
     }
 
@@ -63,10 +64,10 @@ public class Frame {
         // clear stack and local variables
     }
 
-    private long[] returns(){
+    private long[] returns() {
         long[] res = stack.popN(type.getResultTypes().size());
-        for(int i = 0; i < res.length; i++){
-            switch (type.getResultTypes().get(i)){
+        for (int i = 0; i < res.length; i++) {
+            switch (type.getResultTypes().get(i)) {
                 case F32:
                 case I32:
                     // shadow bits
@@ -163,13 +164,13 @@ public class Frame {
                 long[] res = function.execute(
                         stack.popN(function.parametersLength())
                 );
-                int resLength = res == null ? 0: res.length;
-                if(resLength != function.getArity()){
+                int resLength = res == null ? 0 : res.length;
+                if (resLength != function.getArity()) {
                     throw new RuntimeException("the result of function " + function + " is not equals to its arity");
                 }
-                if(res != null){
+                if (res != null) {
                     stack.pushAll(
-                        res
+                            res
                     );
                 }
                 break;
@@ -761,38 +762,38 @@ public class Frame {
             case I32_TRUNC_SF64: {
                 double src = ins.getCode().equals(OpCode.I32_TRUNC_SF32) ? stack.popF32() : stack.popF64();
                 double f = truncDouble(src);
-                if(f > Integer.MAX_VALUE || f < Integer.MIN_VALUE)
+                if (f > Integer.MAX_VALUE || f < Integer.MIN_VALUE)
                     throw new RuntimeException("trunc" + src + " to i32 failed, math overflow");
-                stack.pushI32((int)f);
+                stack.pushI32((int) f);
                 break;
             }
             case I32_TRUNC_UF32:
             case I32_TRUNC_UF64: {
                 double src = ins.getCode().equals(OpCode.I32_TRUNC_UF32) ? stack.popF32() : stack.popF64();
                 double f = truncDouble(src);
-                if(f < 0 || f > MAXIMUM_UNSIGNED_I32)
+                if (f < 0 || f > MAXIMUM_UNSIGNED_I32)
                     throw new RuntimeException("trunc " + src + " to u32 failed, math overflow");
-                stack.push((long)f);
+                stack.push((long) f);
                 break;
             }
             case I64_EXTEND_SI32:
                 stack.pushI64(stack.popI32());
                 break;
             case I64_TRUNC_SF32:
-            case I64_TRUNC_SF64:{
+            case I64_TRUNC_SF64: {
                 double src = ins.getCode().equals(OpCode.I64_TRUNC_SF32) ? stack.popF32() : stack.popF64();
                 double f = truncDouble(src);
-                if(f > Long.MAX_VALUE || f < Long.MIN_VALUE)
+                if (f > Long.MAX_VALUE || f < Long.MIN_VALUE)
                     throw new RuntimeException("trunc" + src + " to i64 failed, math overflow");
-                stack.push((long)f);
+                stack.push((long) f);
                 break;
             }
             case I64_TRUNC_UF32:
-            case I64_TRUNC_UF64:{
+            case I64_TRUNC_UF64: {
                 double src = ins.getCode().equals(OpCode.I64_TRUNC_UF32) ? stack.popF32() : stack.popF64();
                 double f = truncDouble(src);
-                long l = (long) f;
-                if(f < 0 || l != f)
+                long l = doubleToUnsignedLong(f);
+                if (f < 0 || l != f)
                     throw new RuntimeException("trunc " + src + " to u64 failed, math overflow");
                 stack.push(
                         l
@@ -808,7 +809,7 @@ public class Frame {
             case F32_CONVERT_SI64:
                 stack.pushF32(stack.popI64());
                 break;
-            case F32_CONVERT_UI64:{
+            case F32_CONVERT_UI64: {
                 long value = stack.popI64();
                 float fValue = (float) (value & UNSIGNED_MASK);
                 if (value < 0) {
@@ -830,7 +831,7 @@ public class Frame {
             case F64_CONVERT_SI64:
                 stack.pushF64(stack.popI64());
                 break;
-            case F64_CONVERT_UI64:{
+            case F64_CONVERT_UI64: {
                 long value = stack.popI64();
                 double dValue = (double) (value & UNSIGNED_MASK);
                 if (value < 0) {
@@ -838,14 +839,14 @@ public class Frame {
                 }
                 stack.pushF64(dValue);
             }
-                break;
+            break;
             case F64_PROMOTE_F32:
                 stack.pushF64(stack.popF32());
                 break;
             default:
                 throw new RuntimeException("unknown opcode " + ins.getCode());
         }
-        if(module.getGas() > module.gasLimit){
+        if (module.getGas() > module.gasLimit) {
             throw new RuntimeException("gas overflow");
         }
     }
@@ -874,5 +875,9 @@ public class Frame {
 
     private float truncFloat(float f) {
         return (float) truncDouble(f);
+    }
+
+    private long doubleToUnsignedLong(double d) {
+        return new BigDecimal(d).longValue();
     }
 }

@@ -11,6 +11,7 @@ import org.junit.runners.JUnit4;
 import org.tdf.lotusvm.runtime.ModuleInstance;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -338,5 +339,14 @@ public class RuntimeTest {
     @Test
     public void testParseFloat() {
         assert Float.isNaN((float)( 0.0 / 0.0));
+    }
+
+    @Test
+    public void testDoubleToUnsignedLong(){
+        double d = Long.MAX_VALUE;
+        double d2 = d + 1;
+        long l = new BigDecimal(d2).longValue();
+        System.out.println(Long.toUnsignedString(Long.MAX_VALUE));
+        System.out.println(Long.toUnsignedString(l));
     }
 }
