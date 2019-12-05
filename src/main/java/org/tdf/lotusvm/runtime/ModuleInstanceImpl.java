@@ -1,7 +1,7 @@
 package org.tdf.lotusvm.runtime;
 
 import lombok.*;
-import org.tdf.lotusvm.Config;
+import org.tdf.lotusvm.Builder;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.common.Register;
 import org.tdf.lotusvm.types.*;
@@ -57,13 +57,13 @@ public class ModuleInstanceImpl implements ModuleInstance {
         return memory.getData();
     }
 
-    public ModuleInstanceImpl(Config config){
-        Module module = new Module(config.getBinary());
+    public ModuleInstanceImpl(Builder builder){
+        Module module = new Module(builder.getBinary());
         types = module.getTypeSection().getFunctionTypes();
-        hooks = config.getHooks();
+        hooks = builder.getHooks();
 
         Map<String, HostFunction> functionsMap =
-                config.getHostFunctions().stream()
+                builder.getHostFunctions().stream()
                 .collect(Collectors.toMap(HostFunction::getName, Function.identity()));
 
         // imports
@@ -90,7 +90,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
                     .getGlobals().stream().map(GlobalSection.Global::getGlobalType)
                     .collect(Collectors.toList());
         }
-        if(module.getGlobalSection() != null && config.isInitGlobals()){
+        if(module.getGlobalSection() != null && builder.isInitGlobals()){
             globals = new Register(module.getGlobalSection().getGlobals().size());
             for (int i = 0; i < globals.getData().length; i++) {
                 globals.set(i, executeExpression(
@@ -99,8 +99,8 @@ public class ModuleInstanceImpl implements ModuleInstance {
                 ));
             }
         }
-        if(config.getGlobals() != null){
-            globals = new Register(config.getGlobals());
+        if(builder.getGlobals() != null){
+            globals = new Register(builder.getGlobals());
         }
 
         // init tables
@@ -135,15 +135,15 @@ public class ModuleInstanceImpl implements ModuleInstance {
         }
 
         // put data into memory
-        if (module.getDataSection() != null && config.isInitMemory()) {
+        if (module.getDataSection() != null && builder.isInitMemory()) {
             module.getDataSection().getDataSegments().forEach(x -> {
                 int offset = (int) executeExpression(x.getExpression(), ValueType.I32);
                 memory.put(offset, x.getInit());
             });
         }
 
-        if(config.getMemory() != null && memory != null){
-            memory.copyFrom(config.getMemory());
+        if(builder.getMemory() != null && memory != null){
+            memory.copyFrom(builder.getMemory());
         }
 
         // load and execute start function
@@ -174,5 +174,10 @@ public class ModuleInstanceImpl implements ModuleInstance {
     private long executeExpression(List<Instruction> instructions, ValueType type) {
         return new Frame(instructions, new FunctionType(Collections.emptyList(), Collections.singletonList(type)), this,
                 new Register(), new Register()).execute()[0];
+    }
+
+    @Override
+    public boolean hasExport(String funcName) {
+        return exports.containsKey(funcName);
     }
 }

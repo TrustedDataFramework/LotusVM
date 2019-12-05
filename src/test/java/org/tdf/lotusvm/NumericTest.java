@@ -14,11 +14,11 @@ import java.util.stream.Collectors;
 @RunWith(JUnit4.class)
 public class NumericTest {
     public void testSpecFunctions(String filename, Collection<String> functions, int skip, int limit) throws Exception {
-        ModuleInstanceImpl instance = new ModuleInstanceImpl(
-                Config.builder()
+        ModuleInstance instance =
+                Builder.builder()
                         .binary(Util.readClassPathFileAsByteArray("testdata/" + filename))
                 .build()
-        );
+        ;
         RuntimeTest.TestConfig config = RuntimeTest.getTestConfig("testdata/modules.json", filename);
         Set<String> all = new HashSet<>(functions);
         List<RuntimeTest.TestFunction> tests = config.tests.stream().filter(f -> all.contains(f.function)).skip(skip).limit(limit > 0 ? limit : Long.MAX_VALUE).collect(Collectors.toList());

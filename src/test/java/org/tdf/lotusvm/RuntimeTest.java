@@ -131,11 +131,11 @@ public class RuntimeTest {
     }
 
     public void testSpecFunctions(String filename, Collection<String> functions, int skip, int limit) throws Exception {
-        ModuleInstanceImpl instance = new ModuleInstanceImpl(
-                Config.builder()
+        ModuleInstance instance =
+                Builder.builder()
                 .binary(Util.readClassPathFileAsByteArray("testdata/spec/" + filename))
                 .build()
-        );
+        ;
         TestConfig config = getTestConfig("testdata/spec/modules.json", filename);
         Set<String> all = new HashSet<>(functions);
         List<TestFunction> tests = config.tests.stream().filter(f -> all.contains(f.function)).skip(skip).limit(limit > 0 ? limit : Long.MAX_VALUE).collect(Collectors.toList());
@@ -188,11 +188,11 @@ public class RuntimeTest {
 
     @Test
     public void testAddWasm() throws Exception {
-        ModuleInstanceImpl instance = new ModuleInstanceImpl(
-                Config.builder()
+        ModuleInstance instance =
+                Builder.builder()
                 .binary(Util.readClassPathFileAsByteArray("expression-tests/add.wasm"))
                 .build()
-        );
+        ;
         assert instance.execute(0, 1, 1)[0] == 2;
         assert instance.execute(0, 1, -1)[0] == 0;
     }
