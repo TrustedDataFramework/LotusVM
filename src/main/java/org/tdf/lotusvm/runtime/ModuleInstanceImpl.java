@@ -1,7 +1,6 @@
 package org.tdf.lotusvm.runtime;
 
 import lombok.*;
-import org.tdf.lotusvm.Builder;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.common.Register;
 import org.tdf.lotusvm.types.*;
