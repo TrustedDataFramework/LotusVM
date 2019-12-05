@@ -1,4 +1,4 @@
-package org.tdf.lotusvm;
+package org.tdf.lotusvm.common;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -21,6 +21,4 @@ public class Constants {
     public static final int VALUE_F32 = 0x7d;
 
     public static final int VALUE_F64 = 0x7c;
-
-    public static final long MEMORY_GROW_GAS_USAGE = 16 * 1024;
 }

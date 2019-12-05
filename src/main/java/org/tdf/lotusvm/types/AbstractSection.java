@@ -1,9 +1,9 @@
-package org.tdf.lotusvm.section;
+package org.tdf.lotusvm.types;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.tdf.lotusvm.BytesReader;
+import org.tdf.lotusvm.common.BytesReader;
 
 /**
  * Each section consists of
@@ -13,7 +13,7 @@ import org.tdf.lotusvm.BytesReader;
  *
  *
  */
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class AbstractSection {
    @Getter
    private SectionID id;

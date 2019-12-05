@@ -2,7 +2,7 @@ package org.tdf.lotusvm.types;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.tdf.lotusvm.BytesReader;
+import org.tdf.lotusvm.common.BytesReader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ public class TableType {
     @Getter
     private LimitType limit;
 
-    public static TableType readFrom(BytesReader reader){
+    static TableType readFrom(BytesReader reader){
         int type = reader.read();
         if(type != ELEMENT_TYPE){
             throw new RuntimeException(String.format("invalid element type %s", type));
@@ -23,7 +23,7 @@ public class TableType {
         return new TableType(limit);
     }
 
-    public static List<TableType> readTableTypesFrom(BytesReader reader) {
+    static List<TableType> readTableTypesFrom(BytesReader reader) {
         int length = reader.readVarUint32();
         List<TableType> limitTables = new ArrayList<>(length);
         for (int i = 0; i < length; i++) {

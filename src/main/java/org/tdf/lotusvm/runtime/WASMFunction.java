@@ -1,15 +1,16 @@
 package org.tdf.lotusvm.runtime;
 
-import org.tdf.lotusvm.Instruction;
-import org.tdf.lotusvm.section.CodeSection;
+import org.tdf.lotusvm.common.Register;
+import org.tdf.lotusvm.types.CodeSection;
 import org.tdf.lotusvm.types.FunctionType;
+import org.tdf.lotusvm.types.Instruction;
 
 import java.util.List;
 
-public class WASMFunction implements FunctionInstance{
+class WASMFunction implements FunctionInstance{
     private FunctionType type;
     // params + localvars
-    private ModuleInstance module;
+    private ModuleInstanceImpl module;
     private List<Instruction> body;
     private List<CodeSection.Local> locals;
 
@@ -18,7 +19,7 @@ public class WASMFunction implements FunctionInstance{
         return type;
     }
 
-    public WASMFunction(FunctionType type, ModuleInstance module, List<Instruction> body, List<CodeSection.Local> locals) {
+    WASMFunction(FunctionType type, ModuleInstanceImpl module, List<Instruction> body, List<CodeSection.Local> locals) {
         this.type = type;
         this.module = module;
         this.body = body;
@@ -56,10 +57,5 @@ public class WASMFunction implements FunctionInstance{
     @Override
     public int getArity() {
         return type.getResultTypes().size();
-    }
-
-    @Override
-    public long getGas() {
-        return 0;
     }
 }

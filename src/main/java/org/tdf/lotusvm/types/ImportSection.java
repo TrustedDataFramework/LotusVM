@@ -1,14 +1,11 @@
-package org.tdf.lotusvm.section;
+package org.tdf.lotusvm.types;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.tdf.lotusvm.BytesReader;
-import org.tdf.lotusvm.Vector;
-import org.tdf.lotusvm.types.GlobalType;
-import org.tdf.lotusvm.types.LimitType;
-import org.tdf.lotusvm.types.TableType;
+import org.tdf.lotusvm.common.BytesReader;
+import org.tdf.lotusvm.common.Vector;
 
 import java.util.ArrayList;
 import java.util.List;

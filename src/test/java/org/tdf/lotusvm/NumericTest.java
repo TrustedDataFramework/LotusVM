@@ -1,11 +1,9 @@
 package org.tdf.lotusvm;
 
-import com.google.common.io.ByteStreams;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.lotusvm.runtime.Frame;
-import org.tdf.lotusvm.runtime.ModuleInstance;
+import org.tdf.lotusvm.runtime.ModuleInstanceImpl;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -16,8 +14,8 @@ import java.util.stream.Collectors;
 @RunWith(JUnit4.class)
 public class NumericTest {
     public void testSpecFunctions(String filename, Collection<String> functions, int skip, int limit) throws Exception {
-        ModuleInstance instance = new ModuleInstance(
-                ModuleInstance.Config.builder()
+        ModuleInstanceImpl instance = new ModuleInstanceImpl(
+                Config.builder()
                         .binary(Util.readClassPathFileAsByteArray("testdata/" + filename))
                 .build()
         );

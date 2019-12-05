@@ -1,9 +1,9 @@
 package org.tdf.lotusvm.types;
 
 
-import org.tdf.lotusvm.BytesReader;
+import org.tdf.lotusvm.common.BytesReader;
 
-import static org.tdf.lotusvm.Constants.*;
+import static org.tdf.lotusvm.common.Constants.*;
 
 public enum ResultType {
     EMPTY(RESULT_EMPTY),
@@ -17,7 +17,7 @@ public enum ResultType {
         this.code = code;
     }
 
-    public static ResultType readFrom(BytesReader reader) {
+    static ResultType readFrom(BytesReader reader) {
         int type = reader.read();
         switch (type) {
             case VALUE_I32:

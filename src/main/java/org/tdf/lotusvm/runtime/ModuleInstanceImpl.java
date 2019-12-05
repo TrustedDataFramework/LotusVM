@@ -1,12 +1,10 @@
 package org.tdf.lotusvm.runtime;
 
 import lombok.*;
-import org.tdf.lotusvm.Constants;
-import org.tdf.lotusvm.Instruction;
-import org.tdf.lotusvm.section.*;
-import org.tdf.lotusvm.types.FunctionType;
-import org.tdf.lotusvm.types.GlobalType;
-import org.tdf.lotusvm.types.ValueType;
+import org.tdf.lotusvm.Config;
+import org.tdf.lotusvm.ModuleInstance;
+import org.tdf.lotusvm.common.Register;
+import org.tdf.lotusvm.types.*;
 
 import java.util.*;
 import java.util.function.Function;
@@ -17,10 +15,11 @@ import java.util.stream.Collectors;
  * It is created by instantiating a module, and collects runtime representations of all entities that are imported,
  * deﬁned, or exported by the module.
  */
-@Getter
-public class ModuleInstance {
+public class ModuleInstanceImpl implements ModuleInstance {
     // globals
     Register globals = new Register(new long[0]);
+
+    @Getter
     List<GlobalType> globalTypes = new ArrayList<>();
 
     // memories
@@ -40,45 +39,32 @@ public class ModuleInstance {
     // accessible before this initialization has completed.
     FunctionInstance startFunction;
 
+    // hooks
+    Set<Hook> hooks;
+
     // exported functions
     Map<String, FunctionInstance> exports = new HashMap<>();
 
     List<FunctionType> types;
 
-    long gas;
-
-    long gasLimit;
-
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Getter
-    @Setter
-    @Builder
-    public static class Config{
-        @Builder.Default
-        private boolean initGlobals = true;
-        @Builder.Default
-        private boolean initMemory = true;
-        @Builder.Default
-        private Set<HostFunction> hostFunctions = new HashSet<>();
-        @Builder.Default
-        private long gasLimit = Long.MAX_VALUE;
-
-        private byte[] binary;
-        private long[] globals;
-        private byte[] memory;
+    @Override
+    public long[] getGlobals() {
+        return globals.getData();
     }
 
-    public ModuleInstance(Config config) throws Exception{
+    @Override
+    public byte[] getMemory() {
+        return memory.getData();
+    }
+
+    public ModuleInstanceImpl(Config config){
         Module module = new Module(config.getBinary());
         types = module.getTypeSection().getFunctionTypes();
-
+        hooks = config.getHooks();
 
         Map<String, HostFunction> functionsMap =
-                config.hostFunctions.stream()
+                config.getHostFunctions().stream()
                 .collect(Collectors.toMap(HostFunction::getName, Function.identity()));
-
-        gasLimit = config.gasLimit;
 
         // imports
         if(module.getImportSection() != null){
@@ -104,7 +90,7 @@ public class ModuleInstance {
                     .getGlobals().stream().map(GlobalSection.Global::getGlobalType)
                     .collect(Collectors.toList());
         }
-        if(module.getGlobalSection() != null && config.initGlobals){
+        if(module.getGlobalSection() != null && config.isInitGlobals()){
             globals = new Register(module.getGlobalSection().getGlobals().size());
             for (int i = 0; i < globals.getData().length; i++) {
                 globals.set(i, executeExpression(
@@ -113,8 +99,8 @@ public class ModuleInstance {
                 ));
             }
         }
-        if(config.globals != null){
-            globals = new Register(config.globals);
+        if(config.getGlobals() != null){
+            globals = new Register(config.getGlobals());
         }
 
         // init tables
@@ -148,20 +134,16 @@ public class ModuleInstance {
                     .get(0));
         }
 
-        if(config.initMemory){
-            gas += memory.getPageSize() * Constants.MEMORY_GROW_GAS_USAGE;
-        }
-
         // put data into memory
-        if (module.getDataSection() != null && config.initMemory) {
+        if (module.getDataSection() != null && config.isInitMemory()) {
             module.getDataSection().getDataSegments().forEach(x -> {
                 int offset = (int) executeExpression(x.getExpression(), ValueType.I32);
                 memory.put(offset, x.getInit());
             });
         }
 
-        if(config.memory != null && memory != null){
-            memory.copyFrom(config.memory);
+        if(config.getMemory() != null && memory != null){
+            memory.copyFrom(config.getMemory());
         }
 
         // load and execute start function
@@ -178,10 +160,12 @@ public class ModuleInstance {
         }
     }
 
+    @Override
     public long[] execute(int functionIndex, long... parameters) {
         return functions.get(functionIndex).execute(parameters);
     }
 
+    @Override
     public long[] execute(String funcName, long... parameters) throws RuntimeException {
         return exports.get(funcName).execute(parameters);
     }

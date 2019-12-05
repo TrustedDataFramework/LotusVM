@@ -1,6 +1,6 @@
-package org.tdf.lotusvm.section;
+package org.tdf.lotusvm.types;
 
-import org.tdf.lotusvm.BytesReader;
+import org.tdf.lotusvm.common.BytesReader;
 
 public class SectionReader {
     private BytesReader reader;

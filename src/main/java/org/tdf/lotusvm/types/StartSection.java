@@ -1,7 +1,7 @@
-package org.tdf.lotusvm.section;
+package org.tdf.lotusvm.types;
 
 import lombok.Getter;
-import org.tdf.lotusvm.BytesReader;
+import org.tdf.lotusvm.common.BytesReader;
 
 /**
  * The start section has the id 8. It decodes into an optional start function that represents the start component of a module.

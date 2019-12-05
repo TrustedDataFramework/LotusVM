@@ -1,33 +1,24 @@
 package org.tdf.lotusvm.runtime;
 
-import org.tdf.lotusvm.Instruction;
-import org.tdf.lotusvm.OpCode;
+import org.tdf.lotusvm.common.OpCode;
+import org.tdf.lotusvm.common.Register;
 import org.tdf.lotusvm.types.FunctionType;
+import org.tdf.lotusvm.types.Instruction;
 import org.tdf.lotusvm.types.ResultType;
 
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.tdf.lotusvm.Constants.MEMORY_GROW_GAS_USAGE;
-
-
-public class Frame {
-    public static final long MAXIMUM_UNSIGNED_I32 = 0xFFFFFFFFL;
+class Frame {
+    private static final long MAXIMUM_UNSIGNED_I32 = 0xFFFFFFFFL;
 
     private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
-
-    private long getInstructionGas(Instruction ins) {
-        if (ins.getCode() != OpCode.GROW_MEMORY) return 10;
-        return stack.getU32(stack.size() - 1) * MEMORY_GROW_GAS_USAGE;
-    }
 
     private List<Instruction> body;
 
     private FunctionType type;
 
-    private ModuleInstance module;
+    private ModuleInstanceImpl module;
 
     private Register localVariables;
 
@@ -35,7 +26,7 @@ public class Frame {
 
     private LinkedList<Label> labels;
 
-    public Frame(List<Instruction> body, FunctionType type, ModuleInstance module, Register localVariables, Register stack) {
+    Frame(List<Instruction> body, FunctionType type, ModuleInstanceImpl module, Register localVariables, Register stack) {
         this.body = body;
         this.type = type;
         this.module = module;
@@ -94,7 +85,7 @@ public class Frame {
     }
 
     private void invoke(Instruction ins) throws RuntimeException {
-        module.gas += getInstructionGas(ins);
+        module.hooks.forEach(x -> x.onInstruction(ins, module));
         switch (ins.getCode()) {
             // these operations are essentially no-ops.
             case NOP:
@@ -161,7 +152,9 @@ public class Frame {
 //                break;
             case CALL: {
                 FunctionInstance function = module.functions.get(ins.getOperands().getI32(0));
-                module.gas += function.getGas();
+                if (function.isHost()) {
+                    module.hooks.forEach(x -> x.onHostFunction((HostFunction) function, module));
+                }
                 long[] res = function.execute(
                         stack.popN(function.parametersLength())
                 );
@@ -182,10 +175,12 @@ public class Frame {
                     throw new RuntimeException("undefined element index");
                 }
                 FunctionInstance function = module.table.getFunctions()[elementIndex];
+                if (function.isHost()) {
+                    module.hooks.forEach(x -> x.onHostFunction((HostFunction) function, module));
+                }
                 if (!function.getType().equals(module.types.get(ins.getOperands().getI32(0)))) {
                     throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
                 }
-                module.gas += function.getGas();
                 stack.pushAll(
                         function.execute(
                                 stack.popN(function.parametersLength())
@@ -846,9 +841,6 @@ public class Frame {
                 break;
             default:
                 throw new RuntimeException("unknown opcode " + ins.getCode());
-        }
-        if (module.getGas() > module.gasLimit) {
-            throw new RuntimeException("gas overflow");
         }
     }
 

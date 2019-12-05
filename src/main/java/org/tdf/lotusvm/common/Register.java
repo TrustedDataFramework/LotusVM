@@ -1,11 +1,11 @@
-package org.tdf.lotusvm.runtime;
+package org.tdf.lotusvm.common;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.stream.Collectors;
 
 public class Register {
-    public static final int DEFAULT_INITIAL_STACK_CAP = 16;
+    private static final int DEFAULT_INITIAL_STACK_CAP = 16;
 
     private long[] data;
     private int pc;

@@ -5,16 +5,16 @@ import org.tdf.lotusvm.types.LimitType;
 
 import java.util.Collection;
 
-public class Table {
+class Table {
     @Getter
     private FunctionInstance[] functions;
     private LimitType limit;
 
-    public Table(LimitType limit) {
+    Table(LimitType limit) {
         this.functions = new FunctionInstance[limit.getMinimum()];
     }
 
-    public void putElements(int offset, Collection<? extends FunctionInstance> functions) {
+    void putElements(int offset, Collection<? extends FunctionInstance> functions) {
         int i = 0;
         for (FunctionInstance f : functions) {
             int index = offset + i;

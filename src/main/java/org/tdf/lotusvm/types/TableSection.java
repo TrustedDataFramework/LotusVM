@@ -1,8 +1,7 @@
-package org.tdf.lotusvm.section;
+package org.tdf.lotusvm.types;
 
 import lombok.Getter;
-import org.tdf.lotusvm.BytesReader;
-import org.tdf.lotusvm.types.TableType;
+import org.tdf.lotusvm.common.BytesReader;
 
 import java.util.List;
 

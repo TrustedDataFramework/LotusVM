@@ -1,25 +1,26 @@
 package org.tdf.lotusvm.runtime;
 
+import lombok.AccessLevel;
 import lombok.Getter;
-import org.tdf.lotusvm.Instruction;
+import org.tdf.lotusvm.types.Instruction;
 
 import java.util.List;
 
-@Getter
-public class Label {
+@Getter(AccessLevel.PACKAGE)
+class Label {
     private int pc;
     private List<Instruction> body;
     private int arity;
     private boolean loop;
 
-    public Label(boolean hasArity, List<Instruction> body) {
+    Label(boolean hasArity, List<Instruction> body) {
         if(hasArity){
             this.arity = 1;
         }
         this.body = body;
     }
 
-    public Label withLoop(){
+    Label withLoop(){
         this.loop = true;
         return this;
     }

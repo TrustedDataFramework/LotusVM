@@ -1,6 +1,6 @@
-package org.tdf.lotusvm.section;
+package org.tdf.lotusvm.types;
 
-public enum SectionID {
+enum SectionID {
     CUSTOM,
     TYPE,
     IMPORT,

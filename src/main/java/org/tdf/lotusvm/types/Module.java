@@ -1,10 +1,9 @@
-package org.tdf.lotusvm.section;
+package org.tdf.lotusvm.types;
 
 
 import lombok.Getter;
-import lombok.Setter;
-import org.tdf.lotusvm.BytesReader;
-import org.tdf.lotusvm.Constants;
+import org.tdf.lotusvm.common.BytesReader;
+import org.tdf.lotusvm.common.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,66 +13,52 @@ import java.util.List;
  * module record, except that function definitions are split into two sections, separating their type declarations in the
  * function section from their bodies in the code section.
  */
+@Getter
 public class Module {
     // the magic number of wasm
-    @Getter
     private int magic;
     // version of wasm binary
-    @Getter
     private int version;
 
-    @Getter
     private List<CustomSection> customSections = new ArrayList<>();
 
-    @Getter
     private TypeSection typeSection;
 
-    @Getter
     private ImportSection importSection;
 
-    @Getter
     private FunctionSection functionSection;
 
     // In the current version of WebAssembly, at most one table may be defined or imported in a single module,
     // and all constructs implicitly reference this table 0. This restriction may be lifted in future versions.
-    @Getter
     private TableSection tableSection;
 
     // In the current version of WebAssembly, at most one memory may be defined or imported in a single
     // module, and all constructs implicitly reference this memory 0. This restriction may be lifted in future versions.
-    @Getter
-    @Setter
     private MemorySection memorySection;
 
-    @Getter
     private GlobalSection globalSection;
 
-    @Getter
     private ExportSection exportSection;
 
-    @Getter
     private StartSection startSection;
 
-    @Getter
     private ElementSection elementSection;
 
-    @Getter
     private CodeSection codeSection;
 
-    @Getter
     private DataSection dataSection;
 
-    public Module(byte[] binary) throws Exception {
+    public Module(byte[] binary){
         parse(binary);
     }
 
-    private void parse(byte[] binary) throws Exception {
+    private void parse(byte[] binary) {
         BytesReader reader = new BytesReader(binary);
         magic = reader.readUint32();
-        if (magic != Constants.MAGIC_NUMBER) throw new Exception("wasm: Invalid magic number");
+        if (magic != Constants.MAGIC_NUMBER) throw new RuntimeException("wasm: Invalid magic number");
         version = reader.readUint32();
         if (version != Constants.VERSION)
-            throw new Exception(String.format("wasm: unknown binary version: %d", version));
+            throw new RuntimeException(String.format("wasm: unknown binary version: %d", version));
         readSections(reader);
     }
 

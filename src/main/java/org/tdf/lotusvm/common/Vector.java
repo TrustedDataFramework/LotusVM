@@ -1,4 +1,4 @@
-package org.tdf.lotusvm;
+package org.tdf.lotusvm.common;
 
 import java.nio.charset.StandardCharsets;
 

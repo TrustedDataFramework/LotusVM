@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.lotusvm.runtime.ModuleInstance;
+import org.tdf.lotusvm.runtime.ModuleInstanceImpl;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -131,8 +131,8 @@ public class RuntimeTest {
     }
 
     public void testSpecFunctions(String filename, Collection<String> functions, int skip, int limit) throws Exception {
-        ModuleInstance instance = new ModuleInstance(
-                ModuleInstance.Config.builder()
+        ModuleInstanceImpl instance = new ModuleInstanceImpl(
+                Config.builder()
                 .binary(Util.readClassPathFileAsByteArray("testdata/spec/" + filename))
                 .build()
         );
@@ -188,8 +188,8 @@ public class RuntimeTest {
 
     @Test
     public void testAddWasm() throws Exception {
-        ModuleInstance instance = new ModuleInstance(
-                ModuleInstance.Config.builder()
+        ModuleInstanceImpl instance = new ModuleInstanceImpl(
+                Config.builder()
                 .binary(Util.readClassPathFileAsByteArray("expression-tests/add.wasm"))
                 .build()
         );

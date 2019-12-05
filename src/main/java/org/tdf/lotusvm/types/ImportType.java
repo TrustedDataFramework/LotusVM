@@ -1,4 +1,4 @@
-package org.tdf.lotusvm.section;
+package org.tdf.lotusvm.types;
 
 public enum ImportType {
     // import a function

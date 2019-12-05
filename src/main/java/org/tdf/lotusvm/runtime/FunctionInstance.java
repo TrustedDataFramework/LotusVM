@@ -7,6 +7,5 @@ public interface FunctionInstance {
     int getArity();
     FunctionType getType();
     long[] execute(long... parameters);
-    long getGas();
     boolean isHost();
 }

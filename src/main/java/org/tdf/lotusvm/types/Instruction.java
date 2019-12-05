@@ -1,13 +1,15 @@
-package org.tdf.lotusvm;
+package org.tdf.lotusvm.types;
 
 import lombok.*;
-import org.tdf.lotusvm.runtime.Register;
-import org.tdf.lotusvm.types.ResultType;
+import org.tdf.lotusvm.common.BytesReader;
+import org.tdf.lotusvm.common.OpCode;
+import org.tdf.lotusvm.common.Vector;
+import org.tdf.lotusvm.common.Register;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.tdf.lotusvm.OpCode.*;
+import static org.tdf.lotusvm.common.OpCode.*;
 
 @Builder(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)

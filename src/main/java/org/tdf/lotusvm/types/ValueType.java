@@ -1,11 +1,11 @@
 package org.tdf.lotusvm.types;
 
-import org.tdf.lotusvm.BytesReader;
+import org.tdf.lotusvm.common.BytesReader;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.tdf.lotusvm.Constants.*;
+import static org.tdf.lotusvm.common.Constants.*;
 
 
 /**
@@ -25,7 +25,7 @@ public enum ValueType {
         this.code = code;
     }
 
-    public static ValueType readFrom(BytesReader reader){
+    static ValueType readFrom(BytesReader reader){
         int type = reader.read();
         switch (type){
             case VALUE_I32:

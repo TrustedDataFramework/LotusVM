@@ -4,7 +4,8 @@ import com.google.common.io.ByteStreams;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.lotusvm.section.Module;
+import org.tdf.lotusvm.common.BytesReader;
+import org.tdf.lotusvm.types.Module;
 
 import java.io.File;
 import java.io.FileInputStream;

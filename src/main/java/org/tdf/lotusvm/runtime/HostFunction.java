@@ -8,11 +8,9 @@ import org.tdf.lotusvm.types.FunctionType;
 import java.util.Objects;
 
 public abstract class HostFunction implements FunctionInstance {
-    private static final long HOST_FUNCTION_GAS = 10;
-
     @Getter(AccessLevel.PROTECTED)
     @Setter
-    private ModuleInstance instance;
+    private ModuleInstanceImpl instance;
 
     @Setter(AccessLevel.PROTECTED)
     private FunctionType type;
@@ -61,10 +59,5 @@ public abstract class HostFunction implements FunctionInstance {
     @Override
     public int hashCode() {
         return Objects.hash(name);
-    }
-
-    @Override
-    public long getGas() {
-        return HOST_FUNCTION_GAS;
     }
 }

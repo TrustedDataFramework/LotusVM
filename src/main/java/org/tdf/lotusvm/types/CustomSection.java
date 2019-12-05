@@ -1,8 +1,8 @@
-package org.tdf.lotusvm.section;
+package org.tdf.lotusvm.types;
 
 import lombok.Getter;
-import org.tdf.lotusvm.BytesReader;
-import org.tdf.lotusvm.Vector;
+import org.tdf.lotusvm.common.BytesReader;
+import org.tdf.lotusvm.common.Vector;
 
 /**
  * Custom sections have the id 0. They are intended to be used for debugging information or third-party extensions,

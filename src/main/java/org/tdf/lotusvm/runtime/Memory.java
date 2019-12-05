@@ -1,14 +1,14 @@
 package org.tdf.lotusvm.runtime;
 
 import lombok.Getter;
-import org.tdf.lotusvm.LittleEndian;
+import org.tdf.lotusvm.common.LittleEndian;
 import org.tdf.lotusvm.types.LimitType;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 // TODO: limit memory size in block chain
-public class Memory {
+class Memory {
     /**
      * Returns the values from each provided array combined into a single array. For example, {@code
      * concat(new byte[] {a, b}, new byte[] {}, new byte[] {c}} returns the array {@code {a, b, c}}.
@@ -16,7 +16,7 @@ public class Memory {
      * @param arrays zero or more {@code byte} arrays
      * @return a single array containing all the values from the source arrays, in order
      */
-    public static byte[] concat(byte[]... arrays) {
+    private static byte[] concat(byte[]... arrays) {
         int length = 0;
         for (byte[] array : arrays) {
             length += array.length;
@@ -30,24 +30,24 @@ public class Memory {
         return result;
     }
 
-    public static final int PAGE_SIZE = 64 * (1 << 10); // 64 KB
+    private static final int PAGE_SIZE = 64 * (1 << 10); // 64 KB
     @Getter
     private byte[] data;
     private LimitType limit;
     private int pages;
 
-    public Memory() {
+    Memory() {
         this.data = new byte[0];
         this.limit = new LimitType();
     }
 
-    public Memory(LimitType limit) {
+    Memory(LimitType limit) {
         this.limit = limit;
         this.data = new byte[0];
         this.pages = limit.getMinimum();
     }
 
-    public void copyFrom(byte[] data) {
+    void copyFrom(byte[] data) {
         if (limit.isBounded() && data.length > limit.getMaximum() * PAGE_SIZE) {
             throw new RuntimeException("exec: out of bounds memory access");
         }
@@ -60,20 +60,20 @@ public class Memory {
         put(offset, data);
     }
 
-    public void put(int offset, byte[] data) {
+    void put(int offset, byte[] data) {
         spaceCheck(offset + data.length);
         System.arraycopy(data, 0, this.data, offset, data.length);
     }
 
-    public void putLong(int offset, long data) {
+    void putLong(int offset, long data) {
         put(offset, LittleEndian.encodeInt64(data));
     }
 
-    public String loadString(int offset, int n) {
+    String loadString(int offset, int n) {
         return new String(loadN(offset, n), StandardCharsets.UTF_8);
     }
 
-    public byte[] loadN(int offset, int n) {
+    private byte[] loadN(int offset, int n) {
         if (offset < 0 || n < 0) {
             throw new RuntimeException("exec: out of bounds memory access");
         }
@@ -90,35 +90,35 @@ public class Memory {
         return concat(bytes0, new byte[n - bytes0.length]);
     }
 
-    public int load32(int offset) {
+    int load32(int offset) {
         return LittleEndian.decodeInt32(loadN(offset, Integer.BYTES));
     }
 
-    public long load64(int offset) {
+    long load64(int offset) {
         return LittleEndian.decodeInt64(loadN(offset, Long.BYTES));
     }
 
-    public byte load8(int offset) {
+    byte load8(int offset) {
         return loadN(offset, 1)[0];
     }
 
-    public short load16(int offset) {
+    short load16(int offset) {
         return LittleEndian.decodeInt16(loadN(offset, Short.BYTES));
     }
 
-    public void storeI32(int offset, int n) {
+    void storeI32(int offset, int n) {
         put(offset, LittleEndian.encodeInt32(n));
     }
 
-    public void storeI64(int offset, long n) {
+    void storeI64(int offset, long n) {
         put(offset, LittleEndian.encodeInt64(n));
     }
 
-    public void storeI16(int offset, short n) {
+    void storeI16(int offset, short n) {
         put(offset, LittleEndian.encodeInt16(n));
     }
 
-    public void storeI8(int offset, byte n) {
+    void storeI8(int offset, byte n) {
         put(offset, new byte[]{n});
     }
 
@@ -130,7 +130,7 @@ public class Memory {
         System.arraycopy(tmp, 0, data, 0, tmp.length);
     }
 
-    public int getPageSize() {
+    int getPageSize() {
         return pages;
     }
 

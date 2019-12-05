@@ -2,7 +2,7 @@ package org.tdf.lotusvm.types;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.tdf.lotusvm.BytesReader;
+import org.tdf.lotusvm.common.BytesReader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,14 +18,14 @@ public class FunctionType {
     private List<ValueType> parameterTypes;
     private List<ValueType> resultTypes;
 
-    public static FunctionType readFrom(BytesReader reader){
+    static FunctionType readFrom(BytesReader reader){
         if(reader.read() != PREFIX){
             throw new RuntimeException("functype incorrect");
         }
         return new FunctionType(ValueType.readValueTypesFrom(reader), ValueType.readValueTypesFrom(reader));
     }
 
-    public static List<FunctionType> readFunctionTypesFrom(BytesReader reader){
+    static List<FunctionType> readFunctionTypesFrom(BytesReader reader){
         int length = reader.readVarUint32();
         List<FunctionType> res = new ArrayList<>(length);
         for(int i = 0; i < length; i++){
