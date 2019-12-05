@@ -1,16 +1,19 @@
 package org.tdf.lotusvm.runtime;
 
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.Setter;
+import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.FunctionType;
 
 import java.util.Objects;
 
 public abstract class HostFunction implements FunctionInstance {
-    @Getter(AccessLevel.PROTECTED)
     @Setter
     private ModuleInstanceImpl instance;
+
+    protected ModuleInstance getInstance() {
+        return instance;
+    }
 
     @Setter(AccessLevel.PROTECTED)
     private FunctionType type;
@@ -59,5 +62,21 @@ public abstract class HostFunction implements FunctionInstance {
     @Override
     public int hashCode() {
         return Objects.hash(name);
+    }
+
+    protected void putMemory(int offset, byte[] data){
+        instance.memory.put(offset, data);
+    }
+
+    protected byte[] loadMemory(int offset, int length){
+        return instance.memory.loadN(offset, length);
+    }
+
+    protected void putStringIntoMemory(int offset, String data){
+        instance.memory.putString(offset, data);
+    }
+
+    protected String loadStringFromMemory(int offset, int length){
+        return instance.memory.loadString(offset, length);
     }
 }

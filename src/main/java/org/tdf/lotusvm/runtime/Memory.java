@@ -73,7 +73,7 @@ class Memory {
         return new String(loadN(offset, n), StandardCharsets.UTF_8);
     }
 
-    private byte[] loadN(int offset, int n) {
+    byte[] loadN(int offset, int n) {
         if (offset < 0 || n < 0) {
             throw new RuntimeException("exec: out of bounds memory access");
         }

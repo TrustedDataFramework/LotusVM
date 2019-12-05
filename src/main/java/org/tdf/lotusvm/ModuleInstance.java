@@ -23,6 +23,10 @@ public interface ModuleInstance {
 
     long[] execute(String funcName, long... parameters) throws RuntimeException;
 
+    static Builder builder() {
+        return Builder.builder();
+    }
+
     @Getter
     class Builder {
         private boolean initGlobals = true;
@@ -34,48 +38,49 @@ public interface ModuleInstance {
         private long[] globals;
         private byte[] memory;
 
-        private Builder(){}
+        private Builder() {
+        }
 
-        public static Builder builder(){
+        public static Builder builder() {
             return new Builder();
         }
 
-        public Builder initGlobals(boolean initGlobals){
+        public Builder initGlobals(boolean initGlobals) {
             this.initGlobals = initGlobals;
             return this;
         }
 
-        public Builder initMemory(boolean initMemory){
+        public Builder initMemory(boolean initMemory) {
             this.initMemory = initMemory;
             return this;
         }
 
-        public Builder hostFunctions(Set<HostFunction> hostFunctions){
+        public Builder hostFunctions(Set<HostFunction> hostFunctions) {
             this.hostFunctions = hostFunctions;
             return this;
         }
 
-        public Builder hooks(Set<Hook> hooks){
+        public Builder hooks(Set<Hook> hooks) {
             this.hooks = hooks;
             return this;
         }
 
-        public Builder binary(byte[] binary){
+        public Builder binary(byte[] binary) {
             this.binary = binary;
             return this;
         }
 
-        public Builder globals(long[] globals){
+        public Builder globals(long[] globals) {
             this.globals = globals;
             return this;
         }
 
-        public Builder memory(byte[] memory){
+        public Builder memory(byte[] memory) {
             this.memory = memory;
             return this;
         }
 
-        public ModuleInstance build(){
+        public ModuleInstance build() {
             return new ModuleInstanceImpl(this);
         }
     }

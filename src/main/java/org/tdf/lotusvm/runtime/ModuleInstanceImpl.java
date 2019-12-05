@@ -56,26 +56,26 @@ public class ModuleInstanceImpl implements ModuleInstance {
         return memory.getData();
     }
 
-    public ModuleInstanceImpl(Builder builder){
+    public ModuleInstanceImpl(Builder builder) {
         Module module = new Module(builder.getBinary());
         types = module.getTypeSection().getFunctionTypes();
         hooks = builder.getHooks();
 
         Map<String, HostFunction> functionsMap =
                 builder.getHostFunctions().stream()
-                .collect(Collectors.toMap(HostFunction::getName, Function.identity()));
+                        .collect(Collectors.toMap(HostFunction::getName, Function.identity()));
 
         // imports
-        if(module.getImportSection() != null){
-            for(ImportSection.Import imp: module.getImportSection().getImports()){
-                if(!imp.getType().equals(ImportType.TYPE_INDEX)){
+        if (module.getImportSection() != null) {
+            for (ImportSection.Import imp : module.getImportSection().getImports()) {
+                if (!imp.getType().equals(ImportType.TYPE_INDEX)) {
                     continue;
                 }
                 HostFunction func = functionsMap.get(imp.getName());
-                if(func == null){
+                if (func == null) {
                     throw new RuntimeException("unsupported host function " + imp.getName());
                 }
-                if(!module.getTypeSection().getFunctionTypes().get(imp.getTypeIndex()).equals(func.getType())){
+                if (!module.getTypeSection().getFunctionTypes().get(imp.getTypeIndex()).equals(func.getType())) {
                     throw new RuntimeException("invalid function type");
                 }
                 func.setInstance(this);
@@ -89,7 +89,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
                     .getGlobals().stream().map(GlobalSection.Global::getGlobalType)
                     .collect(Collectors.toList());
         }
-        if(module.getGlobalSection() != null && builder.isInitGlobals()){
+        if (module.getGlobalSection() != null && builder.isInitGlobals()) {
             globals = new Register(module.getGlobalSection().getGlobals().size());
             for (int i = 0; i < globals.getData().length; i++) {
                 globals.set(i, executeExpression(
@@ -98,7 +98,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
                 ));
             }
         }
-        if(builder.getGlobals() != null){
+        if (builder.getGlobals() != null) {
             globals = new Register(builder.getGlobals());
         }
 
@@ -121,7 +121,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
         if (module.getElementSection() != null) {
             module.getElementSection().getElements().forEach(x -> {
                 int offset = (int) executeExpression(x.getExpression(), ValueType.I32);
-                if(offset < 0) throw new RuntimeException("invalid offset, overflow Integer.MAX_VALUE");
+                if (offset < 0) throw new RuntimeException("invalid offset, overflow Integer.MAX_VALUE");
                 table.putElements(offset,
                         Arrays.stream(x.getFunctionIndex()).mapToObj(i -> functions.get(i)).collect(Collectors.toList())
                 );
@@ -141,7 +141,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
             });
         }
 
-        if(builder.getMemory() != null && memory != null){
+        if (builder.getMemory() != null && memory != null) {
             memory.copyFrom(builder.getMemory());
         }
 
