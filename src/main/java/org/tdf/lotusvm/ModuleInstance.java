@@ -17,11 +17,15 @@ public interface ModuleInstance {
 
     long[] getGlobals();
 
+    void setGlobals(long[] globals);
+
     List<GlobalType> getGlobalTypes();
 
     byte[] getMemory();
 
-    boolean hasExport(String funcName);
+    void setMemory(byte[] memory);
+
+    boolean containsExport(String funcName);
 
     long[] execute(int functionIndex, long... parameters);
 
@@ -29,8 +33,6 @@ public interface ModuleInstance {
 
     @Getter
     class Builder {
-        private boolean initGlobals = true;
-        private boolean initMemory = true;
         private Set<HostFunction> hostFunctions = Collections.emptySet();
         private Set<Hook> hooks = Collections.emptySet();
 
@@ -43,16 +45,6 @@ public interface ModuleInstance {
 
         public static Builder builder() {
             return new Builder();
-        }
-
-        public Builder initGlobals(boolean initGlobals) {
-            this.initGlobals = initGlobals;
-            return this;
-        }
-
-        public Builder initMemory(boolean initMemory) {
-            this.initMemory = initMemory;
-            return this;
         }
 
         public Builder hostFunctions(Set<HostFunction> hostFunctions) {

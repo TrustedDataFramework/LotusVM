@@ -1,6 +1,7 @@
 package org.tdf.lotusvm.runtime;
 
 import lombok.Getter;
+import lombok.NonNull;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.common.Register;
 import org.tdf.lotusvm.types.*;
@@ -53,7 +54,9 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
         Map<String, HostFunction> functionsMap =
                 builder.getHostFunctions().stream()
-                        .collect(Collectors.toMap(HostFunction::getName, Function.identity()));
+                        .collect(
+                                Collectors.toMap(HostFunction::getName, Function.identity())
+                        );
 
         // imports
         if (module.getImportSection() != null) {
@@ -79,7 +82,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
                     .getGlobals().stream().map(GlobalSection.Global::getGlobalType)
                     .collect(Collectors.toList());
         }
-        if (module.getGlobalSection() != null && builder.isInitGlobals()) {
+        if (module.getGlobalSection() != null && builder.getGlobals() == null) {
             globals = new Register(module.getGlobalSection().getGlobals().size());
             for (int i = 0; i < globals.getData().length; i++) {
                 globals.set(i, executeExpression(
@@ -124,7 +127,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
         }
 
         // put data into memory
-        if (module.getDataSection() != null && builder.isInitMemory()) {
+        if (module.getDataSection() != null && builder.getMemory() == null) {
             module.getDataSection().getDataSegments().forEach(x -> {
                 int offset = (int) executeExpression(x.getExpression(), ValueType.I32);
                 memory.put(offset, x.getInit());
@@ -155,8 +158,21 @@ public class ModuleInstanceImpl implements ModuleInstance {
     }
 
     @Override
+    public void setGlobals(@NonNull long[] globals) {
+        if(globals.length != globalTypes.size())
+            throw new IllegalArgumentException("length of globals should be " + globalTypes.size());
+        this.globals = new Register(globals);
+    }
+
+    @Override
     public byte[] getMemory() {
         return memory.getData();
+    }
+
+    @Override
+    public void setMemory(@NonNull byte[] memory) {
+        if(this.memory == null) throw new IllegalArgumentException("this module instance contains non memory");
+        this.memory.copyFrom(memory);
     }
 
     @Override
@@ -176,7 +192,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     }
 
     @Override
-    public boolean hasExport(String funcName) {
+    public boolean containsExport(String funcName) {
         return exports.containsKey(funcName);
     }
 }

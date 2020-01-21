@@ -14,6 +14,7 @@ class Memory {
     private byte[] data;
     private LimitType limit;
     private int pages;
+
     Memory() {
         this.data = new byte[0];
         this.limit = new LimitType();
