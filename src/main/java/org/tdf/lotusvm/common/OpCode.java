@@ -186,18 +186,6 @@ public enum OpCode {
     I64_REINTERPRET_F64(0xbd, "i64.reinterpret_f64", "", 0),
     F32_REINTERPRET_I32(0xbe, "f32.reinterpret_i32", "", 0),
     F64_REINTERPRET_I64(0xbf, "f64.reinterpret_i64", "", 0);
-    public final int code;
-    public final String name;
-    public final String codeSize;
-    public final int loadSize;
-
-    OpCode(int code, String name, String codeSize, int loadSize) {
-        this.code = code;
-        this.name = name;
-        this.codeSize = codeSize;
-        this.loadSize = loadSize;
-    }
-
     public static final Set<OpCode> CONTROL_INSTRUCTIONS = Stream.of(
             UNREACHABLE,
             NOP,
@@ -213,13 +201,10 @@ public enum OpCode {
             CALL,
             CALL_INDIRECT
     ).collect(Collectors.toSet());
-
-
     public static final Set<OpCode> PARAMETRIC_INSTRUCTIONS = Stream.of(
             DROP,
             SELECT
     ).collect(Collectors.toSet());
-
     public static final Set<OpCode> VARIABLE_INSTRUCTIONS = Stream.of(
             GET_LOCAL,
             SET_LOCAL,
@@ -227,7 +212,6 @@ public enum OpCode {
             GET_GLOBAL,
             SET_GLOBAL
     ).collect(Collectors.toSet());
-
     public static final Set<OpCode> MEMORY_INSTRUCTIONS = Stream.of(
             I64_LOAD,
             F32_LOAD,
@@ -255,7 +239,8 @@ public enum OpCode {
             CURRENT_MEMORY,
             GROW_MEMORY
     ).collect(Collectors.toSet());
-
+    private static final Map<Integer, OpCode> CODES = Arrays.stream(OpCode.values())
+            .collect(Collectors.toMap(o -> o.code, Function.identity()));
     public static Set<OpCode> NUMERIC_INSTRUCTIONS = Stream.of(
             I64_CONST,
             F32_CONST,
@@ -385,10 +370,18 @@ public enum OpCode {
             F32_REINTERPRET_I32,
             F64_REINTERPRET_I64
     ).collect(Collectors.toSet());
+    public final int code;
+    public final String name;
+    public final String codeSize;
+    public final int loadSize;
 
 
-    private static final Map<Integer, OpCode> CODES = Arrays.stream(OpCode.values())
-            .collect(Collectors.toMap(o -> o.code, Function.identity()));
+    OpCode(int code, String name, String codeSize, int loadSize) {
+        this.code = code;
+        this.name = name;
+        this.codeSize = codeSize;
+        this.loadSize = loadSize;
+    }
 
     public static OpCode fromCode(int b) {
         OpCode c = CODES.get(b);

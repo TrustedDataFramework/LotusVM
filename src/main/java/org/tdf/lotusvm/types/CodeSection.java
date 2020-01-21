@@ -21,6 +21,18 @@ import java.util.List;
  * a value type,
  */
 public class CodeSection extends AbstractSection {
+    @Getter
+    private List<Code> codes;
+
+    public CodeSection(SectionID id, long size, BytesReader payload) {
+        super(id, size, payload);
+    }
+
+    @Override
+    void readPayload() {
+        codes = Code.readCodesFrom(getReader());
+    }
+
     @AllArgsConstructor
     @Getter
     public static class Local {
@@ -73,17 +85,5 @@ public class CodeSection extends AbstractSection {
             }
             return codes;
         }
-    }
-
-    @Getter
-    private List<Code> codes;
-
-    public CodeSection(SectionID id, long size, BytesReader payload) {
-        super(id, size, payload);
-    }
-
-    @Override
-    void readPayload() {
-        codes = Code.readCodesFrom(getReader());
     }
 }

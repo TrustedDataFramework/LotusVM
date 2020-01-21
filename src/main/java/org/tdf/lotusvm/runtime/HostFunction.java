@@ -10,18 +10,16 @@ import java.util.Objects;
 public abstract class HostFunction implements FunctionInstance {
     @Setter
     private ModuleInstanceImpl instance;
-
-    protected ModuleInstance getInstance() {
-        return instance;
-    }
-
     @Setter(AccessLevel.PROTECTED)
     private FunctionType type;
-
     @Setter(AccessLevel.PROTECTED)
     private String name;
 
     public HostFunction() {
+    }
+
+    protected ModuleInstance getInstance() {
+        return instance;
     }
 
     @Override

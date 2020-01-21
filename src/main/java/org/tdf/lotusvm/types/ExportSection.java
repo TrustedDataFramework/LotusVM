@@ -12,8 +12,16 @@ import java.util.List;
  * The export section has the id 7. It decodes into a vector of exports that represent the exports component of a module.
  */
 public class ExportSection extends AbstractSection {
+    @Getter
+    private List<Export> exports;
+
     public ExportSection(SectionID id, long size, BytesReader payload) {
         super(id, size, payload);
+    }
+
+    @Override
+    void readPayload() {
+        exports = Export.readExportsFrom(getReader());
     }
 
     public enum ExportType {
@@ -54,13 +62,5 @@ public class ExportSection extends AbstractSection {
             }
             return exports;
         }
-    }
-
-    @Getter
-    private List<Export> exports;
-
-    @Override
-    void readPayload() {
-        exports = Export.readExportsFrom(getReader());
     }
 }

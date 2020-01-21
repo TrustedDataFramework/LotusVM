@@ -35,6 +35,19 @@ class Frame {
         this.labels = new LinkedList<>();
     }
 
+    // math trunc
+    private static double truncDouble(double d) {
+        if (d > 0) {
+            return Math.floor(d);
+        } else {
+            return Math.ceil(d);
+        }
+    }
+
+    private static float truncFloat(float f) {
+        return (float) truncDouble(f);
+    }
+
     // A result is the outcome of a computation. It is either a sequence of values or a trap.
     // In the current version of WebAssembly, a result can consist of at most one value.
     long[] execute() throws RuntimeException {
@@ -855,19 +868,6 @@ class Frame {
         stack.pushAll(valN);
         label.jumpToContinuation();
         pushLabel(label);
-    }
-
-    // math trunc
-    private static double truncDouble(double d) {
-        if (d > 0) {
-            return Math.floor(d);
-        } else {
-            return Math.ceil(d);
-        }
-    }
-
-    private static float truncFloat(float f) {
-        return (float) truncDouble(f);
     }
 
 }

@@ -46,16 +46,6 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     List<FunctionType> types;
 
-    @Override
-    public long[] getGlobals() {
-        return globals.getData();
-    }
-
-    @Override
-    public byte[] getMemory() {
-        return memory.getData();
-    }
-
     public ModuleInstanceImpl(Builder builder) {
         Module module = new Module(builder.getBinary());
         types = module.getTypeSection().getFunctionTypes();
@@ -157,6 +147,16 @@ public class ModuleInstanceImpl implements ModuleInstance {
                     .filter(x -> x.getType() == ExportSection.ExportType.FUNCTION_INDEX)
                     .forEach(x -> exports.put(x.getName(), functions.get(x.getIndex())));
         }
+    }
+
+    @Override
+    public long[] getGlobals() {
+        return globals.getData();
+    }
+
+    @Override
+    public byte[] getMemory() {
+        return memory.getData();
     }
 
     @Override

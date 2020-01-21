@@ -15,6 +15,15 @@ public class GlobalSection extends AbstractSection {
     @Getter
     private List<Global> globals;
 
+    public GlobalSection(SectionID id, long size, BytesReader payload) {
+        super(id, size, payload);
+    }
+
+    @Override
+    void readPayload() throws RuntimeException {
+        globals = Global.readLocalsFrom(getReader());
+    }
+
     @AllArgsConstructor
     @Getter
     public static class Global {
@@ -37,14 +46,5 @@ public class GlobalSection extends AbstractSection {
             }
             return memories;
         }
-    }
-
-    public GlobalSection(SectionID id, long size, BytesReader payload) {
-        super(id, size, payload);
-    }
-
-    @Override
-    void readPayload() throws RuntimeException {
-        globals = Global.readLocalsFrom(getReader());
     }
 }

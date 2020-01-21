@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Set;
 
 public interface ModuleInstance {
+    static Builder builder() {
+        return Builder.builder();
+    }
+
     long[] getGlobals();
 
     List<GlobalType> getGlobalTypes();
@@ -22,10 +26,6 @@ public interface ModuleInstance {
     long[] execute(int functionIndex, long... parameters);
 
     long[] execute(String funcName, long... parameters) throws RuntimeException;
-
-    static Builder builder() {
-        return Builder.builder();
-    }
 
     @Getter
     class Builder {

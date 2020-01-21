@@ -14,11 +14,6 @@ class WASMFunction implements FunctionInstance {
     private List<Instruction> body;
     private List<CodeSection.Local> locals;
 
-    @Override
-    public FunctionType getType() {
-        return type;
-    }
-
     WASMFunction(FunctionType type, ModuleInstanceImpl module, List<Instruction> body, List<CodeSection.Local> locals) {
         this.type = type;
         this.module = module;
@@ -26,6 +21,10 @@ class WASMFunction implements FunctionInstance {
         this.locals = locals;
     }
 
+    @Override
+    public FunctionType getType() {
+        return type;
+    }
 
     private Frame newFrame(long... parameters) {
         // init localvars

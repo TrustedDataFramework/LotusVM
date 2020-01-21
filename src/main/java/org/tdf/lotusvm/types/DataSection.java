@@ -10,8 +10,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DataSection extends AbstractSection {
+    @Getter
+    private List<DataSegment> dataSegments;
+
     public DataSection(SectionID id, long size, BytesReader payload) {
         super(id, size, payload);
+    }
+
+    @Override
+    void readPayload() {
+        dataSegments = DataSegment.readDataSegmentsFrom(getReader());
     }
 
     @Getter
@@ -38,13 +46,5 @@ public class DataSection extends AbstractSection {
             }
             return res;
         }
-    }
-
-    @Getter
-    private List<DataSegment> dataSegments;
-
-    @Override
-    void readPayload() {
-        dataSegments = DataSegment.readDataSegmentsFrom(getReader());
     }
 }

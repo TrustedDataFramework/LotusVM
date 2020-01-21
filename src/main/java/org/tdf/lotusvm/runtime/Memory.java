@@ -9,6 +9,22 @@ import java.util.Arrays;
 
 // TODO: limit memory size in block chain
 class Memory {
+    private static final int PAGE_SIZE = 64 * (1 << 10); // 64 KB
+    @Getter
+    private byte[] data;
+    private LimitType limit;
+    private int pages;
+    Memory() {
+        this.data = new byte[0];
+        this.limit = new LimitType();
+    }
+
+    Memory(LimitType limit) {
+        this.limit = limit;
+        this.data = new byte[0];
+        this.pages = limit.getMinimum();
+    }
+
     /**
      * Returns the values from each provided array combined into a single array. For example, {@code
      * concat(new byte[] {a, b}, new byte[] {}, new byte[] {c}} returns the array {@code {a, b, c}}.
@@ -28,23 +44,6 @@ class Memory {
             pos += array.length;
         }
         return result;
-    }
-
-    private static final int PAGE_SIZE = 64 * (1 << 10); // 64 KB
-    @Getter
-    private byte[] data;
-    private LimitType limit;
-    private int pages;
-
-    Memory() {
-        this.data = new byte[0];
-        this.limit = new LimitType();
-    }
-
-    Memory(LimitType limit) {
-        this.limit = limit;
-        this.data = new byte[0];
-        this.pages = limit.getMinimum();
     }
 
     void copyFrom(byte[] data) {

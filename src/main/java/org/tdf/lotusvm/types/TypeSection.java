@@ -10,12 +10,12 @@ import java.util.List;
  * module.
  */
 public class TypeSection extends AbstractSection {
+    @Getter
+    private List<FunctionType> functionTypes;
+
     public TypeSection(SectionID id, long size, BytesReader contents) {
         super(id, size, contents);
     }
-
-    @Getter
-    private List<FunctionType> functionTypes;
 
     @Override
     void readPayload() {

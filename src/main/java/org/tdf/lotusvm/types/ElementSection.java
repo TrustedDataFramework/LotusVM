@@ -12,10 +12,18 @@ import java.util.List;
  * The element section has the id 9. It decodes into a vector of element segments that represent the elem component of a module.
  */
 public class ElementSection extends AbstractSection {
+    @Getter
+    private List<Element> elements;
+
+
     public ElementSection(SectionID id, long size, BytesReader payload) {
         super(id, size, payload);
     }
 
+    @Override
+    void readPayload() {
+        elements = Element.readElementsFrom(getReader());
+    }
 
     @Getter
     @AllArgsConstructor
@@ -40,13 +48,5 @@ public class ElementSection extends AbstractSection {
             }
             return res;
         }
-    }
-
-    @Getter
-    private List<Element> elements;
-
-    @Override
-    void readPayload() {
-        elements = Element.readElementsFrom(getReader());
     }
 }

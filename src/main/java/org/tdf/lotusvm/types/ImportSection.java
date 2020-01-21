@@ -14,10 +14,18 @@ import java.util.List;
  * The import section has the id 2. It decodes into a vector of imports that represent the imports component of a module.
  */
 public class ImportSection extends AbstractSection {
+    @Getter
+    private List<Import> imports;
+
+
     public ImportSection(SectionID id, long size, BytesReader contents) {
         super(id, size, contents);
     }
 
+    @Override
+    void readPayload() throws RuntimeException {
+        imports = Import.readImportsFrom(getReader());
+    }
 
     @Getter
     @Builder
@@ -74,15 +82,5 @@ public class ImportSection extends AbstractSection {
             return imports;
         }
 
-    }
-
-
-    @Getter
-    private List<Import> imports;
-
-
-    @Override
-    void readPayload() throws RuntimeException {
-        imports = Import.readImportsFrom(getReader());
     }
 }

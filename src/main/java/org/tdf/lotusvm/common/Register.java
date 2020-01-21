@@ -20,6 +20,10 @@ public class Register {
         this(DEFAULT_INITIAL_STACK_CAP);
     }
 
+    public Register(int initialSize) {
+        this.data = new long[initialSize];
+    }
+
     public void pushLabel() {
         startPCs.push(pc);
     }
@@ -30,10 +34,6 @@ public class Register {
 
     public void popAndClearLabel() {
         this.pc = startPCs.pop();
-    }
-
-    public Register(int initialSize) {
-        this.data = new long[initialSize];
     }
 
     public int size() {

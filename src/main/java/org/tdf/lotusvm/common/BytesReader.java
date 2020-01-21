@@ -16,6 +16,16 @@ public class BytesReader extends InputStream {// io.reader
         this.buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
     }
 
+    public static void main(String[] args) {
+        BytesReader reader = new BytesReader(new byte[]{(byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0xfd, 0x07});
+        System.out.println(reader.readVarUint(64));
+        BytesReader reader1 = new BytesReader(new byte[]{(byte) 0x80, 0x7f});
+        System.out.println(reader1.readVarUint(64));
+        BytesReader reader2 = new BytesReader(new byte[]{0x08});
+        System.out.println(reader2.readVarUint(64));
+
+    }
+
     public int peek() {
         return Byte.toUnsignedInt(buffer.get(buffer.position()));
     }
@@ -47,7 +57,6 @@ public class BytesReader extends InputStream {// io.reader
         return buf;
     }
 
-
     // u32
     public int readVarUint32() throws RuntimeException {
         int res = (int) readVarUint(32);
@@ -59,7 +68,6 @@ public class BytesReader extends InputStream {// io.reader
     public long readVarUint64() throws RuntimeException {
         return readVarUint(64);
     }
-
 
     public long readVarUint(int n) throws RuntimeException {
         if (n > 64) {
@@ -141,17 +149,6 @@ public class BytesReader extends InputStream {// io.reader
         }
         return res;
     }
-
-    public static void main(String[] args) {
-        BytesReader reader = new BytesReader(new byte[]{(byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0xfd, 0x07});
-        System.out.println(reader.readVarUint(64));
-        BytesReader reader1 = new BytesReader(new byte[]{(byte) 0x80, 0x7f});
-        System.out.println(reader1.readVarUint(64));
-        BytesReader reader2 = new BytesReader(new byte[]{0x08});
-        System.out.println(reader2.readVarUint(64));
-
-    }
-
 
     public int readUint32() throws RuntimeException {
         int res = buffer.getInt();
