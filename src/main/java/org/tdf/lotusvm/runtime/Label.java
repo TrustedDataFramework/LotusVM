@@ -14,13 +14,13 @@ class Label {
     private boolean loop;
 
     Label(boolean hasArity, List<Instruction> body) {
-        if(hasArity){
+        if (hasArity) {
             this.arity = 1;
         }
         this.body = body;
     }
 
-    Label withLoop(){
+    Label withLoop() {
         this.loop = true;
         return this;
     }
@@ -29,8 +29,8 @@ class Label {
         return ++pc;
     }
 
-    void jumpToContinuation(){
-        if(isLoop()){
+    void jumpToContinuation() {
+        if (isLoop()) {
             // continuation is the start of the loop label
             this.pc = 0;
             return;

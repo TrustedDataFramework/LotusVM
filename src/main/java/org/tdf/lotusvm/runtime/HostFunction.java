@@ -35,9 +35,11 @@ public abstract class HostFunction implements FunctionInstance {
     }
 
     @Override
-    public FunctionType getType(){
+    public FunctionType getType() {
         return type;
-    };
+    }
+
+    ;
 
     @Override
     public abstract long[] execute(long... parameters);
@@ -47,9 +49,11 @@ public abstract class HostFunction implements FunctionInstance {
         return true;
     }
 
-    public String getName(){
+    public String getName() {
         return name;
-    };
+    }
+
+    ;
 
     @Override
     public boolean equals(Object o) {
@@ -64,19 +68,19 @@ public abstract class HostFunction implements FunctionInstance {
         return Objects.hash(name);
     }
 
-    protected void putMemory(int offset, byte[] data){
+    protected void putMemory(int offset, byte[] data) {
         instance.memory.put(offset, data);
     }
 
-    protected byte[] loadMemory(int offset, int length){
+    protected byte[] loadMemory(int offset, int length) {
         return instance.memory.loadN(offset, length);
     }
 
-    protected void putStringIntoMemory(int offset, String data){
+    protected void putStringIntoMemory(int offset, String data) {
         instance.memory.putString(offset, data);
     }
 
-    protected String loadStringFromMemory(int offset, int length){
+    protected String loadStringFromMemory(int offset, int length) {
         return instance.memory.loadString(offset, length);
     }
 }

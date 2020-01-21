@@ -48,7 +48,7 @@ public class Module {
 
     private DataSection dataSection;
 
-    public Module(byte[] binary){
+    public Module(byte[] binary) {
         parse(binary);
     }
 
@@ -64,8 +64,8 @@ public class Module {
 
     private void readSections(BytesReader reader) {
         SectionReader sectionReader = new SectionReader(reader);
-        while (reader.remaining() > 0){
-            if(reader.peek() < 0 || reader.peek() >= SectionID.values().length)
+        while (reader.remaining() > 0) {
+            if (reader.peek() < 0 || reader.peek() >= SectionID.values().length)
                 throw new RuntimeException(String.format("unknown section type %x", reader.peek()));
             SectionID id = SectionID.values()[reader.peek()];
             switch (id) {

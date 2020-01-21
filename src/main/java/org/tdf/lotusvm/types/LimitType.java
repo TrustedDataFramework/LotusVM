@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * Limits are encoded with a preceding flag indicating whether a maximum is present.
- *
+ * <p>
  * also used for memory types
  */
 @Getter
@@ -17,7 +17,7 @@ public class LimitType {
     private int minimum;
     private int maximum;
 
-    public LimitType(){
+    public LimitType() {
         bounded = true;
     }
 
@@ -32,7 +32,7 @@ public class LimitType {
     }
 
     static LimitType readFrom(BytesReader reader) throws RuntimeException {
-        if(reader.read() == 0){
+        if (reader.read() == 0) {
             return new LimitType(reader.readVarUint32());
         }
         return new LimitType(reader.readVarUint32(), reader.readVarUint32());

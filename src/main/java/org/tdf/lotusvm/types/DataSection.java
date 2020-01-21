@@ -16,24 +16,24 @@ public class DataSection extends AbstractSection {
 
     @Getter
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class DataSegment{
+    public static class DataSegment {
         private int memoryIndex;
 
         private List<Instruction> expression;
 
         private byte[] init;
 
-        public static DataSegment readFrom(BytesReader reader){
+        public static DataSegment readFrom(BytesReader reader) {
             return new DataSegment(reader.readVarUint32(),
                     Instruction.readExpressionFrom(reader),
                     Vector.readBytesFrom(reader)
             );
         }
 
-        public static List<DataSegment> readDataSegmentsFrom(BytesReader reader){
+        public static List<DataSegment> readDataSegmentsFrom(BytesReader reader) {
             int length = reader.readVarUint32();
             List<DataSegment> res = new ArrayList<>(length);
-            for(int i = 0; i < length; i++){
+            for (int i = 0; i < length; i++) {
                 res.add(readFrom(reader));
             }
             return res;

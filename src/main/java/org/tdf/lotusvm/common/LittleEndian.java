@@ -48,18 +48,17 @@ public class LittleEndian {
         return encodeInt32(Float.floatToIntBits(number));
     }
 
-    public static byte[] encodeIEEE754Double(double number){
+    public static byte[] encodeIEEE754Double(double number) {
         return encodeInt64(Double.doubleToLongBits(number));
     }
 
-    public static float decodeIEEE754Float(byte[] data){
+    public static float decodeIEEE754Float(byte[] data) {
         return Float.intBitsToFloat(decodeInt32(data));
     }
 
-    public static double decodeIEEE754Double(byte[] data){
+    public static double decodeIEEE754Double(byte[] data) {
         return Double.longBitsToDouble(decodeInt64(data));
     }
-
 
 
 }

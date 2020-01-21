@@ -21,13 +21,13 @@ public enum ValueType {
     F64(VALUE_F64);
     public final int code;
 
-    ValueType(int code){
+    ValueType(int code) {
         this.code = code;
     }
 
-    static ValueType readFrom(BytesReader reader){
+    static ValueType readFrom(BytesReader reader) {
         int type = reader.read();
-        switch (type){
+        switch (type) {
             case VALUE_I32:
                 return I32;
             case VALUE_I64:
@@ -36,14 +36,15 @@ public enum ValueType {
                 return F32;
             case VALUE_F64:
                 return F64;
-            default: throw new IllegalArgumentException(String.format("unknown value type %x", type));
+            default:
+                throw new IllegalArgumentException(String.format("unknown value type %x", type));
         }
     }
 
-    public static List<ValueType> readValueTypesFrom(BytesReader reader){
+    public static List<ValueType> readValueTypesFrom(BytesReader reader) {
         int length = reader.readVarUint32();
         List<ValueType> res = new ArrayList<>(length);
-        for(int i = 0; i < length; i++){
+        for (int i = 0; i < length; i++) {
             res.add(readFrom(reader));
         }
         return res;

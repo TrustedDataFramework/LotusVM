@@ -19,23 +19,23 @@ public class ElementSection extends AbstractSection {
 
     @Getter
     @AllArgsConstructor
-    public static class Element{
+    public static class Element {
         // In the current version of WebAssembly, at most one table is allowed in a module. Consequently, the only
         // valid tableidx is 0.
         private int tableIndex;
         private List<Instruction> expression;
         private int[] functionIndex;
 
-        public static Element readFrom(BytesReader reader){
+        public static Element readFrom(BytesReader reader) {
             return new Element(reader.readVarUint32(),
                     Instruction.readExpressionFrom(reader),
                     Vector.readUint32VectorFrom(reader));
         }
 
-        public static List<Element> readElementsFrom(BytesReader reader){
+        public static List<Element> readElementsFrom(BytesReader reader) {
             int length = reader.readVarUint32();
             List<Element> res = new ArrayList<>(length);
-            for(int i = 0; i < length; i++) {
+            for (int i = 0; i < length; i++) {
                 res.add(Element.readFrom(reader));
             }
             return res;

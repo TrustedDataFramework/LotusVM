@@ -160,7 +160,7 @@ public class Register {
         return (int) get(index);
     }
 
-    public int getU32(int index){
+    public int getU32(int index) {
         int i = getI32(index);
         if (i < 0) throw new RuntimeException("the uint exceed integers maximum value");
         return i;

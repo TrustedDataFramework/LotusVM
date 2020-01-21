@@ -198,7 +198,7 @@ public enum OpCode {
         this.loadSize = loadSize;
     }
 
-    public static Set<OpCode> CONTROL_INSTRUCTIONS = Stream.of(
+    public static final Set<OpCode> CONTROL_INSTRUCTIONS = Stream.of(
             UNREACHABLE,
             NOP,
             BLOCK,
@@ -215,12 +215,12 @@ public enum OpCode {
     ).collect(Collectors.toSet());
 
 
-    public static Set<OpCode> PARAMETRIC_INSTRUCTIONS = Stream.of(
+    public static final Set<OpCode> PARAMETRIC_INSTRUCTIONS = Stream.of(
             DROP,
             SELECT
     ).collect(Collectors.toSet());
 
-    public static Set<OpCode> VARIABLE_INSTRUCTIONS = Stream.of(
+    public static final Set<OpCode> VARIABLE_INSTRUCTIONS = Stream.of(
             GET_LOCAL,
             SET_LOCAL,
             TEE_LOCAL,
@@ -228,7 +228,7 @@ public enum OpCode {
             SET_GLOBAL
     ).collect(Collectors.toSet());
 
-    public static Set<OpCode> MEMORY_INSTRUCTIONS = Stream.of(
+    public static final Set<OpCode> MEMORY_INSTRUCTIONS = Stream.of(
             I64_LOAD,
             F32_LOAD,
             F64_LOAD,
@@ -387,12 +387,12 @@ public enum OpCode {
     ).collect(Collectors.toSet());
 
 
-    private static Map<Integer, OpCode> CODES = Arrays.stream(OpCode.values())
+    private static final Map<Integer, OpCode> CODES = Arrays.stream(OpCode.values())
             .collect(Collectors.toMap(o -> o.code, Function.identity()));
 
     public static OpCode fromCode(int b) {
         OpCode c = CODES.get(b);
-        if (c == null) throw new RuntimeException(String.format("unknown control opcode %x", b));
+        if (c == null) throw new RuntimeException(String.format("unknown opcode %x", b));
         return c;
     }
 }

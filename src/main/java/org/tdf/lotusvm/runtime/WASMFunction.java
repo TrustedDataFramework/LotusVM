@@ -7,7 +7,7 @@ import org.tdf.lotusvm.types.Instruction;
 
 import java.util.List;
 
-class WASMFunction implements FunctionInstance{
+class WASMFunction implements FunctionInstance {
     private FunctionType type;
     // params + localvars
     private ModuleInstanceImpl module;
@@ -45,7 +45,7 @@ class WASMFunction implements FunctionInstance{
     }
 
     @Override
-    public long[] execute(long... parameters) throws RuntimeException{
+    public long[] execute(long... parameters) throws RuntimeException {
         return newFrame(parameters).execute();
     }
 

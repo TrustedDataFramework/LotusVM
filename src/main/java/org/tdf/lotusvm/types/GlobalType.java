@@ -15,7 +15,7 @@ public class GlobalType {
     private ValueType valueType;
     private boolean mutable; // true var ,false const
 
-    static GlobalType readFrom(BytesReader reader){
+    static GlobalType readFrom(BytesReader reader) {
         ValueType valueType = ValueType.readFrom(reader);
         boolean mutable = reader.read() != 0;
         return GlobalType.builder().valueType(valueType).mutable(mutable).build();

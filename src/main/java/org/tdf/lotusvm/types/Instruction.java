@@ -3,8 +3,8 @@ package org.tdf.lotusvm.types;
 import lombok.*;
 import org.tdf.lotusvm.common.BytesReader;
 import org.tdf.lotusvm.common.OpCode;
-import org.tdf.lotusvm.common.Vector;
 import org.tdf.lotusvm.common.Register;
+import org.tdf.lotusvm.common.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,7 +98,7 @@ public class Instruction {
         OpCode c = OpCode.fromCode(reader.read());
         if (c == CURRENT_MEMORY /*0x3f 0x00*/ || c == GROW_MEMORY /*0x40 0x00*/) {
             // skip 0x00
-            if (reader.read() != 0){
+            if (reader.read() != 0) {
                 throw new RuntimeException("invalid terminator of opcode " + c);
             }
             return builder().code(c).build();

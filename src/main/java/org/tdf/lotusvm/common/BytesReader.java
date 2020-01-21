@@ -5,10 +5,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 
-public class BytesReader extends InputStream{// io.reader
+public class BytesReader extends InputStream {// io.reader
     private ByteBuffer buffer;
 
-    private BytesReader (ByteBuffer buffer){
+    private BytesReader(ByteBuffer buffer) {
         this.buffer = buffer;
     }
 
@@ -34,7 +34,7 @@ public class BytesReader extends InputStream{// io.reader
         return buf;
     }
 
-    public BytesReader readAsReader(int size){
+    public BytesReader readAsReader(int size) {
         ByteBuffer buf = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);
         buf.limit(size);
         buffer.position(buffer.position() + size);
@@ -84,7 +84,7 @@ public class BytesReader extends InputStream{// io.reader
             }
             if (b >= 1 << 7 && n > 7) {
 //                res = res.plus(UnsignedLong.valueOf(1L << shift).times(unsignedB.minus(UnsignedLong.valueOf(1 << 7))));
-                res = res + (1L << shift) * (b - (1<<7));
+                res = res + (1L << shift) * (b - (1 << 7));
                 shift += 7;
                 n -= 7;
                 continue;
@@ -117,14 +117,14 @@ public class BytesReader extends InputStream{// io.reader
             int b = read();
             //  b < 1<<6 && uint64(b) < uint64(1<<(n-1))
             if (b < 1 << 6 &&
-                    Long.compareUnsigned(b, 1L << (n-1)) < 0) {
+                    Long.compareUnsigned(b, 1L << (n - 1)) < 0) {
                 res += (1L << shift) * b;
                 break;
             }
             // b >= 1<<6 && b < 1<<7 && uint64(b)+1<<(n-1) >= 1<<7
             if (b >= 1 << 6 &&
                     b < 1 << 7 &&
-                    Long.compareUnsigned(b + (1L << (n-1)), 1L << 7 ) >= 0
+                    Long.compareUnsigned(b + (1L << (n - 1)), 1L << 7) >= 0
             ) {
                 res += (1L << shift) * (b - (1 << 7));
                 break;

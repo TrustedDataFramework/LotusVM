@@ -18,17 +18,17 @@ public class FunctionType {
     private List<ValueType> parameterTypes;
     private List<ValueType> resultTypes;
 
-    static FunctionType readFrom(BytesReader reader){
-        if(reader.read() != PREFIX){
+    static FunctionType readFrom(BytesReader reader) {
+        if (reader.read() != PREFIX) {
             throw new RuntimeException("functype incorrect");
         }
         return new FunctionType(ValueType.readValueTypesFrom(reader), ValueType.readValueTypesFrom(reader));
     }
 
-    static List<FunctionType> readFunctionTypesFrom(BytesReader reader){
+    static List<FunctionType> readFunctionTypesFrom(BytesReader reader) {
         int length = reader.readVarUint32();
         List<FunctionType> res = new ArrayList<>(length);
-        for(int i = 0; i < length; i++){
+        for (int i = 0; i < length; i++) {
             res.add(readFrom(reader));
         }
         return res;
@@ -39,13 +39,13 @@ public class FunctionType {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FunctionType that = (FunctionType) o;
-        if(parameterTypes.size() != that.parameterTypes.size()) return false;
-        for(int i = 0; i < parameterTypes.size(); i++){
-            if(!parameterTypes.get(i).equals(that.parameterTypes.get(i))) return false;
+        if (parameterTypes.size() != that.parameterTypes.size()) return false;
+        for (int i = 0; i < parameterTypes.size(); i++) {
+            if (!parameterTypes.get(i).equals(that.parameterTypes.get(i))) return false;
         }
-        if(resultTypes.size() != that.resultTypes.size()) return false;
-        for(int i = 0; i < resultTypes.size(); i++){
-            if(!resultTypes.get(i).equals(that.resultTypes.get(i))) return false;
+        if (resultTypes.size() != that.resultTypes.size()) return false;
+        for (int i = 0; i < resultTypes.size(); i++) {
+            if (!resultTypes.get(i).equals(that.resultTypes.get(i))) return false;
         }
         return true;
     }

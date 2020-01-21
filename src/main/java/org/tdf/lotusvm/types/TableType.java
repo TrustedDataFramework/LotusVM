@@ -14,9 +14,9 @@ public class TableType {
     @Getter
     private LimitType limit;
 
-    static TableType readFrom(BytesReader reader){
+    static TableType readFrom(BytesReader reader) {
         int type = reader.read();
-        if(type != ELEMENT_TYPE){
+        if (type != ELEMENT_TYPE) {
             throw new RuntimeException(String.format("invalid element type %s", type));
         }
         LimitType limit = LimitType.readFrom(reader);
