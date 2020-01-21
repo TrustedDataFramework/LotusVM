@@ -1,7 +1,6 @@
 package org.tdf.lotusvm.runtime;
 
-import lombok.Getter;
-import lombok.NonNull;
+import lombok.*;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.common.Register;
 import org.tdf.lotusvm.types.*;
@@ -15,12 +14,13 @@ import java.util.stream.Collectors;
  * It is created by instantiating a module, and collects runtime representations of all entities that are imported,
  * deﬁned, or exported by the module.
  */
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ModuleInstanceImpl implements ModuleInstance {
     // globals
     Register globals = new Register(new long[0]);
 
     @Getter
-    List<GlobalType> globalTypes = new ArrayList<>();
+    List<GlobalType> globalTypes = Collections.emptyList();
 
     // memories
     // In the current version of WebAssembly, all memory instructions implicitly operate on memory index 0.
@@ -32,7 +32,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     Table table;
 
     // all functions
-    List<FunctionInstance> functions = new ArrayList<>();
+    List<FunctionInstance> functions;
 
     // main function
     // The start function is intended for initializing the state of a module. The module and its exports are not
@@ -40,10 +40,12 @@ public class ModuleInstanceImpl implements ModuleInstance {
     FunctionInstance startFunction;
 
     // hooks
+    @Getter
+    @Setter
     Set<Hook> hooks;
 
     // exported functions
-    Map<String, FunctionInstance> exports = new HashMap<>();
+    Map<String, FunctionInstance> exports;
 
     List<FunctionType> types;
 
@@ -101,6 +103,8 @@ public class ModuleInstanceImpl implements ModuleInstance {
         }
 
         // init function instances
+        int functionsLength = module.getFunctionSection().getTypeIndices().length;
+        functions = functionsLength == 0 ? Collections.emptyList() : new ArrayList<>(functionsLength);
         for (int i = 0; i < module.getFunctionSection().getTypeIndices().length; i++) {
             int typeIndex = module.getFunctionSection().getTypeIndices()[i];
             CodeSection.Code code = module.getCodeSection().getCodes().get(i);
@@ -146,6 +150,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
         // exports
         if (module.getExportSection() != null) {
+            exports = new HashMap<>();
             module.getExportSection().getExports().stream()
                     .filter(x -> x.getType() == ExportSection.ExportType.FUNCTION_INDEX)
                     .forEach(x -> exports.put(x.getName(), functions.get(x.getIndex())));
@@ -159,7 +164,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     @Override
     public void setGlobals(@NonNull long[] globals) {
-        if(globals.length != globalTypes.size())
+        if (globals.length != globalTypes.size())
             throw new IllegalArgumentException("length of globals should be " + globalTypes.size());
         this.globals = new Register(globals);
     }
@@ -171,7 +176,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     @Override
     public void setMemory(@NonNull byte[] memory) {
-        if(this.memory == null) throw new IllegalArgumentException("this module instance contains non memory");
+        if (this.memory == null) throw new IllegalArgumentException("this module instance contains non memory");
         this.memory.copyFrom(memory);
     }
 
@@ -194,5 +199,23 @@ public class ModuleInstanceImpl implements ModuleInstance {
     @Override
     public boolean containsExport(String funcName) {
         return exports.containsKey(funcName);
+    }
+
+    @Override
+    public ModuleInstance clone() {
+        ModuleInstance ret = new ModuleInstanceImpl(
+                null,
+                globalTypes,
+                new Memory(memory.getLimit()),
+                table,
+                functions,
+                startFunction,
+                Collections.emptySet(),
+                exports,
+                types
+        );
+        ret.setGlobals(globals.getData());
+        ret.setMemory(memory.getData());
+        return ret;
     }
 }

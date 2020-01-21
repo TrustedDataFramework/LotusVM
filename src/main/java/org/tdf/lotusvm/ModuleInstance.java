@@ -25,11 +25,22 @@ public interface ModuleInstance {
 
     void setMemory(byte[] memory);
 
+    Set<Hook> getHooks();
+
+    void setHooks(Set<Hook> hooks);
+
     boolean containsExport(String funcName);
 
     long[] execute(int functionIndex, long... parameters);
 
     long[] execute(String funcName, long... parameters) throws RuntimeException;
+
+    /**
+     * create a module instance with empty hooks, the cloned module instance has its own globals and memory
+     *
+     * @return cloned module instance
+     */
+    ModuleInstance clone();
 
     @Getter
     class Builder {

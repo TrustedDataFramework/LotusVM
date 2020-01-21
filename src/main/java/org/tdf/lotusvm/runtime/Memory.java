@@ -8,9 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 // TODO: limit memory size in block chain
+@Getter
 class Memory {
     private static final int PAGE_SIZE = 64 * (1 << 10); // 64 KB
-    @Getter
     private byte[] data;
     private LimitType limit;
     private int pages;
