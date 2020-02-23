@@ -32,7 +32,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     Table table;
 
     // all functions
-    List<FunctionInstance> functions;
+    List<FunctionInstance> functions = new ArrayList<>();
 
     // main function
     // The start function is intended for initializing the state of a module. The module and its exports are not
@@ -103,8 +103,6 @@ public class ModuleInstanceImpl implements ModuleInstance {
         }
 
         // init function instances
-        int functionsLength = module.getFunctionSection().getTypeIndices().length;
-        functions = functionsLength == 0 ? Collections.emptyList() : new ArrayList<>(functionsLength);
         for (int i = 0; i < module.getFunctionSection().getTypeIndices().length; i++) {
             int typeIndex = module.getFunctionSection().getTypeIndices()[i];
             CodeSection.Code code = module.getCodeSection().getCodes().get(i);
