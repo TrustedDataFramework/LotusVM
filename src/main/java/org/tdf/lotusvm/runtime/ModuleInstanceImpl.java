@@ -71,7 +71,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
                     throw new RuntimeException("unsupported host function " + imp.getName());
                 }
                 if (!module.getTypeSection().getFunctionTypes().get(imp.getTypeIndex()).equals(func.getType())) {
-                    throw new RuntimeException("invalid function type");
+                    throw new RuntimeException("invalid function type: " + func.getName());
                 }
                 func.setInstance(this);
                 functions.add(func);
