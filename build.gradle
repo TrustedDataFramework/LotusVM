@@ -29,6 +29,10 @@ dependencies {
     testCompile "com.google.guava:guava:${guavaVersion}"
 }
 
+jar{
+    from sourceSets.main.allSource
+}
+
 publishing {
     repositories {
         maven {
