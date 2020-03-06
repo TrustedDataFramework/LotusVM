@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.tdf.lotusvm.common.BytesReader;
 import org.tdf.lotusvm.common.Vector;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +52,15 @@ public class ExportSection extends AbstractSection {
         private int index;
 
         public static Export readFrom(BytesReader reader) {
-            return new Export(Vector.readStringFrom(reader), ExportType.readFrom(reader), reader.readVarUint32());
+            byte[] chars = Vector.readBytesFrom(reader);
+            for (byte ch : chars) {
+                if('0' <= ch && ch <= '9') continue;
+                if('a' <= ch && ch <= 'z') continue;
+                if('A' <= ch && ch <= 'Z') continue;
+                if(ch == '_') continue;
+                throw new RuntimeException("invalid char " + (char) ch);
+            }
+            return new Export(new String(chars, StandardCharsets.UTF_8), ExportType.readFrom(reader), reader.readVarUint32());
         }
 
         public static List<Export> readExportsFrom(BytesReader reader) {
