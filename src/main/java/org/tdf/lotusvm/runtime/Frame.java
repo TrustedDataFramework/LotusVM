@@ -1,5 +1,6 @@
 package org.tdf.lotusvm.runtime;
 
+import lombok.Getter;
 import org.tdf.lotusvm.common.OpCode;
 import org.tdf.lotusvm.common.Register;
 import org.tdf.lotusvm.types.FunctionType;
@@ -9,7 +10,8 @@ import org.tdf.lotusvm.types.ResultType;
 import java.util.LinkedList;
 import java.util.List;
 
-class Frame {
+@Getter
+public class Frame {
     private static final long MAXIMUM_UNSIGNED_I32 = 0xFFFFFFFFL;
 
     private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
@@ -33,6 +35,7 @@ class Frame {
         this.localVariables = localVariables;
         this.stack = stack;
         this.labels = new LinkedList<>();
+        module.hooks.forEach(h -> h.onNewFrame(this));
     }
 
     // math trunc
@@ -65,6 +68,7 @@ class Frame {
             label.incrementAndGet();
             invoke(ins);
         }
+        module.hooks.forEach(x -> x.onFrameExit(this));
         return returns();
         // clear stack and local variables
     }

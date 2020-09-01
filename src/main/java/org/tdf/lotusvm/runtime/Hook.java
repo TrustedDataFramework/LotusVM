@@ -6,4 +6,8 @@ public interface Hook {
     void onInstruction(Instruction ins, ModuleInstanceImpl module);
 
     void onHostFunction(HostFunction function, ModuleInstanceImpl module);
+
+    void onNewFrame(Frame frame);
+
+    void onFrameExit(Frame frame);
 }
