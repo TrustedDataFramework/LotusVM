@@ -3,6 +3,7 @@ package org.tdf.lotusvm;
 import lombok.Getter;
 import org.tdf.lotusvm.runtime.Hook;
 import org.tdf.lotusvm.runtime.HostFunction;
+import org.tdf.lotusvm.runtime.Memory;
 import org.tdf.lotusvm.runtime.ModuleInstanceImpl;
 import org.tdf.lotusvm.types.GlobalType;
 
@@ -21,7 +22,7 @@ public interface ModuleInstance {
 
     List<GlobalType> getGlobalTypes();
 
-    byte[] getMemory();
+    Memory getMemory();
 
     void setMemory(byte[] memory);
 

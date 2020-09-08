@@ -168,8 +168,8 @@ public class ModuleInstanceImpl implements ModuleInstance {
     }
 
     @Override
-    public byte[] getMemory() {
-        return memory.getData();
+    public Memory getMemory() {
+        return memory;
     }
 
     @Override

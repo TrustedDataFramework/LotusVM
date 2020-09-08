@@ -9,7 +9,7 @@ import java.util.Arrays;
 
 // TODO: limit memory size in block chain
 @Getter
-class Memory {
+public class Memory {
     private static final int PAGE_SIZE = 64 * (1 << 10); // 64 KB
     private byte[] data;
     private LimitType limit;
@@ -60,20 +60,20 @@ class Memory {
         put(offset, data);
     }
 
-    void put(int offset, byte[] data) {
+    public void put(int offset, byte[] data) {
         spaceCheck(offset + data.length);
         System.arraycopy(data, 0, this.data, offset, data.length);
     }
 
-    void putLong(int offset, long data) {
+    public void putLong(int offset, long data) {
         put(offset, LittleEndian.encodeInt64(data));
     }
 
-    String loadString(int offset, int n) {
+    public String loadString(int offset, int n) {
         return new String(loadN(offset, n), StandardCharsets.UTF_8);
     }
 
-    byte[] loadN(int offset, int n) {
+    public byte[] loadN(int offset, int n) {
         if (offset < 0 || n < 0) {
             throw new RuntimeException("exec: out of bounds memory access");
         }
@@ -90,35 +90,35 @@ class Memory {
         return concat(bytes0, new byte[n - bytes0.length]);
     }
 
-    int load32(int offset) {
+    public int load32(int offset) {
         return LittleEndian.decodeInt32(loadN(offset, Integer.BYTES));
     }
 
-    long load64(int offset) {
+    public long load64(int offset) {
         return LittleEndian.decodeInt64(loadN(offset, Long.BYTES));
     }
 
-    byte load8(int offset) {
+    public byte load8(int offset) {
         return loadN(offset, 1)[0];
     }
 
-    short load16(int offset) {
+    public short load16(int offset) {
         return LittleEndian.decodeInt16(loadN(offset, Short.BYTES));
     }
 
-    void storeI32(int offset, int n) {
+    public void storeI32(int offset, int n) {
         put(offset, LittleEndian.encodeInt32(n));
     }
 
-    void storeI64(int offset, long n) {
+    public void storeI64(int offset, long n) {
         put(offset, LittleEndian.encodeInt64(n));
     }
 
-    void storeI16(int offset, short n) {
+    public void storeI16(int offset, short n) {
         put(offset, LittleEndian.encodeInt16(n));
     }
 
-    void storeI8(int offset, byte n) {
+    public void storeI8(int offset, byte n) {
         put(offset, new byte[]{n});
     }
 
@@ -147,6 +147,7 @@ class Memory {
         this.pages += n;
         return tmp;
     }
+
 
     public int getActualSize() {
         return data.length;
