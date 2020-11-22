@@ -37,7 +37,6 @@ public abstract class HostFunction implements FunctionInstance {
         return type;
     }
 
-    ;
 
     @Override
     public abstract long[] execute(long... parameters);

@@ -53,13 +53,6 @@ public class ExportSection extends AbstractSection {
 
         public static Export readFrom(BytesReader reader) {
             byte[] chars = Vector.readBytesFrom(reader);
-            for (byte ch : chars) {
-                if('0' <= ch && ch <= '9') continue;
-                if('a' <= ch && ch <= 'z') continue;
-                if('A' <= ch && ch <= 'Z') continue;
-                if(ch == '_') continue;
-                throw new RuntimeException("invalid char " + (char) ch);
-            }
             return new Export(new String(chars, StandardCharsets.UTF_8), ExportType.readFrom(reader), reader.readVarUint32());
         }
 

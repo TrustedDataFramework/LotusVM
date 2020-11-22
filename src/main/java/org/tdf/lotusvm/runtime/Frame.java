@@ -176,9 +176,9 @@ public class Frame {
                         stack.popN(function.parametersLength())
                 );
                 int resLength = res == null ? 0 : res.length;
-                if (resLength != function.getArity()) {
-                    throw new RuntimeException("the result of function " + function + " is not equals to its arity");
-                }
+//                if (resLength != function.getArity()) {
+//                    throw new RuntimeException("the result of function " + function + " is not equals to its arity");
+//                }
                 if (res != null) {
                     stack.pushAll(
                             res
@@ -195,9 +195,9 @@ public class Frame {
                 if (function.isHost()) {
                     module.hooks.forEach(x -> x.onHostFunction((HostFunction) function, module));
                 }
-                if (!function.getType().equals(module.types.get(ins.getOperands().getI32(0)))) {
-                    throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
-                }
+//                if (!function.getType().equals(module.types.get(ins.getOperands().getI32(0)))) {
+//                    throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
+//                }
                 stack.pushAll(
                         function.execute(
                                 stack.popN(function.parametersLength())
