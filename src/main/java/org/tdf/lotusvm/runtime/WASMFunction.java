@@ -21,6 +21,14 @@ class WASMFunction implements FunctionInstance {
         this.locals = locals;
     }
 
+    int getLocals(){
+        int ret = 0;
+        for (int i = 0; i < locals.size(); i++) {
+            ret += locals.get(i).getCount();
+        }
+        return ret;
+    }
+
     @Override
     public FunctionType getType() {
         return type;
@@ -28,8 +36,7 @@ class WASMFunction implements FunctionInstance {
 
     private Frame newFrame(long... parameters) {
         // init localvars
-        Register localVariables = new Register(parameters.length +
-                locals.stream().map(CodeSection.Local::getCount).reduce(0, Integer::sum));
+        Register localVariables = new Register(parameters.length + getLocals());
         for (int i = 0; i < parameters.length; i++) {
             localVariables.setI64(i, parameters[i]);
         }

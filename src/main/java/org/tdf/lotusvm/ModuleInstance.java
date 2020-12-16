@@ -51,6 +51,7 @@ public interface ModuleInstance {
         private byte[] binary;
         private long[] globals;
         private byte[] memory;
+        boolean validateFunctionType;
 
         private Builder() {
         }
@@ -81,6 +82,11 @@ public interface ModuleInstance {
 
         public Builder memory(byte[] memory) {
             this.memory = memory;
+            return this;
+        }
+
+        public Builder validateFunctionType(){
+            this.validateFunctionType = true;
             return this;
         }
 

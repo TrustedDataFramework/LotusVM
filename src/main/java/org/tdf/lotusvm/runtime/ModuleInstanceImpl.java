@@ -40,19 +40,29 @@ public class ModuleInstanceImpl implements ModuleInstance {
     FunctionInstance startFunction;
 
     // hooks
-    @Getter
-    @Setter
-    Set<Hook> hooks;
+    Hook[] hooks;
+
+    public Set<Hook> getHooks(){
+        return new HashSet<>(Arrays.asList(hooks));
+    }
+
+    @Override
+    public void setHooks(Set<Hook> hooks) {
+        this.hooks = new ArrayList<>(hooks).toArray(new Hook[]{});
+    }
 
     // exported functions
     Map<String, FunctionInstance> exports;
 
     List<FunctionType> types;
 
+    boolean validateFunctionType;
+
     public ModuleInstanceImpl(Builder builder) {
         Module module = new Module(builder.getBinary());
         types = module.getTypeSection().getFunctionTypes();
-        hooks = builder.getHooks();
+        hooks = new ArrayList<>(builder.getHooks()).toArray(new Hook[]{});
+        this.validateFunctionType = builder.isValidateFunctionType();
 
         Map<String, HostFunction> functionsMap =
                 builder.getHostFunctions().stream()
@@ -208,9 +218,10 @@ public class ModuleInstanceImpl implements ModuleInstance {
                 table,
                 functions,
                 startFunction,
-                Collections.emptySet(),
+                hooks,
                 exports,
-                types
+                types,
+                validateFunctionType
         );
         ret.setGlobals(globals.getData());
         ret.setMemory(memory.getData());

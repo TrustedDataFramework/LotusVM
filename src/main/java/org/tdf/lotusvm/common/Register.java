@@ -1,15 +1,27 @@
 package org.tdf.lotusvm.common;
 
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.stream.Collectors;
 
 public class Register {
-    private static final int DEFAULT_INITIAL_STACK_CAP = 16;
+    public static final int DEFAULT_INITIAL_STACK_CAP = 16;
 
     private long[] data;
     private int pc;
-    private LinkedList<Integer> startPCs = new LinkedList<>();
+
+    private int[] startPC;
+    private int startPCPos;
+
+
+    private void growStartPC() {
+        if(this.startPC == null)
+            this.startPC = new int[DEFAULT_INITIAL_STACK_CAP];
+        if (startPCPos >= this.startPC.length) {
+            int[] tmp = this.startPC;
+            this.startPC = new int[tmp.length * 2 + 1];
+            System.arraycopy(tmp, 0, this.startPC, 0, tmp.length);
+        }
+    }
 
     public Register(long[] data) {
         this.data = data;
@@ -25,15 +37,18 @@ public class Register {
     }
 
     public void pushLabel() {
-        startPCs.push(pc);
+        this.growStartPC();
+        startPC[this.startPCPos] = pc;
+        this.startPCPos++;
     }
 
     public void popLabel() {
-        startPCs.pop();
+        this.startPCPos--;
     }
 
     public void popAndClearLabel() {
-        this.pc = startPCs.pop();
+        this.pc = this.startPC[this.startPCPos-1];
+        this.startPCPos--;
     }
 
     public int size() {
@@ -54,7 +69,7 @@ public class Register {
 
 
     public long[] popN(int n) {
-        if (n == 0) return new long[0];
+        if (n == 0) return Constants.EMPTY_LONGS;
         long[] res = Arrays.copyOfRange(data, pc - n, pc);
         pc -= n;
         return res;

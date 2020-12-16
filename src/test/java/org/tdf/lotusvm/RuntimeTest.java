@@ -131,7 +131,9 @@ public class RuntimeTest {
 
     public void testSpecFunctions(String filename, Collection<String> functions, int skip, int limit) throws Exception {
         ModuleInstance instance =
-                ModuleInstance.Builder.builder()
+                ModuleInstance.Builder
+                        .builder()
+                        .validateFunctionType()
                 .binary(Util.readClassPathFileAsByteArray("testdata/spec/" + filename))
                 .build()
         ;

@@ -7,8 +7,9 @@ import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.Instruction;
 import org.tdf.lotusvm.types.ResultType;
 
-import java.util.LinkedList;
 import java.util.List;
+
+import static org.tdf.lotusvm.common.Register.DEFAULT_INITIAL_STACK_CAP;
 
 @Getter
 public class Frame {
@@ -26,16 +27,31 @@ public class Frame {
 
     private Register stack;
 
-    private LinkedList<Label> labels;
+    private Label[] labels;
+    private int labelPos;
 
+    private boolean labelIsEmpty(){
+        return labelPos <= 0;
+    }
+
+    private void growLabel() {
+        if(this.labels == null)
+            this.labels = new Label[DEFAULT_INITIAL_STACK_CAP];
+        if (labelPos >= this.labels.length) {
+            Label[] tmp = this.labels;
+            this.labels = new Label[tmp.length * 2 + 1];
+            System.arraycopy(tmp, 0, this.labels, 0, tmp.length);
+        }
+    }
     Frame(List<Instruction> body, FunctionType type, ModuleInstanceImpl module, Register localVariables, Register stack) {
         this.body = body;
         this.type = type;
         this.module = module;
         this.localVariables = localVariables;
         this.stack = stack;
-        this.labels = new LinkedList<>();
-        module.hooks.forEach(h -> h.onNewFrame(this));
+        for(int i = 0 ; i < module.hooks.length; i++){
+            module.hooks[i].onNewFrame(this);
+        }
     }
 
     // math trunc
@@ -55,8 +71,8 @@ public class Frame {
     // In the current version of WebAssembly, a result can consist of at most one value.
     long[] execute() throws RuntimeException {
         pushLabel(new Label(type.getResultTypes().size() != 0, body));
-        while (!labels.isEmpty()) {
-            Label label = labels.getFirst();
+        while (!labelIsEmpty()) {
+            Label label = labels[this.labelPos - 1];
             if (label.getPc() >= label.getBody().size()) {
                 popLabel();
                 continue;
@@ -68,7 +84,9 @@ public class Frame {
             label.incrementAndGet();
             invoke(ins);
         }
-        module.hooks.forEach(x -> x.onFrameExit(this));
+        for(int i = 0; i < module.hooks.length; i++){
+            module.hooks[i].onFrameExit(this);
+        }
         return returns();
         // clear stack and local variables
     }
@@ -87,22 +105,26 @@ public class Frame {
     }
 
     private void pushLabel(Label label) {
-        labels.push(label);
+        this.growLabel();
+        this.labels[labelPos] = label;
+        this.labelPos++;
         stack.pushLabel();
     }
 
     private void popLabel() {
         stack.popLabel();
-        labels.pop();
+        this.labelPos--;
     }
 
     private void popAndClearLabel() {
         stack.popAndClearLabel();
-        labels.pop();
+        this.labelPos--;
     }
 
     private void invoke(Instruction ins) throws RuntimeException {
-        module.hooks.forEach(x -> x.onInstruction(ins, module));
+        for (int i = 0; i < module.hooks.length; i++) {
+            module.hooks[i].onInstruction(ins, module);
+        }
         switch (ins.getCode()) {
             // these operations are essentially no-ops.
             case NOP:
@@ -170,7 +192,9 @@ public class Frame {
             case CALL: {
                 FunctionInstance function = module.functions.get(ins.getOperands().getI32(0));
                 if (function.isHost()) {
-                    module.hooks.forEach(x -> x.onHostFunction((HostFunction) function, module));
+                    for (int i = 0; i < module.hooks.length; i++) {
+                        module.hooks[i].onHostFunction((HostFunction) function, module);
+                    }
                 }
                 long[] res = function.execute(
                         stack.popN(function.parametersLength())
@@ -193,11 +217,13 @@ public class Frame {
                 }
                 FunctionInstance function = module.table.getFunctions()[elementIndex];
                 if (function.isHost()) {
-                    module.hooks.forEach(x -> x.onHostFunction((HostFunction) function, module));
+                    for (int i = 0; i < module.hooks.length; i++) {
+                        module.hooks[i].onHostFunction((HostFunction) function, module);
+                    }
                 }
-//                if (!function.getType().equals(module.types.get(ins.getOperands().getI32(0)))) {
-//                    throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
-//                }
+                if (module.validateFunctionType && !function.getType().equals(module.types.get(ins.getOperands().getI32(0)))) {
+                    throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
+                }
                 stack.pushAll(
                         function.execute(
                                 stack.popN(function.parametersLength())
@@ -863,7 +889,7 @@ public class Frame {
 
     // br l
     private void branch(int l) {
-        Label label = labels.get(l);
+        Label label = labels[this.labelPos - 1 - l];
         long[] valN = stack.popN(label.getArity());
         // Repeat l+1 times
         for (int i = 0; i < l + 1; i++) {
