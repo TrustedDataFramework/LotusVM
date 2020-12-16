@@ -200,9 +200,9 @@ public class Frame {
                         stack.popN(function.parametersLength())
                 );
                 int resLength = res == null ? 0 : res.length;
-//                if (resLength != function.getArity()) {
-//                    throw new RuntimeException("the result of function " + function + " is not equals to its arity");
-//                }
+                if (module.validateFunctionType && resLength != function.getArity()) {
+                    throw new RuntimeException("the result of function " + function + " is not equals to its arity");
+                }
                 if (res != null) {
                     stack.pushAll(
                             res

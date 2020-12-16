@@ -90,6 +90,15 @@ public class Memory {
         return concat(bytes0, new byte[n - bytes0.length]);
     }
 
+    public byte get(int offset){
+        if (offset < 0 || offset > pages * PAGE_SIZE) {
+            throw new RuntimeException("exec: out of bounds memory access");
+        }
+        if(offset < data.length)
+            return data[offset];
+        return 0;
+    }
+
     public int load32(int offset) {
         return LittleEndian.decodeInt32(loadN(offset, Integer.BYTES));
     }
