@@ -90,45 +90,75 @@ public class Memory {
         return concat(bytes0, new byte[n - bytes0.length]);
     }
 
-    public byte get(int offset){
-        if (offset < 0 || offset > pages * PAGE_SIZE) {
+    public int get(int offset) {
+        if (offset < 0 || offset + 1 > pages * PAGE_SIZE) {
             throw new RuntimeException("exec: out of bounds memory access");
         }
-        if(offset < data.length)
-            return data[offset];
+        if (offset < data.length)
+            return data[offset] & 0xff;
+        return 0;
+    }
+
+    public long getLong(int offset) {
+        if (offset < 0 || offset + 1 > pages * PAGE_SIZE) {
+            throw new RuntimeException("exec: out of bounds memory access");
+        }
+        if (offset < data.length)
+            return (data[offset] & 0xff) & 0x00000000ffffffffL;
         return 0;
     }
 
     public int load32(int offset) {
-        return LittleEndian.decodeInt32(loadN(offset, Integer.BYTES));
+        return get(offset) | (get(offset + 1) << 8) | (get(offset + 2) << 16) | (get(offset + 3) << 24);
     }
 
     public long load64(int offset) {
-        return LittleEndian.decodeInt64(loadN(offset, Long.BYTES));
+        return getLong(offset) |
+                (getLong(offset + 1) << 8) |
+                (getLong(offset + 2) << 16) |
+                (getLong(offset + 3) << 24) |
+                (getLong(offset + 4) << 32) |
+                (getLong(offset + 5) << 40) |
+                (getLong(offset + 6) << 48) |
+                (getLong(offset + 7) << 56)
+                ;
+
     }
 
     public byte load8(int offset) {
-        return loadN(offset, 1)[0];
+        return (byte) get(offset);
     }
 
     public short load16(int offset) {
-        return LittleEndian.decodeInt16(loadN(offset, Short.BYTES));
+        return (short) (get(offset) | ((get(offset + 1) & 0xff) << 8));
     }
 
     public void storeI32(int offset, int n) {
-        put(offset, LittleEndian.encodeInt32(n));
+        storeI8(offset, (byte) (n & 0xff));
+        storeI8(offset + 1, (byte) ((n >>> 8) & 0xff));
+        storeI8(offset + 2, (byte) ((n >>> 16) & 0xff));
+        storeI8(offset + 3, (byte) ((n >>> 24) & 0xff));
     }
 
     public void storeI64(int offset, long n) {
-        put(offset, LittleEndian.encodeInt64(n));
+        storeI8(offset, (byte) (n & 0xff));
+        storeI8(offset + 1, (byte) ((n >>> 8) & 0xff));
+        storeI8(offset + 2, (byte) ((n >>> 16) & 0xff));
+        storeI8(offset + 3, (byte) ((n >>> 24) & 0xff));
+        storeI8(offset + 4, (byte) ((n >>> 32) & 0xff));
+        storeI8(offset + 5, (byte) ((n >>> 40) & 0xff));
+        storeI8(offset + 6, (byte) ((n >>> 48) & 0xff));
+        storeI8(offset + 7, (byte) ((n >>> 56) & 0xff));
     }
 
     public void storeI16(int offset, short n) {
-        put(offset, LittleEndian.encodeInt16(n));
+        storeI8(offset, (byte) (n & 0xff));
+        storeI8(offset + 1, (byte) ((n >>> 8) & 0xff));
     }
 
     public void storeI8(int offset, byte n) {
-        put(offset, new byte[]{n});
+        spaceCheck(offset + 1);
+        this.data[offset] = n;
     }
 
     private void spaceCheck(int n) {
@@ -161,4 +191,5 @@ public class Memory {
     public int getActualSize() {
         return data.length;
     }
+
 }
