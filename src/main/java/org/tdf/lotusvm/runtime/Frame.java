@@ -17,7 +17,7 @@ public class Frame {
 
     private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
 
-    private List<Instruction> body;
+    private Instruction[] body;
 
     private FunctionType type;
 
@@ -43,7 +43,7 @@ public class Frame {
             System.arraycopy(tmp, 0, this.labels, 0, tmp.length);
         }
     }
-    Frame(List<Instruction> body, FunctionType type, ModuleInstanceImpl module, Register localVariables, Register stack) {
+    Frame(Instruction[] body, FunctionType type, ModuleInstanceImpl module, Register localVariables, Register stack) {
         this.body = body;
         this.type = type;
         this.module = module;
@@ -73,11 +73,11 @@ public class Frame {
         pushLabel(new Label(type.getResultTypes().size() != 0, body));
         while (!labelIsEmpty()) {
             Label label = labels[this.labelPos - 1];
-            if (label.getPc() >= label.getBody().size()) {
+            if (label.getPc() >= label.getBody().length) {
                 popLabel();
                 continue;
             }
-            Instruction ins = label.getBody().get(label.getPc());
+            Instruction ins = label.getBody()[label.getPc()];
             if (ins.getCode().equals(OpCode.RETURN)) {
                 return returns();
             }

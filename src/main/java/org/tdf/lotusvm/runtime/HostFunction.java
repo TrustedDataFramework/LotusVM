@@ -39,7 +39,7 @@ public abstract class HostFunction implements FunctionInstance {
 
 
     @Override
-    public abstract long[] execute(long... parameters);
+    public abstract long[] execute(long[] parameters);
 
     @Override
     public boolean isHost() {

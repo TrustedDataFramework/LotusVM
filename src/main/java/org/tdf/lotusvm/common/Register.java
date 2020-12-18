@@ -1,5 +1,7 @@
 package org.tdf.lotusvm.common;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -7,6 +9,7 @@ public class Register {
     public static final int DEFAULT_INITIAL_STACK_CAP = 16;
 
     private long[] data;
+    @Getter
     private int pc;
 
     private int[] startPC;

@@ -27,7 +27,7 @@ public class DataSection extends AbstractSection {
     public static class DataSegment {
         private int memoryIndex;
 
-        private List<Instruction> expression;
+        private Instruction[] expression;
 
         private byte[] init;
 

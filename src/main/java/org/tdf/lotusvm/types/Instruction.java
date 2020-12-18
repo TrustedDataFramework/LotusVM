@@ -16,13 +16,15 @@ import static org.tdf.lotusvm.common.OpCode.*;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class Instruction {
+    public static final Instruction[] EMPTY_INSTRUCTIONS = new Instruction[0];
+
     private OpCode code;
 
     private ResultType blockType;
 
-    private List<Instruction> branch0;
+    private Instruction[] branch0;
 
-    private List<Instruction> branch1;
+    private Instruction[] branch1;
 
     private Register operands;
 
@@ -47,8 +49,8 @@ public class Instruction {
             case LOOP:
             case IF:
                 ResultType type = ResultType.readFrom(reader);
-                List<Instruction> branch0 = readInstructionsUntil(reader, END.code, ELSE.code);
-                List<Instruction> branch1 = null;
+                Instruction[] branch0 = readInstructionsUntil(reader, END.code, ELSE.code);
+                Instruction[] branch1 = null;
                 if (reader.peek() == ELSE.code) {
                     // skip 0x05
                     reader.read();
@@ -151,19 +153,19 @@ public class Instruction {
         throw new RuntimeException("unknown opcode " + c);
     }
 
-    private static List<Instruction> readInstructionsUntil(BytesReader reader, int... ends) {
+    private static Instruction[] readInstructionsUntil(BytesReader reader, int... ends) {
         List<Instruction> instructions = new ArrayList<>();
         while (true) {
             int ins = reader.peek();
             for (int e : ends) {
-                if (e == ins) return instructions;
+                if (e == ins) return instructions.toArray(EMPTY_INSTRUCTIONS);
             }
             instructions.add(readFrom(reader));
         }
     }
 
-    public static List<Instruction> readExpressionFrom(BytesReader reader) {
-        List<Instruction> instructions = readInstructionsUntil(reader, END.code);
+    public static Instruction[] readExpressionFrom(BytesReader reader) {
+        Instruction[] instructions = readInstructionsUntil(reader, END.code);
         reader.read();
         return instructions;
     }

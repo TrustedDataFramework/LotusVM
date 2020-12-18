@@ -1,7 +1,6 @@
 package org.tdf.lotusvm.runtime;
 
 import lombok.Getter;
-import org.tdf.lotusvm.common.LittleEndian;
 import org.tdf.lotusvm.types.LimitType;
 
 import java.nio.charset.StandardCharsets;
@@ -22,8 +21,8 @@ public class Memory {
 
     Memory(LimitType limit) {
         this.limit = limit;
-        this.data = new byte[0];
         this.pages = limit.getMinimum();
+        this.data = new byte[limit.getMinimum() * PAGE_SIZE];
     }
 
     /**
@@ -52,7 +51,6 @@ public class Memory {
             throw new RuntimeException("exec: out of bounds memory access");
         }
         this.data = data;
-        this.pages = data.length / PAGE_SIZE + (data.length % PAGE_SIZE == 0 ? 0 : 1);
     }
 
     public void putString(int offset, String s) {
@@ -61,12 +59,13 @@ public class Memory {
     }
 
     public void put(int offset, byte[] data) {
-        spaceCheck(offset + data.length);
+        if(offset + data.length >= this.data.length)
+            throw new RuntimeException("exec: out of bounds memory access");
         System.arraycopy(data, 0, this.data, offset, data.length);
     }
 
     public void putLong(int offset, long data) {
-        put(offset, LittleEndian.encodeInt64(data));
+        storeI64(offset, data);
     }
 
     public String loadString(int offset, int n) {
@@ -77,35 +76,24 @@ public class Memory {
         if (offset < 0 || n < 0) {
             throw new RuntimeException("exec: out of bounds memory access");
         }
-        if (offset + n > pages * PAGE_SIZE) {
+        if (offset + n > data.length) {
             throw new RuntimeException("exec: out of bounds memory access");
         }
-        if (offset + n <= data.length) {
-            return Arrays.copyOfRange(data, offset, offset + n);
-        }
-        if (offset >= data.length) {
-            return new byte[n];
-        }
-        byte[] bytes0 = Arrays.copyOfRange(data, offset, data.length);
-        return concat(bytes0, new byte[n - bytes0.length]);
+        return Arrays.copyOfRange(data, offset, offset + n);
     }
 
     public int get(int offset) {
-        if (offset < 0 || offset + 1 > pages * PAGE_SIZE) {
+        if (offset >= data.length) {
             throw new RuntimeException("exec: out of bounds memory access");
         }
-        if (offset < data.length)
-            return data[offset] & 0xff;
-        return 0;
+        return data[offset] & 0xff;
     }
 
     public long getLong(int offset) {
-        if (offset < 0 || offset + 1 > pages * PAGE_SIZE) {
+        if (offset >= data.length) {
             throw new RuntimeException("exec: out of bounds memory access");
         }
-        if (offset < data.length)
-            return (data[offset] & 0xff) & 0x00000000ffffffffL;
-        return 0;
+        return (data[offset] & 0xff) & 0x00000000ffffffffL;
     }
 
     public int load32(int offset) {
@@ -157,16 +145,9 @@ public class Memory {
     }
 
     public void storeI8(int offset, byte n) {
-        spaceCheck(offset + 1);
+        if(offset >= this.data.length)
+            throw new RuntimeException("exec: out of bounds memory access");
         this.data[offset] = n;
-    }
-
-    private void spaceCheck(int n) {
-        if (n <= data.length) return;
-        if (n > pages * PAGE_SIZE) throw new RuntimeException("exec: out of bounds memory access");
-        byte[] tmp = data;
-        data = new byte[n];
-        System.arraycopy(tmp, 0, data, 0, tmp.length);
     }
 
     int getPageSize() {
@@ -182,9 +163,12 @@ public class Memory {
         if (limit.isBounded() && getPageSize() + n > limit.getMaximum()) {
             return -1;
         }
-        int tmp = this.pages;
+        int prev = this.pages;
         this.pages += n;
-        return tmp;
+        byte[] tmp = new byte[PAGE_SIZE * this.pages];
+        System.arraycopy(this.data, 0, tmp, 0, this.data.length);
+        this.data = tmp;
+        return prev;
     }
 
 

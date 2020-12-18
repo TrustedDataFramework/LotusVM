@@ -57,7 +57,7 @@ public class CodeSection extends AbstractSection {
     @Getter
     public static class Function {
         private List<Local> locals;
-        private List<Instruction> expression;
+        private Instruction[] expression;
 
         public static Function readFrom(BytesReader reader) {
             return new Function(Local.readLocalsFrom(reader), Instruction.readExpressionFrom(reader));

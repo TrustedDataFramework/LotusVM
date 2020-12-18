@@ -11,10 +11,10 @@ class WASMFunction implements FunctionInstance {
     private FunctionType type;
     // params + localvars
     private ModuleInstanceImpl module;
-    private List<Instruction> body;
+    private Instruction[] body;
     private List<CodeSection.Local> locals;
 
-    WASMFunction(FunctionType type, ModuleInstanceImpl module, List<Instruction> body, List<CodeSection.Local> locals) {
+    WASMFunction(FunctionType type, ModuleInstanceImpl module,Instruction[] body, List<CodeSection.Local> locals) {
         this.type = type;
         this.module = module;
         this.body = body;
@@ -34,7 +34,7 @@ class WASMFunction implements FunctionInstance {
         return type;
     }
 
-    private Frame newFrame(long... parameters) {
+    private Frame newFrame(long[] parameters) {
         // init localvars
         Register localVariables = new Register(parameters.length + getLocals());
         for (int i = 0; i < parameters.length; i++) {
@@ -51,7 +51,7 @@ class WASMFunction implements FunctionInstance {
     }
 
     @Override
-    public long[] execute(long... parameters) throws RuntimeException {
+    public long[] execute(long[] parameters) throws RuntimeException {
         return newFrame(parameters).execute();
     }
 

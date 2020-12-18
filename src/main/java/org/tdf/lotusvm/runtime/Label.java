@@ -9,11 +9,11 @@ import java.util.List;
 @Getter(AccessLevel.PACKAGE)
 class Label {
     private int pc;
-    private List<Instruction> body;
+    private Instruction[] body;
     private int arity;
     private boolean loop;
 
-    Label(boolean hasArity, List<Instruction> body) {
+    Label(boolean hasArity, Instruction[] body) {
         if (hasArity) {
             this.arity = 1;
         }
@@ -36,6 +36,6 @@ class Label {
             return;
         }
         //  continuation is the end of the block label
-        this.pc = body.size();
+        this.pc = body.length;
     }
 }

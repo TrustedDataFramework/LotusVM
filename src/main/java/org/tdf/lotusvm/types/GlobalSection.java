@@ -30,11 +30,11 @@ public class GlobalSection extends AbstractSection {
 
         private GlobalType globalType;
 
-        private List<Instruction> expression;
+        private Instruction[] expression;
 
         public static Global readFrom(BytesReader reader) {
             GlobalType globalType = GlobalType.readFrom(reader);
-            List<Instruction> expression = Instruction.readExpressionFrom(reader);
+            Instruction[] expression = Instruction.readExpressionFrom(reader);
             return new Global(globalType, expression);
         }
 

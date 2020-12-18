@@ -2,6 +2,7 @@ package org.tdf.lotusvm.runtime;
 
 import lombok.*;
 import org.tdf.lotusvm.ModuleInstance;
+import org.tdf.lotusvm.common.Constants;
 import org.tdf.lotusvm.common.Register;
 import org.tdf.lotusvm.types.*;
 
@@ -153,7 +154,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
         // load and execute start function
         if (module.getStartSection() != null) {
             startFunction = functions.get(module.getStartSection().getFunctionIndex());
-            startFunction.execute();
+            startFunction.execute(Constants.EMPTY_LONGS);
         }
 
         // exports
@@ -199,7 +200,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     }
 
 
-    private long executeExpression(List<Instruction> instructions, ValueType type) {
+    private long executeExpression(Instruction[] instructions, ValueType type) {
         return new Frame(instructions, new FunctionType(Collections.emptyList(), Collections.singletonList(type)), this,
                 new Register(), new Register()).execute()[0];
     }
