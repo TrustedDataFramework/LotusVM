@@ -3,7 +3,6 @@ package org.tdf.lotusvm.types;
 import lombok.*;
 import org.tdf.lotusvm.common.BytesReader;
 import org.tdf.lotusvm.common.OpCode;
-import org.tdf.lotusvm.common.Register;
 import org.tdf.lotusvm.common.Vector;
 
 import java.util.ArrayList;
@@ -11,7 +10,6 @@ import java.util.List;
 
 import static org.tdf.lotusvm.common.OpCode.*;
 
-@Builder(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
@@ -26,7 +24,29 @@ public class Instruction {
 
     private Instruction[] branch1;
 
-    private Register operands;
+    private long[] operands;
+
+    public int getOperandInt(int idx) {
+        return (int) operands[idx];
+    }
+
+    public long getOperandLong(int idx) {
+        return operands[idx];
+    }
+
+
+    public int getOperandLen() {
+        return operands.length;
+    }
+
+    public Instruction(OpCode code) {
+        this.code = code;
+    }
+
+    public Instruction(OpCode code, long[] operands) {
+        this.code = code;
+        this.operands = operands;
+    }
 
     private static Instruction readControlInstruction(BytesReader reader) {
         OpCode c = OpCode.fromCode(reader.read());
@@ -35,15 +55,13 @@ public class Instruction {
             case UNREACHABLE:
             case NOP:
             case RETURN:
-                return builder().code(c).build();
+                return new Instruction(c);
             // 0x0c 0x0d 0x10
             // a u32 operand
             case BR:
             case BR_IF:
             case CALL:
-                Register s = new Register(1);
-                s.pushI32(reader.readVarUint32());
-                return builder().code(c).operands(s).build();
+                return new Instruction(c, new long[]{reader.readVarUint32() & 0xffffffffL});
             // 0x02 0x03 0x04
             case BLOCK:
             case LOOP:
@@ -58,20 +76,18 @@ public class Instruction {
                 }
                 // skip 0x05 or 0x0b
                 reader.read();
-                return builder().code(c).blockType(type)
-                        .branch0(branch0).branch1(branch1)
-                        .build();
+                return new Instruction(c, type, branch0, branch1, null);
             case BR_TABLE:
                 long[] labels = Vector.readUint32VectorAsLongFrom(reader);
                 long[] operands = new long[labels.length + 1];
                 System.arraycopy(labels, 0, operands, 0, labels.length);
-                operands[operands.length - 1] = Integer.toUnsignedLong(reader.readVarUint32());
-                return builder().code(c).operands(new Register(operands)).build();
+                operands[operands.length - 1] = reader.readVarUint32() & 0xffffffffL;
+                return new Instruction(c, operands);
             case CALL_INDIRECT:
                 // 0x11  x:typeidx u32  0x00
-                long typeIndex = Integer.toUnsignedLong(reader.readVarUint32());
+                long typeIndex = reader.readVarUint32() & 0xffffffffL;
                 if (reader.read() != 0) throw new RuntimeException("invalid operand of call indirect");
-                return builder().code(c).operands(new Register(new long[]{typeIndex})).build();
+                return new Instruction(c, new long[]{typeIndex});
         }
         throw new RuntimeException("unknown control opcode " + c);
     }
@@ -81,7 +97,7 @@ public class Instruction {
     //0x1A
     //0x1B
     private static Instruction readParametricInstruction(BytesReader reader) {
-        return builder().code(OpCode.fromCode(reader.read())).build();
+        return new Instruction(OpCode.fromCode(reader.read()));
     }
 
     //0x20  x:localidx
@@ -91,9 +107,7 @@ public class Instruction {
     //0x24  x:globalidx
     private static Instruction readVariableInstruction(BytesReader reader) {
         OpCode c = OpCode.fromCode(reader.read());
-        Register s = new Register(1);
-        s.pushI32(reader.readVarUint32());
-        return builder().code(c).operands(s).build();
+        return new Instruction(c, new long[]{reader.readVarUint32() & 0xffffffffL});
     }
 
     private static Instruction readMemoryInstruction(BytesReader reader) {
@@ -103,33 +117,36 @@ public class Instruction {
             if (reader.read() != 0) {
                 throw new RuntimeException("invalid terminator of opcode " + c);
             }
-            return builder().code(c).build();
+            return new Instruction(c);
         }
-        Register s = new Register(2);
-        s.pushI32(reader.readVarUint32()); // align
-        s.pushI32(reader.readVarUint32()); // offset
-        return builder()
-                .code(c).operands(s).build();
+        return new Instruction(c, new long[]{reader.readVarUint32() & 0xffffffffL, reader.readVarUint32() & 0xffffffffL});
     }
 
     private static Instruction readNumericInstruction(BytesReader reader) {
         OpCode c = OpCode.fromCode(reader.read());
-        Register s = new Register(1);
         switch (c) {
-            case I32_CONST:
-                s.pushI32(reader.readVarInt32());
-                return builder().code(c).operands(s).build();
-            case I64_CONST:
-                s.pushI64(reader.readVarInt64());
-                return builder().code(c).operands(s).build();
-            case F32_CONST:
-                s.pushF32(reader.readFloat());
-                return builder().code(c).operands(s).build();
-            case F64_CONST:
-                s.pushF64(reader.readDouble());
-                return builder().code(c).operands(s).build();
+            case I32_CONST: {
+                long[] operands = new long[1];
+                operands[0] = reader.readVarInt32() & 0xffffffffL;
+                return new Instruction(c, operands);
+            }
+            case I64_CONST: {
+                long[] operands = new long[1];
+                operands[0] = reader.readVarInt64();
+                return new Instruction(c, operands);
+            }
+            case F32_CONST: {
+                long[] operands = new long[1];
+                operands[0] = Float.floatToIntBits(reader.readFloat()) & 0xffffffffL;
+                return new Instruction(c, operands);
+            }
+            case F64_CONST: {
+                long[] operands = new long[1];
+                operands[0] = Double.doubleToLongBits(reader.readDouble());
+                return new Instruction(c, operands);
+            }
             default:
-                return builder().code(c).build();
+                return new Instruction(c);
         }
     }
 

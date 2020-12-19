@@ -193,7 +193,7 @@ public class Frame {
             }
             case BR: {
                 // the l is non-negative here
-                int l = ins.getOperands().getI32(0);
+                int l = ins.getOperandInt(0);
                 branch(l);
                 break;
             }
@@ -203,19 +203,18 @@ public class Frame {
                     break;
                 }
                 // the l is non-negative here
-                int l = ins.getOperands().getI32(0);
+                int l = ins.getOperandInt(0);
                 branch(l);
                 break;
             }
             case BR_TABLE: {
-                Register operands = ins.getOperands();
                 // n is non-negative
-                int n = operands.getI32(ins.getOperands().cap() - 1);
+                int n = ins.getOperandInt(ins.getOperandLen() - 1);
                 // cannot determine sign of i
                 int i = stack.popI32();
                 // length of l* is operands.cap() - 1
-                if (Integer.compareUnsigned(i, operands.cap() - 1) < 0) {
-                    n = operands.getI32(i);
+                if (Integer.compareUnsigned(i, ins.getOperandLen() - 1) < 0) {
+                    n = ins.getOperandInt(i);
                 }
                 branch(n);
                 break;
@@ -227,7 +226,7 @@ public class Frame {
 //            case RETURN:
 //                break;
             case CALL: {
-                FunctionInstance function = module.functions.get(ins.getOperands().getI32(0));
+                FunctionInstance function = module.functions.get(ins.getOperandInt(0));
                 if (function.isHost()) {
                     for (int i = 0; i < module.hooks.length; i++) {
                         module.hooks[i].onHostFunction((HostFunction) function, module);
@@ -258,7 +257,7 @@ public class Frame {
                         module.hooks[i].onHostFunction((HostFunction) function, module);
                     }
                 }
-                if (module.validateFunctionType && !function.getType().equals(module.types.get(ins.getOperands().getI32(0)))) {
+                if (module.validateFunctionType && !function.getType().equals(module.types.get(ins.getOperandInt(0)))) {
                     throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
                 }
                 long r = function.execute(
@@ -282,89 +281,89 @@ public class Frame {
             }
             // variable instructions
             case GET_LOCAL:
-                stack.push(localVariables.get(ins.getOperands().getI32(0)));
+                stack.push(localVariables.get(ins.getOperandInt(0)));
                 break;
             case SET_LOCAL:
-                localVariables.set(ins.getOperands().getI32(0), stack.pop());
+                localVariables.set(ins.getOperandInt(0), stack.pop());
                 break;
             case TEE_LOCAL: {
                 long val = stack.pop();
                 stack.push(val);
                 stack.push(val);
-                localVariables.set(ins.getOperands().getI32(0), stack.pop());
+                localVariables.set(ins.getOperandInt(0), stack.pop());
                 break;
             }
             case GET_GLOBAL:
-                stack.push(module.globals.get(ins.getOperands().getI32(0)));
+                stack.push(module.globals.get(ins.getOperandInt(0)));
                 break;
             case SET_GLOBAL:
                 if (!module.globalTypes.get(
-                        ins.getOperands().getI32(0)
+                        ins.getOperandInt(0)
                 ).isMutable()) throw new RuntimeException("modify a immutable global");
-                module.globals.set(ins.getOperands().getI32(0), stack.pop());
+                module.globals.set(ins.getOperandInt(0), stack.pop());
                 break;
             // memory instructions
             case I32_LOAD:
             case F32_LOAD:
             case I64_LOAD32_U:
                 stack.pushI32(
-                        module.memory.load32(stack.popU32() + ins.getOperands().getI32(1))
+                        module.memory.load32(stack.popU32() + ins.getOperandInt(1))
                 );
                 break;
             case I64_LOAD:
             case F64_LOAD:
                 stack.push(
-                        module.memory.load64(stack.popU32() + ins.getOperands().getI32(1))
+                        module.memory.load64(stack.popU32() + ins.getOperandInt(1))
                 );
                 break;
             case I32_LOAD8_S:
-                stack.pushI32(module.memory.load8(stack.popU32() + ins.getOperands().getI32(1)));
+                stack.pushI32(module.memory.load8(stack.popU32() + ins.getOperandInt(1)));
                 break;
             case I64_LOAD8_S: {
-                stack.push(module.memory.load8(stack.popU32() + ins.getOperands().getI32(1)));
+                stack.push(module.memory.load8(stack.popU32() + ins.getOperandInt(1)));
                 break;
             }
             case I32_LOAD8_U:
             case I64_LOAD8_U:
-                stack.pushI8(module.memory.load8(stack.popU32() + ins.getOperands().getI32(1)));
+                stack.pushI8(module.memory.load8(stack.popU32() + ins.getOperandInt(1)));
                 break;
             case I32_LOAD16_S: {
-                stack.pushI32(module.memory.load16(stack.popU32() + ins.getOperands().getI32(1)));
+                stack.pushI32(module.memory.load16(stack.popU32() + ins.getOperandInt(1)));
                 break;
             }
             case I64_LOAD16_S:
-                stack.push(module.memory.load16(stack.popU32() + ins.getOperands().getI32(1)));
+                stack.push(module.memory.load16(stack.popU32() + ins.getOperandInt(1)));
                 break;
             case I32_LOAD16_U:
             case I64_LOAD16_U:
-                stack.pushI16(module.memory.load16(stack.popU32() + ins.getOperands().getI32(1)));
+                stack.pushI16(module.memory.load16(stack.popU32() + ins.getOperandInt(1)));
                 break;
             case I64_LOAD32_S:
-                stack.push(module.memory.load32(stack.popU32() + ins.getOperands().getI32(1)));
+                stack.push(module.memory.load32(stack.popU32() + ins.getOperandInt(1)));
                 break;
             case I32_STORE8:
             case I64_STORE8: {
                 byte c = stack.popI8();
-                module.memory.storeI8(stack.popU32() + ins.getOperands().getI32(1), c);
+                module.memory.storeI8(stack.popU32() + ins.getOperandInt(1), c);
                 break;
             }
             case I32_STORE16:
             case I64_STORE16: {
                 short c = stack.popI16();
-                module.memory.storeI16(stack.popU32() + ins.getOperands().getI32(1), c);
+                module.memory.storeI16(stack.popU32() + ins.getOperandInt(1), c);
                 break;
             }
             case I32_STORE:
             case F32_STORE:
             case I64_STORE32: {
                 int c = stack.popI32();
-                module.memory.storeI32(stack.popU32() + ins.getOperands().getI32(1), c);
+                module.memory.storeI32(stack.popU32() + ins.getOperandInt(1), c);
                 break;
             }
             case I64_STORE:
             case F64_STORE: {
                 long c = stack.pop();
-                module.memory.storeI64(stack.popU32() + ins.getOperands().getI32(1), c);
+                module.memory.storeI64(stack.popU32() + ins.getOperandInt(1), c);
                 break;
             }
             case CURRENT_MEMORY:
@@ -379,7 +378,7 @@ public class Frame {
             case I64_CONST:
             case F32_CONST:
             case F64_CONST:
-                stack.push(ins.getOperands().get(0));
+                stack.push(ins.getOperandLong(0));
                 break;
             case I32_CLZ:
                 stack.pushI32(Integer.numberOfLeadingZeros(stack.popI32()));
