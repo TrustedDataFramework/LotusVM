@@ -59,10 +59,7 @@ public class BytesReader extends InputStream {// io.reader
 
     // u32
     public int readVarUint32() throws RuntimeException {
-        int res = (int) readVarUint(32);
-        if (res < 0)
-            throw new RuntimeException("integer overflow");
-        return res;
+        return (int) readVarUint(32);
     }
 
     public long readVarUint64() throws RuntimeException {
@@ -99,16 +96,11 @@ public class BytesReader extends InputStream {// io.reader
             }
             throw new RuntimeException("leb128: invalid int");
         }
-        if (res < 0) {
-            throw new RuntimeException("integer overflow");
-        }
         return res;
     }
 
     public int readVarInt32() throws RuntimeException {
-        long res = readVarInt(32);
-        if (res > Integer.MAX_VALUE) throw new RuntimeException("integer overflow");
-        return (int) res;
+        return (int) readVarInt(32);
     }
 
     public long readVarInt64() throws RuntimeException {
@@ -151,15 +143,11 @@ public class BytesReader extends InputStream {// io.reader
     }
 
     public int readUint32() throws RuntimeException {
-        int res = buffer.getInt();
-        if (res < 0) throw new RuntimeException("integer overflow");
-        return res;
+        return  buffer.getInt();
     }
 
     public long readUint64() {
-        long res = buffer.getLong();
-        if (res < 0) throw new RuntimeException("long overflow");
-        return res;
+        return buffer.getLong();
     }
 
     public float readFloat() {
