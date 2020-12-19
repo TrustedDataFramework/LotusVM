@@ -36,11 +36,8 @@ class WASMFunction implements FunctionInstance {
 
     private Frame newFrame(long[] parameters) {
         // init localvars
-        Register localVariables = new Register(parameters.length + getLocals());
-        for (int i = 0; i < parameters.length; i++) {
-            localVariables.setI64(i, parameters[i]);
-        }
-        localVariables.fillAll();
+        long[] localVariables = new long[parameters.length + getLocals()];
+        System.arraycopy(parameters, 0, localVariables, 0, parameters.length);
         Register stack = new Register();
         return new Frame(body, type, module, localVariables, stack);
     }

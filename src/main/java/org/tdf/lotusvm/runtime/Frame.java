@@ -22,7 +22,7 @@ public class Frame {
 
     private ModuleInstanceImpl module;
 
-    private Register localVariables;
+    private long[] localVariables;
 
     private Register stack;
 
@@ -63,7 +63,7 @@ public class Frame {
         }
     }
 
-    Frame(Instruction[] body, FunctionType type, ModuleInstanceImpl module, Register localVariables, Register stack) {
+    Frame(Instruction[] body, FunctionType type, ModuleInstanceImpl module, long[] localVariables, Register stack) {
         this.body = body;
         this.type = type;
         this.module = module;
@@ -269,16 +269,16 @@ public class Frame {
             }
             // variable instructions
             case GET_LOCAL:
-                stack.push(localVariables.get(ins.getOperandInt(0)));
+                stack.push(localVariables[ins.getOperandInt(0)]);
                 break;
             case SET_LOCAL:
-                localVariables.set(ins.getOperandInt(0), stack.pop());
+                localVariables[ins.getOperandInt(0)] = stack.pop();
                 break;
             case TEE_LOCAL: {
                 long val = stack.pop();
                 stack.push(val);
                 stack.push(val);
-                localVariables.set(ins.getOperandInt(0), stack.pop());
+                localVariables[ins.getOperandInt(0)] = stack.pop();
                 break;
             }
             case GET_GLOBAL:

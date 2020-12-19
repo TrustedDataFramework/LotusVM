@@ -208,7 +208,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     private long executeExpression(Instruction[] instructions, ValueType type) {
         return new Frame(instructions, new FunctionType(Collections.emptyList(), Collections.singletonList(type)), this,
-                new Register(), new Register()).execute();
+                EMPTY_LONGS, new Register()).execute();
     }
 
     @Override
