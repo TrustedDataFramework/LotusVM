@@ -26,7 +26,6 @@ public class Frame {
 
     private Register stack;
 
-    private Label[] labels;
     private int labelPos;
 
     private int[] labelsPC;
@@ -61,17 +60,6 @@ public class Frame {
             System.arraycopy(tmp1, 0, this.labelsBody, 0, tmp0.length);
             System.arraycopy(tmp2, 0, this.labelsArity, 0, tmp0.length);
             System.arraycopy(tmp3, 0, this.labelsLoop, 0, tmp0.length);
-        }
-    }
-
-
-    private void growLabel() {
-        if (this.labels == null)
-            this.labels = new Label[DEFAULT_INITIAL_STACK_CAP];
-        if (labelPos >= this.labels.length) {
-            Label[] tmp = this.labels;
-            this.labels = new Label[tmp.length * 2 + 1];
-            System.arraycopy(tmp, 0, this.labels, 0, tmp.length);
         }
     }
 
