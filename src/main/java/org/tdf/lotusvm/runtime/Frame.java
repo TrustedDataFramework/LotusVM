@@ -7,12 +7,11 @@ import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.Instruction;
 import org.tdf.lotusvm.types.ResultType;
 
-import java.util.List;
 
-import static org.tdf.lotusvm.common.Register.DEFAULT_INITIAL_STACK_CAP;
 
 @Getter
 public class Frame {
+    public static int DEFAULT_INITIAL_STACK_CAP = 8;
     private static final long MAXIMUM_UNSIGNED_I32 = 0xFFFFFFFFL;
 
     private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
@@ -30,12 +29,44 @@ public class Frame {
     private Label[] labels;
     private int labelPos;
 
-    private boolean labelIsEmpty(){
+    private int[] labelsPC;
+    private Instruction[][] labelsBody;
+    private boolean[] labelsArity;
+    private boolean[] labelsLoop;
+
+    private boolean labelIsEmpty() {
         return labelPos <= 0;
     }
 
+
+    private void growLabel1() {
+        if (this.labelsPC == null) {
+            this.labelsPC = new int[DEFAULT_INITIAL_STACK_CAP];
+            this.labelsBody = new Instruction[DEFAULT_INITIAL_STACK_CAP][];
+            this.labelsArity = new boolean[DEFAULT_INITIAL_STACK_CAP];
+            this.labelsLoop = new boolean[DEFAULT_INITIAL_STACK_CAP];
+        }
+
+        if (labelPos >= this.labelsPC.length) {
+            int[] tmp0 = this.labelsPC;
+            Instruction[][] tmp1 = this.labelsBody;
+            boolean[] tmp2 = this.labelsArity;
+            boolean[] tmp3 = this.labelsLoop;
+            int l = tmp0.length * 2 + 1;
+            this.labelsPC = new int[l];
+            this.labelsBody = new Instruction[l][];
+            this.labelsArity = new boolean[l];
+            this.labelsLoop = new boolean[l];
+            System.arraycopy(tmp0, 0, this.labelsPC, 0, tmp0.length);
+            System.arraycopy(tmp1, 0, this.labelsBody, 0, tmp0.length);
+            System.arraycopy(tmp2, 0, this.labelsArity, 0, tmp0.length);
+            System.arraycopy(tmp3, 0, this.labelsLoop, 0, tmp0.length);
+        }
+    }
+
+
     private void growLabel() {
-        if(this.labels == null)
+        if (this.labels == null)
             this.labels = new Label[DEFAULT_INITIAL_STACK_CAP];
         if (labelPos >= this.labels.length) {
             Label[] tmp = this.labels;
@@ -43,13 +74,14 @@ public class Frame {
             System.arraycopy(tmp, 0, this.labels, 0, tmp.length);
         }
     }
+
     Frame(Instruction[] body, FunctionType type, ModuleInstanceImpl module, Register localVariables, Register stack) {
         this.body = body;
         this.type = type;
         this.module = module;
         this.localVariables = localVariables;
         this.stack = stack;
-        for(int i = 0 ; i < module.hooks.length; i++){
+        for (int i = 0; i < module.hooks.length; i++) {
             module.hooks[i].onNewFrame(this);
         }
     }
@@ -69,44 +101,49 @@ public class Frame {
 
     // A result is the outcome of a computation. It is either a sequence of values or a trap.
     // In the current version of WebAssembly, a result can consist of at most one value.
-    long[] execute() throws RuntimeException {
-        pushLabel(new Label(type.getResultTypes().size() != 0, body));
+    long execute() throws RuntimeException {
+        pushLabel(type.getResultTypes().size() != 0, body, false);
         while (!labelIsEmpty()) {
-            Label label = labels[this.labelPos - 1];
-            if (label.getPc() >= label.getBody().length) {
+            int idx = this.labelPos - 1;
+            int pc = this.labelsPC[idx];
+            Instruction[] body = this.labelsBody[idx];
+            if (pc >= body.length) {
                 popLabel();
                 continue;
             }
-            Instruction ins = label.getBody()[label.getPc()];
+            Instruction ins = body[pc];
             if (ins.getCode().equals(OpCode.RETURN)) {
                 return returns();
             }
-            label.incrementAndGet();
+            labelsPC[idx]++;
             invoke(ins);
         }
-        for(int i = 0; i < module.hooks.length; i++){
+        for (int i = 0; i < module.hooks.length; i++) {
             module.hooks[i].onFrameExit(this);
         }
         return returns();
         // clear stack and local variables
     }
 
-    private long[] returns() {
-        long[] res = stack.popN(type.getResultTypes().size());
-        for (int i = 0; i < res.length; i++) {
-            switch (type.getResultTypes().get(i)) {
-                case F32:
-                case I32:
-                    // shadow bits
-                    res[i] = Integer.toUnsignedLong((int) res[i]);
-            }
+    private long returns() {
+        if (type.getResultTypes().size() == 0)
+            return 0;
+        long res = stack.pop();
+        switch (type.getResultTypes().get(0)) {
+            case F32:
+            case I32:
+                // shadow bits
+                res = res & 0xffffffffL;
         }
         return res;
     }
 
-    private void pushLabel(Label label) {
-        this.growLabel();
-        this.labels[labelPos] = label;
+    private void pushLabel(boolean arity, Instruction[] body, boolean loop) {
+        this.growLabel1();
+        this.labelsBody[labelPos] = body;
+        this.labelsArity[labelPos] = arity;
+        this.labelsLoop[labelPos] = loop;
+        this.labelsPC[labelPos] = 0;
         this.labelPos++;
         stack.pushLabel();
     }
@@ -138,19 +175,19 @@ public class Frame {
                 throw new RuntimeException("exec: reached unreachable");
                 // parametric instructions
             case BLOCK:
-                pushLabel(new Label(ins.getBlockType() != ResultType.EMPTY, ins.getBranch0()));
+                pushLabel(ins.getBlockType() != ResultType.EMPTY, ins.getBranch0(), false);
                 break;
             case LOOP:
-                pushLabel(new Label(false, ins.getBranch0()).withLoop());
+                pushLabel(false, ins.getBranch0(), true);
                 break;
             case IF: {
                 long c = stack.pop();
                 if (c != 0) {
-                    pushLabel(new Label(ins.getBlockType() != ResultType.EMPTY, ins.getBranch0()));
+                    pushLabel(ins.getBlockType() != ResultType.EMPTY, ins.getBranch0(), false);
                     break;
                 }
                 if (ins.getBranch1() != null) {
-                    pushLabel(new Label(ins.getBlockType() != ResultType.EMPTY, ins.getBranch1()));
+                    pushLabel(ins.getBlockType() != ResultType.EMPTY, ins.getBranch1(), false);
                 }
                 break;
             }
@@ -196,15 +233,15 @@ public class Frame {
                         module.hooks[i].onHostFunction((HostFunction) function, module);
                     }
                 }
-                long[] res = function.execute(
+                long res = function.execute(
                         stack.popN(function.parametersLength())
                 );
-                int resLength = res == null ? 0 : res.length;
+                int resLength = function.getArity();
                 if (module.validateFunctionType && resLength != function.getArity()) {
                     throw new RuntimeException("the result of function " + function + " is not equals to its arity");
                 }
-                if (res != null) {
-                    stack.pushAll(
+                if (function.getArity() > 0) {
+                    stack.push(
                             res
                     );
                 }
@@ -224,11 +261,12 @@ public class Frame {
                 if (module.validateFunctionType && !function.getType().equals(module.types.get(ins.getOperands().getI32(0)))) {
                     throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
                 }
-                stack.pushAll(
-                        function.execute(
-                                stack.popN(function.parametersLength())
-                        )
+                long r = function.execute(
+                        stack.popN(function.parametersLength())
                 );
+                if (function.getArity() > 0) {
+                    stack.push(r);
+                }
                 break;
             }
             case SELECT: {
@@ -887,17 +925,26 @@ public class Frame {
         }
     }
 
+
     // br l
     private void branch(int l) {
-        Label label = labels[this.labelPos - 1 - l];
-        long[] valN = stack.popN(label.getArity());
+        int idx = this.labelPos - 1 - l;
+        long val = labelsArity[idx] ? stack.pop() : 0;
         // Repeat l+1 times
         for (int i = 0; i < l + 1; i++) {
             popAndClearLabel();
         }
-        stack.pushAll(valN);
-        label.jumpToContinuation();
-        pushLabel(label);
+        if (labelsArity[idx]) {
+            stack.push(val);
+        }
+        if (labelsLoop[idx]) {
+            labelsPC[idx] = 0;
+        } else {
+            labelsPC[idx] = labelsBody[idx].length;
+        }
+        int prevPc = labelsPC[idx];
+        pushLabel(labelsArity[idx], labelsBody[idx], labelsLoop[idx]);
+        labelsPC[labelPos - 1] = prevPc;
     }
 
 }

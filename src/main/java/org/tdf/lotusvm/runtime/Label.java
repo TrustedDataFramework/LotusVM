@@ -8,22 +8,17 @@ import java.util.List;
 
 @Getter(AccessLevel.PACKAGE)
 class Label {
-    private int pc;
-    private Instruction[] body;
-    private int arity;
+    int pc;
+   Instruction[] body;
+    private boolean arity;
     private boolean loop;
 
-    Label(boolean hasArity, Instruction[] body) {
-        if (hasArity) {
-            this.arity = 1;
-        }
+    Label(boolean arity, Instruction[] body,    boolean loop) {
+        this.arity = arity;
+        this.loop = loop;
         this.body = body;
     }
 
-    Label withLoop() {
-        this.loop = true;
-        return this;
-    }
 
     int incrementAndGet() {
         return ++pc;

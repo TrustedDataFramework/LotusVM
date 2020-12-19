@@ -10,6 +10,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.tdf.lotusvm.common.Constants.EMPTY_LONGS;
+
 /**
  * A module instance is the runtime representation of a module.
  * It is created by instantiating a module, and collects runtime representations of all entities that are imported,
@@ -43,7 +45,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     // hooks
     Hook[] hooks;
 
-    public Set<Hook> getHooks(){
+    public Set<Hook> getHooks() {
         return new HashSet<>(Arrays.asList(hooks));
     }
 
@@ -154,7 +156,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
         // load and execute start function
         if (module.getStartSection() != null) {
             startFunction = functions.get(module.getStartSection().getFunctionIndex());
-            startFunction.execute(Constants.EMPTY_LONGS);
+            startFunction.execute(EMPTY_LONGS);
         }
 
         // exports
@@ -191,18 +193,22 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     @Override
     public long[] execute(int functionIndex, long... parameters) {
-        return functions.get(functionIndex).execute(parameters);
+        FunctionInstance ins = functions.get(functionIndex);
+        long r = ins.execute(parameters);
+        return ins.getArity() > 0 ? new long[]{r} : EMPTY_LONGS;
     }
 
     @Override
     public long[] execute(String funcName, long... parameters) throws RuntimeException {
-        return exports.get(funcName).execute(parameters);
+        FunctionInstance ins = exports.get(funcName);
+        long r = ins.execute(parameters);
+        return ins.getArity() > 0 ? new long[]{r} : EMPTY_LONGS;
     }
 
 
     private long executeExpression(Instruction[] instructions, ValueType type) {
         return new Frame(instructions, new FunctionType(Collections.emptyList(), Collections.singletonList(type)), this,
-                new Register(), new Register()).execute()[0];
+                new Register(), new Register()).execute();
     }
 
     @Override

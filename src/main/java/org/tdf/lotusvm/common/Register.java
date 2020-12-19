@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class Register {
-    public static final int DEFAULT_INITIAL_STACK_CAP = 16;
+    public static int DEFAULT_INITIAL_STACK_CAP = 8;
 
     private long[] data;
     @Getter
@@ -73,7 +73,8 @@ public class Register {
 
     public long[] popN(int n) {
         if (n == 0) return Constants.EMPTY_LONGS;
-        long[] res = Arrays.copyOfRange(data, pc - n, pc);
+        long[] res = new long[n];
+        System.arraycopy(data, pc - n, res, 0, n);
         pc -= n;
         return res;
     }

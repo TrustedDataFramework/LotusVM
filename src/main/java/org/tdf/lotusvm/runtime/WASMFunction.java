@@ -51,7 +51,7 @@ class WASMFunction implements FunctionInstance {
     }
 
     @Override
-    public long[] execute(long[] parameters) throws RuntimeException {
+    public long execute(long[] parameters) throws RuntimeException {
         return newFrame(parameters).execute();
     }
 

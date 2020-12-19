@@ -9,7 +9,7 @@ public interface FunctionInstance {
 
     FunctionType getType();
 
-    long[] execute(long[] parameters);
+    long execute(long[] parameters);
 
     boolean isHost();
 }

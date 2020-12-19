@@ -22,7 +22,10 @@ public class FunctionType {
         if (reader.read() != PREFIX) {
             throw new RuntimeException("functype incorrect");
         }
-        return new FunctionType(ValueType.readValueTypesFrom(reader), ValueType.readValueTypesFrom(reader));
+        FunctionType t = new FunctionType(ValueType.readValueTypesFrom(reader), ValueType.readValueTypesFrom(reader));
+        if(t.getResultTypes().size() > 1)
+            throw new RuntimeException("unsupported multi returns for function ");
+        return t;
     }
 
     static List<FunctionType> readFunctionTypesFrom(BytesReader reader) {
