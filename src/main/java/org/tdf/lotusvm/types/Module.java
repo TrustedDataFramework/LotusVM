@@ -20,7 +20,7 @@ public class Module {
     // version of wasm binary
     private int version;
 
-    private List<CustomSection> customSections = new ArrayList<>();
+    private final List<CustomSection> customSections = new ArrayList<>();
 
     private TypeSection typeSection;
 

@@ -1,6 +1,9 @@
 package org.tdf.lotusvm.types;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.tdf.lotusvm.common.BytesReader;
 import org.tdf.lotusvm.common.OpCode;
 import org.tdf.lotusvm.common.Vector;
@@ -25,19 +28,6 @@ public class Instruction {
     private Instruction[] branch1;
 
     private long[] operands;
-
-    public int getOperandInt(int idx) {
-        return (int) operands[idx];
-    }
-
-    public long getOperandLong(int idx) {
-        return operands[idx];
-    }
-
-
-    public int getOperandLen() {
-        return operands.length;
-    }
 
     public Instruction(OpCode code) {
         this.code = code;
@@ -185,5 +175,17 @@ public class Instruction {
         Instruction[] instructions = readInstructionsUntil(reader, END.code);
         reader.read();
         return instructions;
+    }
+
+    public int getOperandInt(int idx) {
+        return (int) operands[idx];
+    }
+
+    public long getOperandLong(int idx) {
+        return operands[idx];
+    }
+
+    public int getOperandLen() {
+        return operands.length;
     }
 }

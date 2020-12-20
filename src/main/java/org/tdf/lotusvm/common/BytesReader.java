@@ -6,7 +6,7 @@ import java.nio.ByteOrder;
 
 
 public class BytesReader extends InputStream {// io.reader
-    private ByteBuffer buffer;
+    private final ByteBuffer buffer;
 
     private BytesReader(ByteBuffer buffer) {
         this.buffer = buffer;
@@ -143,7 +143,7 @@ public class BytesReader extends InputStream {// io.reader
     }
 
     public int readUint32() throws RuntimeException {
-        return  buffer.getInt();
+        return buffer.getInt();
     }
 
     public long readUint64() {

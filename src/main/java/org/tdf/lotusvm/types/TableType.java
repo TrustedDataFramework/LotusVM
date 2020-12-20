@@ -12,7 +12,7 @@ public class TableType {
     @Getter
     private static final int ELEMENT_TYPE = 0x70;
     @Getter
-    private LimitType limit;
+    private final LimitType limit;
 
     static TableType readFrom(BytesReader reader) {
         int type = reader.read();

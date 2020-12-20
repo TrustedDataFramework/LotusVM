@@ -28,9 +28,9 @@ public class GlobalSection extends AbstractSection {
     @Getter
     public static class Global {
 
-        private GlobalType globalType;
+        private final GlobalType globalType;
 
-        private Instruction[] expression;
+        private final Instruction[] expression;
 
         public static Global readFrom(BytesReader reader) {
             GlobalType globalType = GlobalType.readFrom(reader);

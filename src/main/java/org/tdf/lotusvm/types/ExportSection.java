@@ -47,9 +47,9 @@ public class ExportSection extends AbstractSection {
     @Getter
     @AllArgsConstructor
     public static class Export {
-        private String name;
-        private ExportType type;
-        private int index;
+        private final String name;
+        private final ExportType type;
+        private final int index;
 
         public static Export readFrom(BytesReader reader) {
             byte[] chars = Vector.readBytesFrom(reader);

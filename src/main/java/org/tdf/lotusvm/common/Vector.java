@@ -30,7 +30,7 @@ public class Vector {
 
     public static long[] readUint32VectorAsLongFrom(BytesReader reader) {
         int length = reader.readVarUint32();
-        if(length == 0)
+        if (length == 0)
             return EMPTY_LONGS;
         long[] res = new long[length];
         for (int i = 0; i < res.length; i++) {

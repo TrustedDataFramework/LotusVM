@@ -50,8 +50,6 @@ public abstract class HostFunction implements FunctionInstance {
         return name;
     }
 
-    ;
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

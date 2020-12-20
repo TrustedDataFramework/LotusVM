@@ -12,8 +12,8 @@ import org.tdf.lotusvm.common.BytesReader;
 @Builder
 @Getter
 public class GlobalType {
-    private ValueType valueType;
-    private boolean mutable; // true var ,false const
+    private final ValueType valueType;
+    private final boolean mutable; // true var ,false const
 
     static GlobalType readFrom(BytesReader reader) {
         ValueType valueType = ValueType.readFrom(reader);

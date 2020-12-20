@@ -3,7 +3,7 @@ package org.tdf.lotusvm.types;
 import org.tdf.lotusvm.common.BytesReader;
 
 public class SectionReader {
-    private BytesReader reader;
+    private final BytesReader reader;
 
     public SectionReader(BytesReader reader) {
         this.reader = reader;

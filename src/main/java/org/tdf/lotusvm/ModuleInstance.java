@@ -45,13 +45,12 @@ public interface ModuleInstance {
 
     @Getter
     class Builder {
+        boolean validateFunctionType;
         private Set<HostFunction> hostFunctions = Collections.emptySet();
         private Set<Hook> hooks = Collections.emptySet();
-
         private byte[] binary;
         private long[] globals;
         private byte[] memory;
-        boolean validateFunctionType;
 
         private Builder() {
         }
@@ -85,7 +84,7 @@ public interface ModuleInstance {
             return this;
         }
 
-        public Builder validateFunctionType(){
+        public Builder validateFunctionType() {
             this.validateFunctionType = true;
             return this;
         }

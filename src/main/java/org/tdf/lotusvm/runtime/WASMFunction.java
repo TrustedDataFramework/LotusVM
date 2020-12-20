@@ -8,20 +8,20 @@ import org.tdf.lotusvm.types.Instruction;
 import java.util.List;
 
 class WASMFunction implements FunctionInstance {
-    private FunctionType type;
+    private final FunctionType type;
     // params + localvars
-    private ModuleInstanceImpl module;
-    private Instruction[] body;
-    private List<CodeSection.Local> locals;
+    private final ModuleInstanceImpl module;
+    private final Instruction[] body;
+    private final List<CodeSection.Local> locals;
 
-    WASMFunction(FunctionType type, ModuleInstanceImpl module,Instruction[] body, List<CodeSection.Local> locals) {
+    WASMFunction(FunctionType type, ModuleInstanceImpl module, Instruction[] body, List<CodeSection.Local> locals) {
         this.type = type;
         this.module = module;
         this.body = body;
         this.locals = locals;
     }
 
-    int getLocals(){
+    int getLocals() {
         int ret = 0;
         for (int i = 0; i < locals.size(); i++) {
             ret += locals.get(i).getCount();
@@ -39,7 +39,7 @@ class WASMFunction implements FunctionInstance {
         long[] localVariables = new long[parameters.length + getLocals()];
         System.arraycopy(parameters, 0, localVariables, 0, parameters.length);
         Register stack = new Register();
-        return new Frame(body, type, module, localVariables, stack);
+        return new Frame(body, type, module, localVariables);
     }
 
     @Override

@@ -15,15 +15,15 @@ import java.util.Objects;
 @Getter
 public class FunctionType {
     private static final int PREFIX = 0x60;
-    private List<ValueType> parameterTypes;
-    private List<ValueType> resultTypes;
+    private final List<ValueType> parameterTypes;
+    private final List<ValueType> resultTypes;
 
     static FunctionType readFrom(BytesReader reader) {
         if (reader.read() != PREFIX) {
             throw new RuntimeException("functype incorrect");
         }
         FunctionType t = new FunctionType(ValueType.readValueTypesFrom(reader), ValueType.readValueTypesFrom(reader));
-        if(t.getResultTypes().size() > 1)
+        if (t.getResultTypes().size() > 1)
             throw new RuntimeException("unsupported multi returns for function ");
         return t;
     }

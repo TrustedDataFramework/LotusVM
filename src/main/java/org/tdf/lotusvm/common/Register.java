@@ -16,16 +16,6 @@ public class Register {
     private int startPCPos;
 
 
-    private void growStartPC() {
-        if(this.startPC == null)
-            this.startPC = new int[DEFAULT_INITIAL_STACK_CAP];
-        if (startPCPos >= this.startPC.length) {
-            int[] tmp = this.startPC;
-            this.startPC = new int[tmp.length * 2 + 1];
-            System.arraycopy(tmp, 0, this.startPC, 0, tmp.length);
-        }
-    }
-
     public Register(long[] data) {
         this.data = data;
         this.pc = data.length;
@@ -39,6 +29,16 @@ public class Register {
         this.data = new long[initialSize];
     }
 
+    private void growStartPC() {
+        if (this.startPC == null)
+            this.startPC = new int[DEFAULT_INITIAL_STACK_CAP];
+        if (startPCPos >= this.startPC.length) {
+            int[] tmp = this.startPC;
+            this.startPC = new int[tmp.length * 2 + 1];
+            System.arraycopy(tmp, 0, this.startPC, 0, tmp.length);
+        }
+    }
+
     public void pushLabel() {
         this.growStartPC();
         startPC[this.startPCPos] = pc;
@@ -50,7 +50,7 @@ public class Register {
     }
 
     public void popAndClearLabel() {
-        this.pc = this.startPC[this.startPCPos-1];
+        this.pc = this.startPC[this.startPCPos - 1];
         this.startPCPos--;
     }
 

@@ -11,7 +11,7 @@ import java.util.Arrays;
 public class Memory {
     private static final int PAGE_SIZE = 64 * (1 << 10); // 64 KB
     private byte[] data;
-    private LimitType limit;
+    private final LimitType limit;
     private int pages;
 
     Memory() {
@@ -59,7 +59,7 @@ public class Memory {
     }
 
     public void put(int offset, byte[] data) {
-        if(offset + data.length >= this.data.length)
+        if (offset + data.length >= this.data.length)
             throw new RuntimeException("exec: out of bounds memory access");
         System.arraycopy(data, 0, this.data, offset, data.length);
     }
@@ -145,7 +145,7 @@ public class Memory {
     }
 
     public void storeI8(int offset, byte n) {
-        if(offset >= this.data.length)
+        if (offset >= this.data.length)
             throw new RuntimeException("exec: out of bounds memory access");
         this.data[offset] = n;
     }

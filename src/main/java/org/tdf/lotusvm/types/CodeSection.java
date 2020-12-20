@@ -36,8 +36,8 @@ public class CodeSection extends AbstractSection {
     @AllArgsConstructor
     @Getter
     public static class Local {
-        private int count;
-        private ValueType type;
+        private final int count;
+        private final ValueType type;
 
         public static Local readFrom(BytesReader reader) {
             return new Local(reader.readVarUint32(), ValueType.readFrom(reader));
@@ -56,8 +56,8 @@ public class CodeSection extends AbstractSection {
     @AllArgsConstructor
     @Getter
     public static class Function {
-        private List<Local> locals;
-        private Instruction[] expression;
+        private final List<Local> locals;
+        private final Instruction[] expression;
 
         public static Function readFrom(BytesReader reader) {
             return new Function(Local.readLocalsFrom(reader), Instruction.readExpressionFrom(reader));
@@ -67,8 +67,8 @@ public class CodeSection extends AbstractSection {
     @AllArgsConstructor
     @Getter
     public static class Code {
-        private int size;
-        private Function code;
+        private final int size;
+        private final Function code;
 
         public static Code readFrom(BytesReader reader) {
             int size = reader.readVarUint32();

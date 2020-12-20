@@ -25,11 +25,11 @@ public class DataSection extends AbstractSection {
     @Getter
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static class DataSegment {
-        private int memoryIndex;
+        private final int memoryIndex;
 
-        private Instruction[] expression;
+        private final Instruction[] expression;
 
-        private byte[] init;
+        private final byte[] init;
 
         public static DataSegment readFrom(BytesReader reader) {
             return new DataSegment(reader.readVarUint32(),

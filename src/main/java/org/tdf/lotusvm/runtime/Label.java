@@ -4,16 +4,14 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import org.tdf.lotusvm.types.Instruction;
 
-import java.util.List;
-
 @Getter(AccessLevel.PACKAGE)
 class Label {
     int pc;
-   Instruction[] body;
-    private boolean arity;
-    private boolean loop;
+    Instruction[] body;
+    private final boolean arity;
+    private final boolean loop;
 
-    Label(boolean arity, Instruction[] body,    boolean loop) {
+    Label(boolean arity, Instruction[] body, boolean loop) {
         this.arity = arity;
         this.loop = loop;
         this.body = body;

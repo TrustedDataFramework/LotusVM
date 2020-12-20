@@ -14,9 +14,9 @@ import org.tdf.lotusvm.common.BytesReader;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class AbstractSection {
     @Getter
-    private SectionID id;
+    private final SectionID id;
     @Getter
-    private long size; // unsigned integer
+    private final long size; // unsigned integer
     @Getter(AccessLevel.PROTECTED)
     private BytesReader reader;
 

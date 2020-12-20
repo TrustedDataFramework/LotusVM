@@ -1,8 +1,10 @@
 package org.tdf.lotusvm.runtime;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NonNull;
 import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.lotusvm.common.Constants;
 import org.tdf.lotusvm.common.Register;
 import org.tdf.lotusvm.types.*;
 
@@ -44,21 +46,9 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     // hooks
     Hook[] hooks;
-
-    public Set<Hook> getHooks() {
-        return new HashSet<>(Arrays.asList(hooks));
-    }
-
-    @Override
-    public void setHooks(Set<Hook> hooks) {
-        this.hooks = new ArrayList<>(hooks).toArray(new Hook[]{});
-    }
-
     // exported functions
     Map<String, FunctionInstance> exports;
-
     List<FunctionType> types;
-
     boolean validateFunctionType;
 
     public ModuleInstanceImpl(Builder builder) {
@@ -168,6 +158,15 @@ public class ModuleInstanceImpl implements ModuleInstance {
         }
     }
 
+    public Set<Hook> getHooks() {
+        return new HashSet<>(Arrays.asList(hooks));
+    }
+
+    @Override
+    public void setHooks(Set<Hook> hooks) {
+        this.hooks = new ArrayList<>(hooks).toArray(new Hook[]{});
+    }
+
     @Override
     public long[] getGlobals() {
         return globals.getData();
@@ -208,7 +207,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     private long executeExpression(Instruction[] instructions, ValueType type) {
         return new Frame(instructions, new FunctionType(Collections.emptyList(), Collections.singletonList(type)), this,
-                EMPTY_LONGS, new Register()).execute();
+                EMPTY_LONGS).execute();
     }
 
     @Override
