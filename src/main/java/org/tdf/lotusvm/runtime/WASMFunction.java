@@ -1,6 +1,5 @@
 package org.tdf.lotusvm.runtime;
 
-import org.tdf.lotusvm.common.Register;
 import org.tdf.lotusvm.types.CodeSection;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.Instruction;
@@ -38,7 +37,6 @@ class WASMFunction implements FunctionInstance {
         // init localvars
         long[] localVariables = new long[parameters.length + getLocals()];
         System.arraycopy(parameters, 0, localVariables, 0, parameters.length);
-        Register stack = new Register();
         return new Frame(body, type, module, localVariables);
     }
 

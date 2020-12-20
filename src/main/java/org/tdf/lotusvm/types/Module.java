@@ -15,13 +15,11 @@ import java.util.List;
  */
 @Getter
 public class Module {
+    private final List<CustomSection> customSections = new ArrayList<>();
     // the magic number of wasm
     private int magic;
     // version of wasm binary
     private int version;
-
-    private final List<CustomSection> customSections = new ArrayList<>();
-
     private TypeSection typeSection;
 
     private ImportSection importSection;

@@ -352,13 +352,13 @@ public class Frame {
                 break;
             }
             case GET_GLOBAL:
-                push(module.globals.get(ins.getOperandInt(0)));
+                push(module.globals[ins.getOperandInt(0)]);
                 break;
             case SET_GLOBAL:
                 if (!module.globalTypes.get(
                         ins.getOperandInt(0)
                 ).isMutable()) throw new RuntimeException("modify a immutable global");
-                module.globals.set(ins.getOperandInt(0), pop());
+                module.globals[ins.getOperandInt(0)] = pop();
                 break;
             // memory instructions
             case I32_LOAD:

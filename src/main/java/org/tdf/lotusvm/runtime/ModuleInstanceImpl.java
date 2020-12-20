@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import org.tdf.lotusvm.ModuleInstance;
-import org.tdf.lotusvm.common.Register;
 import org.tdf.lotusvm.types.*;
 
 import java.util.*;
@@ -22,7 +21,7 @@ import static org.tdf.lotusvm.common.Constants.EMPTY_LONGS;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ModuleInstanceImpl implements ModuleInstance {
     // globals
-    Register globals = new Register(new long[0]);
+    long[] globals;
 
     @Getter
     List<GlobalType> globalTypes = Collections.emptyList();
@@ -88,16 +87,16 @@ public class ModuleInstanceImpl implements ModuleInstance {
                     .collect(Collectors.toList());
         }
         if (module.getGlobalSection() != null && builder.getGlobals() == null) {
-            globals = new Register(module.getGlobalSection().getGlobals().size());
-            for (int i = 0; i < globals.getData().length; i++) {
-                globals.set(i, executeExpression(
+            globals = new long[module.getGlobalSection().getGlobals().size()];
+            for (int i = 0; i < globals.length; i++) {
+                globals[i] = executeExpression(
                         module.getGlobalSection().getGlobals().get(i).getExpression(),
                         module.getGlobalSection().getGlobals().get(i).getGlobalType().getValueType()
-                ));
+                );
             }
         }
         if (builder.getGlobals() != null) {
-            globals = new Register(builder.getGlobals());
+            globals = builder.getGlobals();
         }
 
         // init tables
@@ -169,14 +168,14 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     @Override
     public long[] getGlobals() {
-        return globals.getData();
+        return globals;
     }
 
     @Override
     public void setGlobals(@NonNull long[] globals) {
         if (globals.length != globalTypes.size())
             throw new IllegalArgumentException("length of globals should be " + globalTypes.size());
-        this.globals = new Register(globals);
+        this.globals = globals;
     }
 
     @Override
@@ -229,7 +228,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
                 types,
                 validateFunctionType
         );
-        ret.setGlobals(globals.getData());
+        ret.setGlobals(globals);
         ret.setMemory(memory.getData());
         return ret;
     }

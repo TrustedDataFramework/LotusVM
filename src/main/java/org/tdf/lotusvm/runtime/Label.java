@@ -6,10 +6,10 @@ import org.tdf.lotusvm.types.Instruction;
 
 @Getter(AccessLevel.PACKAGE)
 class Label {
-    int pc;
-    Instruction[] body;
     private final boolean arity;
     private final boolean loop;
+    int pc;
+    Instruction[] body;
 
     Label(boolean arity, Instruction[] body, boolean loop) {
         this.arity = arity;

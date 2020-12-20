@@ -10,8 +10,8 @@ import java.util.Arrays;
 @Getter
 public class Memory {
     private static final int PAGE_SIZE = 64 * (1 << 10); // 64 KB
-    private byte[] data;
     private final LimitType limit;
+    private byte[] data;
     private int pages;
 
     Memory() {
