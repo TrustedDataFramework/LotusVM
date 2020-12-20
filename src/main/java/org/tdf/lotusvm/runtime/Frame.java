@@ -26,7 +26,7 @@ public class Frame {
     private long[] stackData;
     private int stackPointer;
 
-
+    // label
     private int[] startPC;
     private int startPCPos;
     private int labelPos;

@@ -51,7 +51,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     boolean validateFunctionType;
 
     public ModuleInstanceImpl(Builder builder) {
-        Module module = new Module(builder.getBinary());
+        Module module = builder.getModule() == null ? new Module(builder.getBinary()) : builder.getModule();
         types = module.getTypeSection().getFunctionTypes();
         hooks = new ArrayList<>(builder.getHooks()).toArray(new Hook[]{});
         this.validateFunctionType = builder.isValidateFunctionType();

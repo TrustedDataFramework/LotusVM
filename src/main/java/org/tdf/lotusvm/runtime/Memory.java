@@ -93,7 +93,7 @@ public class Memory {
         if (offset >= data.length) {
             throw new RuntimeException("exec: out of bounds memory access");
         }
-        return (data[offset] & 0xff) & 0x00000000ffffffffL;
+        return (data[offset] & 0xff) & 0xffffffffL;
     }
 
     public int load32(int offset) {

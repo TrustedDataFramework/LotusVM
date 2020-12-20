@@ -6,6 +6,7 @@ import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.runtime.Memory;
 import org.tdf.lotusvm.runtime.ModuleInstanceImpl;
 import org.tdf.lotusvm.types.GlobalType;
+import org.tdf.lotusvm.types.Module;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,12 +52,19 @@ public interface ModuleInstance {
         private byte[] binary;
         private long[] globals;
         private byte[] memory;
+        private Module module;
 
         private Builder() {
         }
 
         public static Builder builder() {
             return new Builder();
+        }
+
+        public Builder module(Module module){
+            this.module = module;
+            this.binary = null;
+            return this;
         }
 
         public Builder hostFunctions(Set<HostFunction> hostFunctions) {
@@ -71,6 +79,7 @@ public interface ModuleInstance {
 
         public Builder binary(byte[] binary) {
             this.binary = binary;
+            this.module = null;
             return this;
         }
 
