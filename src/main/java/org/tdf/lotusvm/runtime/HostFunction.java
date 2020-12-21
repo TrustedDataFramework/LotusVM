@@ -10,10 +10,9 @@ import java.util.Objects;
 import java.util.Set;
 
 public abstract class HostFunction implements FunctionInstance {
-    ModuleInstanceImpl instance;
     private final FunctionType type;
     private final String name;
-
+    ModuleInstanceImpl instance;
     @Getter
     private Set<String> alias;
 
