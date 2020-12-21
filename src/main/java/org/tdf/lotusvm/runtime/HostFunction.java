@@ -1,22 +1,34 @@
 package org.tdf.lotusvm.runtime;
 
-import lombok.AccessLevel;
-import lombok.Setter;
+import lombok.Getter;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.FunctionType;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public abstract class HostFunction implements FunctionInstance {
-    @Setter
-    private ModuleInstanceImpl instance;
-    @Setter(AccessLevel.PROTECTED)
-    private FunctionType type;
-    @Setter(AccessLevel.PROTECTED)
-    private String name;
+    ModuleInstanceImpl instance;
+    private final FunctionType type;
+    private final String name;
 
-    public HostFunction() {
+    @Getter
+    private Set<String> alias;
+
+    public HostFunction(String name, FunctionType type) {
+        this.name = name;
+        this.type = type;
     }
+
+    public HostFunction(String name, FunctionType type, String... alias) {
+        this.name = name;
+        this.type = type;
+        this.alias = new HashSet<>();
+        this.alias.addAll(Arrays.asList(alias));
+    }
+
 
     protected ModuleInstance getInstance() {
         return instance;

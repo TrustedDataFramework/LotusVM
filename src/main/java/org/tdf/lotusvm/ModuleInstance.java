@@ -61,7 +61,7 @@ public interface ModuleInstance {
             return new Builder();
         }
 
-        public Builder module(Module module){
+        public Builder module(Module module) {
             this.module = module;
             this.binary = null;
             return this;

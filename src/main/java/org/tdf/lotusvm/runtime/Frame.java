@@ -19,6 +19,7 @@ public class Frame {
 
     private final ModuleInstanceImpl module;
 
+    // TODO: merge local variables and stack data
     private final long[] localVariables;
 
 
@@ -285,14 +286,22 @@ public class Frame {
 //                break;
             case CALL: {
                 FunctionInstance function = module.functions.get(ins.getOperandInt(0));
+                long res;
                 if (function.isHost()) {
                     for (int i = 0; i < module.hooks.length; i++) {
                         module.hooks[i].onHostFunction((HostFunction) function, module);
                     }
+                    res = function.execute(
+                            popN(function.parametersLength())
+                    );
+                } else {
+                    int sp = this.stackPointer;
+                    this.stackPointer -= function.parametersLength();
+                    res = ((WASMFunction) function).newFrame(
+                            this.stackData, sp - function.parametersLength(), function.parametersLength()
+                    ).execute();
                 }
-                long res = function.execute(
-                        popN(function.parametersLength())
-                );
+
                 int resLength = function.getArity();
                 if (module.validateFunctionType && resLength != function.getArity()) {
                     throw new RuntimeException("the result of function " + function + " is not equals to its arity");
@@ -310,17 +319,24 @@ public class Frame {
                     throw new RuntimeException("undefined element index");
                 }
                 FunctionInstance function = module.table.getFunctions()[elementIndex];
+                long r;
                 if (function.isHost()) {
                     for (int i = 0; i < module.hooks.length; i++) {
                         module.hooks[i].onHostFunction((HostFunction) function, module);
                     }
+                    r = function.execute(
+                            popN(function.parametersLength())
+                    );
+                } else {
+                    int sp = this.stackPointer;
+                    this.stackPointer -= function.parametersLength();
+                    r = ((WASMFunction) function).newFrame(
+                            this.stackData, sp - function.parametersLength(), function.parametersLength()
+                    ).execute();
                 }
                 if (module.validateFunctionType && !function.getType().equals(module.types.get(ins.getOperandInt(0)))) {
                     throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
                 }
-                long r = function.execute(
-                        popN(function.parametersLength())
-                );
                 if (function.getArity() > 0) {
                     push(r);
                 }

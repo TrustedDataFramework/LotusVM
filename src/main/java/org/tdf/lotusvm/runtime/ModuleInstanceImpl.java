@@ -8,7 +8,6 @@ import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.*;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.tdf.lotusvm.common.Constants.EMPTY_LONGS;
@@ -56,11 +55,19 @@ public class ModuleInstanceImpl implements ModuleInstance {
         hooks = new ArrayList<>(builder.getHooks()).toArray(new Hook[]{});
         this.validateFunctionType = builder.isValidateFunctionType();
 
-        Map<String, HostFunction> functionsMap =
-                builder.getHostFunctions().stream()
-                        .collect(
-                                Collectors.toMap(HostFunction::getName, Function.identity())
-                        );
+        Map<String, HostFunction> functionsMap = new HashMap<>();
+
+        for (HostFunction f : builder.getHostFunctions()) {
+            if (functionsMap.containsKey(f.getName()))
+                throw new RuntimeException("create module instance failed: duplicated host function " + f.getName());
+            functionsMap.put(f.getName(), f);
+            for (String alias : f.getAlias()) {
+                if (functionsMap.containsKey(alias))
+                    throw new RuntimeException("create module instance failed: duplicated host function " + alias);
+                functionsMap.put(alias, f);
+            }
+        }
+
 
         // imports
         if (module.getImportSection() != null) {
@@ -75,7 +82,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
 //                if (!module.getTypeSection().getFunctionTypes().get(imp.getTypeIndex()).equals(func.getType())) {
 //                    throw new RuntimeException("invalid function type: " + func.getName());
 //                }
-                func.setInstance(this);
+                func.instance = this;
                 functions.add(func);
             }
         }

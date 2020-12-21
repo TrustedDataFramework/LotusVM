@@ -33,10 +33,10 @@ class WASMFunction implements FunctionInstance {
         return type;
     }
 
-    private Frame newFrame(long[] parameters) {
+    Frame newFrame(long[] parameters, int start, int len) {
         // init localvars
         long[] localVariables = new long[parameters.length + getLocals()];
-        System.arraycopy(parameters, 0, localVariables, 0, parameters.length);
+        System.arraycopy(parameters, start, localVariables, 0, len);
         return new Frame(body, type, module, localVariables);
     }
 
@@ -47,8 +47,9 @@ class WASMFunction implements FunctionInstance {
 
     @Override
     public long execute(long[] parameters) throws RuntimeException {
-        return newFrame(parameters).execute();
+        return newFrame(parameters, 0, parameters.length).execute();
     }
+
 
     @Override
     public int parametersLength() {
