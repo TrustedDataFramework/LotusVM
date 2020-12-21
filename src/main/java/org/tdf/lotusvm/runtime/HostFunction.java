@@ -4,17 +4,19 @@ import lombok.Getter;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.FunctionType;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public abstract class HostFunction implements FunctionInstance {
     private final FunctionType type;
     private final String name;
     ModuleInstanceImpl instance;
-    @Getter
     private Set<String> alias;
+
+    public Set<String> getAlias(){
+        if(alias == null)
+            return Collections.emptySet();
+        return alias;
+    }
 
     public HostFunction(String name, FunctionType type) {
         this.name = name;
