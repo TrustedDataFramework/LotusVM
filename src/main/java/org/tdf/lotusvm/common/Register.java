@@ -25,7 +25,7 @@ public class Register {
         this(DEFAULT_INITIAL_STACK_CAP);
     }
 
-    public Register(int initialSize) {
+    private Register(int initialSize) {
         this.data = new long[initialSize];
     }
 

@@ -10,9 +10,8 @@ public class RegisterTest {
 
     @Test
     public void testPushFloat(){
-        Register s = new Register(0);
+        Register s = new Register();
         s.pushF32(0.5f);
-        assert s.getData().length == 1;
         assert s.popF32() == 0.5f;
     }
     
