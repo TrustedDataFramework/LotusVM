@@ -6,14 +6,19 @@ import java.nio.ByteOrder;
 
 
 public class BytesReader extends InputStream {// io.reader
-    private final ByteBuffer buffer;
+    private final byte[] buffer;
+    private int offset;
+    private int limit;
 
-    private BytesReader(ByteBuffer buffer) {
+    public BytesReader(byte[] buffer) {
         this.buffer = buffer;
+        this.limit = buffer.length;
     }
 
-    public BytesReader(byte[] data) {
-        this.buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
+    private BytesReader(byte[] buffer, int offset, int limit) {
+        this.buffer = buffer;
+        this.offset = offset;
+        this.limit = limit;
     }
 
     public static void main(String[] args) {
@@ -27,34 +32,32 @@ public class BytesReader extends InputStream {// io.reader
     }
 
     public int peek() {
-        return Byte.toUnsignedInt(buffer.get(buffer.position()));
+        return buffer[offset] & 0xff;
     }
 
     public int read() {
-        return Byte.toUnsignedInt(buffer.get());
+        return buffer[offset++] & 0xff;
     }
 
     public int remaining() {
-        return buffer.remaining();
+        return limit - offset;
     }
 
     public byte[] read(int size) {
         byte[] buf = new byte[size];
-        buffer.get(buf);
+        System.arraycopy(this.buffer, offset, buf, 0, size);
+        this.offset += size;
         return buf;
     }
 
     public BytesReader readAsReader(int size) {
-        ByteBuffer buf = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);
-        buf.limit(size);
-        buffer.position(buffer.position() + size);
-        return new BytesReader(buf);
+        BytesReader r = new BytesReader(buffer, offset, offset + size);
+        this.offset += size;
+        return r;
     }
 
     public byte[] readAll() {
-        byte[] buf = new byte[buffer.remaining()];
-        buffer.get(buf);
-        return buf;
+        return read(remaining());
     }
 
     // u32
@@ -114,7 +117,7 @@ public class BytesReader extends InputStream {// io.reader
         long res = 0;
         int shift = 0;
         while (true) {
-            int b = read();
+            long b = read() & 0xffffffffL;
             //  b < 1<<6 && uint64(b) < uint64(1<<(n-1))
             if (b < 1 << 6 &&
                     Long.compareUnsigned(b, 1L << (n - 1)) < 0) {
@@ -143,19 +146,23 @@ public class BytesReader extends InputStream {// io.reader
     }
 
     public int readUint32() throws RuntimeException {
-        return buffer.getInt();
+        int r = LittleEndian.decodeInt32(buffer, offset);
+        this.offset += 4;
+        return r;
     }
 
     public long readUint64() {
-        return buffer.getLong();
+        long r = LittleEndian.decodeInt64(buffer, offset);
+        this.offset += 8;
+        return r;
     }
 
     public float readFloat() {
-        return buffer.getFloat();
+        return Float.intBitsToFloat(readUint32());
     }
 
     public double readDouble() {
-        return buffer.getDouble();
+        return Double.longBitsToDouble(readUint64());
     }
 
 }
