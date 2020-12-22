@@ -65,7 +65,7 @@ public class Register {
     private void grow() {
         if (pc >= data.length) {
             long[] tmp = data;
-            data = new long[tmp.length * 2 + 1];
+            data = new long[tmp.length * 2];
             System.arraycopy(tmp, 0, data, 0, tmp.length);
         }
     }
@@ -80,9 +80,10 @@ public class Register {
     }
 
     public long[] popAll() {
-        long[] all = Arrays.copyOfRange(data, 0, pc);
+        long[] res = new long[pc];
+        System.arraycopy(data, 0 , res, 0, pc);
         pc = 0;
-        return all;
+        return res;
     }
 
     public void pushAll(long[] all) {
