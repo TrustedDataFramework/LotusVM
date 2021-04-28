@@ -13,8 +13,8 @@ public class TableSection extends AbstractSection {
     @Getter
     private List<TableType> tableTypes;
 
-    public TableSection(SectionID id, long size, BytesReader payload) {
-        super(id, size, payload);
+    public TableSection(SectionID id, long size, BytesReader payload, int offset, int limit) {
+        super(id, size, payload, offset, limit);
     }
 
     @Override

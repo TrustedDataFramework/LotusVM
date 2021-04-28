@@ -13,8 +13,8 @@ public class FunctionSection extends AbstractSection {
     @Getter
     private int[] typeIndices;
 
-    public FunctionSection(SectionID id, long size, BytesReader payload) {
-        super(id, size, payload);
+    public FunctionSection(SectionID id, long size, BytesReader payload, int offset, int limit) {
+        super(id, size, payload, offset, limit);
     }
 
     @Override

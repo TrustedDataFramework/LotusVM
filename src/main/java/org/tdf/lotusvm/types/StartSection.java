@@ -10,8 +10,8 @@ public class StartSection extends AbstractSection {
     @Getter
     private int functionIndex;
 
-    public StartSection(SectionID id, long size, BytesReader payload) {
-        super(id, size, payload);
+    public StartSection(SectionID id, long size, BytesReader payload, int offset, int limit) {
+        super(id, size, payload, offset, limit);
     }
 
     @Override

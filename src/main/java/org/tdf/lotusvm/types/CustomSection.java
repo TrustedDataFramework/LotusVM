@@ -15,8 +15,8 @@ public class CustomSection extends AbstractSection {
     @Getter
     private byte[] data;
 
-    public CustomSection(SectionID id, long size, BytesReader contents) {
-        super(id, size, contents);
+    public CustomSection(SectionID id, long size, BytesReader contents, int offset, int limit) {
+        super(id, size, contents, offset, limit);
     }
 
     @Override

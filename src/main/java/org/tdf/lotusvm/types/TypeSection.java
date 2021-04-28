@@ -13,8 +13,8 @@ public class TypeSection extends AbstractSection {
     @Getter
     private List<FunctionType> functionTypes;
 
-    public TypeSection(SectionID id, long size, BytesReader contents) {
-        super(id, size, contents);
+    public TypeSection(SectionID id, long size, BytesReader contents, int offset, int limit) {
+        super(id, size, contents, offset, limit);
     }
 
     @Override

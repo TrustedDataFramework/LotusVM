@@ -1,10 +1,10 @@
 package org.tdf.lotusvm.common;
 
+import lombok.Getter;
+
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-
+@Getter
 public class BytesReader extends InputStream {// io.reader
     private final byte[] buffer;
     private int offset;

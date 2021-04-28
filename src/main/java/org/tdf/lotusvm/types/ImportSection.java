@@ -18,8 +18,8 @@ public class ImportSection extends AbstractSection {
     private List<Import> imports;
 
 
-    public ImportSection(SectionID id, long size, BytesReader contents) {
-        super(id, size, contents);
+    public ImportSection(SectionID id, long size, BytesReader contents, int offset, int limit) {
+        super(id, size, contents, offset, limit);
     }
 
     @Override

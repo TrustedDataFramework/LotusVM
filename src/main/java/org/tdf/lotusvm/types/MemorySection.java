@@ -13,8 +13,8 @@ public class MemorySection extends AbstractSection {
     @Getter
     private List<LimitType> memories;
 
-    public MemorySection(SectionID id, long size, BytesReader payload) {
-        super(id, size, payload);
+    public MemorySection(SectionID id, long size, BytesReader payload, int offset, int limit) {
+        super(id, size, payload, offset, limit);
     }
 
     @Override

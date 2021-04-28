@@ -13,8 +13,8 @@ public class DataSection extends AbstractSection {
     @Getter
     private List<DataSegment> dataSegments;
 
-    public DataSection(SectionID id, long size, BytesReader payload) {
-        super(id, size, payload);
+    public DataSection(SectionID id, long size, BytesReader payload, int offset, int limit) {
+        super(id, size, payload, offset, limit);
     }
 
     @Override

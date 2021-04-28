@@ -16,8 +16,8 @@ public class ElementSection extends AbstractSection {
     private List<Element> elements;
 
 
-    public ElementSection(SectionID id, long size, BytesReader payload) {
-        super(id, size, payload);
+    public ElementSection(SectionID id, long size, BytesReader payload, int offset, int limit) {
+        super(id, size, payload, offset, limit);
     }
 
     @Override

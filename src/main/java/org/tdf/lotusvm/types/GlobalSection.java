@@ -15,8 +15,8 @@ public class GlobalSection extends AbstractSection {
     @Getter
     private List<Global> globals;
 
-    public GlobalSection(SectionID id, long size, BytesReader payload) {
-        super(id, size, payload);
+    public GlobalSection(SectionID id, long size, BytesReader payload, int offset, int limit) {
+        super(id, size, payload, offset, limit);
     }
 
     @Override

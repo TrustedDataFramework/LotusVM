@@ -7,6 +7,8 @@ import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.Instruction;
 import org.tdf.lotusvm.types.ResultType;
 
+import java.util.Arrays;
+
 
 @Getter
 public class Frame {

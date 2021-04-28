@@ -10,13 +10,15 @@ public class SectionReader {
     }
 
     <T extends AbstractSection> T readSection(Class<T> clazz) throws RuntimeException {
+        int current = reader.getOffset();
         SectionID id = SectionID.values()[reader.read()];
 
         int size = reader.readVarUint32();
         BytesReader contents = reader.readAsReader(size);
         T section = null;
         try {
-            section = clazz.getConstructor(SectionID.class, long.class, BytesReader.class).newInstance(id, size, contents);
+            section = clazz.getConstructor(SectionID.class, long.class, BytesReader.class, int.class, int.class)
+                    .newInstance(id, size, contents, current, contents.getLimit());
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

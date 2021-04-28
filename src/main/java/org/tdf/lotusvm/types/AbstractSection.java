@@ -20,6 +20,10 @@ public abstract class AbstractSection {
     @Getter(AccessLevel.PROTECTED)
     private BytesReader reader;
 
+    @Getter
+    private final int offset;
+    @Getter
+    private final int limit;
 
     abstract void readPayload();
 

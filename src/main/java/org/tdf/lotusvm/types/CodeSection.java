@@ -24,8 +24,8 @@ public class CodeSection extends AbstractSection {
     @Getter
     private List<Code> codes;
 
-    public CodeSection(SectionID id, long size, BytesReader payload) {
-        super(id, size, payload);
+    public CodeSection(SectionID id, long size, BytesReader payload, int offset, int limit) {
+        super(id, size, payload, offset, limit);
     }
 
     @Override
