@@ -218,9 +218,9 @@ public class LimitedStackProvider implements StackProvider{
         labelData[p] |= (loop ? 1L : 0L) << LOOP_OFFSET;
         labelData[p] &= ~LABELS_PC_MASK;
 
+        int stackSize = getStackSize(stackId);
         labelData[p] &= ~STACK_PC_MASK;
 
-        int stackSize = getStackSize(stackId);
         labelData[p] |= Integer.toUnsignedLong(stackSize) << STACK_PC_OFFSET;
 
         increaseLabelSize(stackId);
@@ -285,18 +285,27 @@ public class LimitedStackProvider implements StackProvider{
 
     @Override
     public Instruction[] getInstructions(int stackId, int idx) {
+        int size = getLabelSize(stackId);
+        if(idx >= size)
+            throw new RuntimeException("label overflow");
         int base = getLabelBase(stackId);
         return labels[base + idx];
     }
 
     @Override
     public int getPc(int stackId, int idx) {
+        int size = getLabelSize(stackId);
+        if(idx >= size)
+            throw new RuntimeException("label overflow");
         int p = getLabelBase(stackId) + idx;
         return (int) ((labelData[p] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
     }
 
     @Override
     public void setPc(int stackId, int idx, int pc) {
+        int size = getLabelSize(stackId);
+        if(idx >= size)
+            throw new RuntimeException("label overflow");
         int p = getLabelBase(stackId) + idx;
         labelData[p] &= ~LABELS_PC_MASK;
         labelData[p] |= (Integer.toUnsignedLong(pc) << LABELS_PC_OFFSET);

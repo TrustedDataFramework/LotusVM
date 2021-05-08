@@ -45,7 +45,6 @@ public class Frame {
         Instruction[] body,
         FunctionType type,
         ModuleInstanceImpl module,
-        int parentStackId,
         int start,
         int paramsLength,
         int localLength
@@ -342,7 +341,7 @@ public class Frame {
                     int start = module.stackProvider.popN(this.stackId, function.parametersLength());
                     res = ((WASMFunction) function).newFrame(
 //                        popN(function.parametersLength())
-                        stackId, start, function.parametersLength()
+                         start, function.parametersLength()
                     ).execute();
                 }
 
@@ -375,7 +374,7 @@ public class Frame {
                     int start = module.stackProvider.popN(stackId, function.parametersLength());
                     r = ((WASMFunction) function).newFrame(
 //                        popN(function.parametersLength())
-                        stackId, start, function.parametersLength()
+                        start, function.parametersLength()
                     ).execute();
                 }
                 if (module.validateFunctionType && !function.getType().equals(module.types.get(ins.getOperandInt(0)))) {

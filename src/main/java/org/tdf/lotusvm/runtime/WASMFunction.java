@@ -39,9 +39,9 @@ class WASMFunction implements FunctionInstance {
         return new Frame(body, type, module, localVariables);
     }
 
-    Frame newFrame(int parentStackId, int start, int parameterLen) {
+    Frame newFrame(int start, int parameterLen) {
         // init localvars
-        return new Frame(body, type, module, parentStackId, start, parameterLen, getLocals() + parameterLen);
+        return new Frame(body, type, module, start, parameterLen, getLocals() + parameterLen);
     }
 
     @Override
