@@ -50,6 +50,8 @@ public class ModuleInstanceImpl implements ModuleInstance {
     List<FunctionType> types;
     boolean validateFunctionType;
 
+    StackProvider stackProvider = new LimitedStackProvider(256, 32768);
+
     public ModuleInstanceImpl(Builder builder) {
         Module module = builder.getModule() == null ? new Module(builder.getBinary()) : builder.getModule();
         types = module.getTypeSection().getFunctionTypes();
@@ -234,7 +236,8 @@ public class ModuleInstanceImpl implements ModuleInstance {
                 hooks,
                 exports,
                 types,
-                validateFunctionType
+                validateFunctionType,
+                new BaseStackProvider()
         );
         ret.setGlobals(globals);
         ret.setMemory(memory.getData());

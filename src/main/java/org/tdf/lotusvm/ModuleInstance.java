@@ -1,10 +1,7 @@
 package org.tdf.lotusvm;
 
 import lombok.Getter;
-import org.tdf.lotusvm.runtime.Hook;
-import org.tdf.lotusvm.runtime.HostFunction;
-import org.tdf.lotusvm.runtime.Memory;
-import org.tdf.lotusvm.runtime.ModuleInstanceImpl;
+import org.tdf.lotusvm.runtime.*;
 import org.tdf.lotusvm.types.GlobalType;
 import org.tdf.lotusvm.types.Module;
 
@@ -53,6 +50,7 @@ public interface ModuleInstance {
         private long[] globals;
         private byte[] memory;
         private Module module;
+        private StackProvider stackProvider = new LimitedStackProvider(256, 32768);
 
         private Builder() {
         }
@@ -64,6 +62,11 @@ public interface ModuleInstance {
         public Builder module(Module module) {
             this.module = module;
             this.binary = null;
+            return this;
+        }
+
+        public Builder stackProvider(StackProvider provider) {
+            this.stackProvider = provider;
             return this;
         }
 

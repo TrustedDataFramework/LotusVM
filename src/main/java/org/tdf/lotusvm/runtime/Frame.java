@@ -7,8 +7,6 @@ import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.Instruction;
 import org.tdf.lotusvm.types.ResultType;
 
-import java.util.Arrays;
-
 
 @Getter
 public class Frame {
@@ -21,13 +19,7 @@ public class Frame {
 
     private final ModuleInstanceImpl module;
 
-    // TODO: merge local variables and stack data
-    private final long[] localVariables;
-
-
-    // stack
-    private long[] stackData;
-    private int stackPointer;
+    private final int stackId;
 
     // label
     private int[] startPC;
@@ -42,11 +34,14 @@ public class Frame {
         this.body = body;
         this.type = type;
         this.module = module;
-        this.localVariables = localVariables;
-        this.stackData = new long[DEFAULT_INITIAL_STACK_CAP];
+        this.stackId = module.stackProvider.create();
 
         for (int i = 0; i < module.hooks.length; i++) {
             module.hooks[i].onNewFrame(this);
+        }
+
+        for (int i = 0; i < localVariables.length; i++) {
+            module.stackProvider.pushLocal(stackId, localVariables[i]);
         }
     }
 
@@ -64,7 +59,7 @@ public class Frame {
     }
 
     public long pop() {
-        return stackData[--stackPointer];
+        return module.stackProvider.pop(stackId);
     }
 
     public int popI32() {
@@ -103,28 +98,25 @@ public class Frame {
         push(b ? 1 : 0);
     }
 
+    public long getLocal(int idx) {
+       return module.stackProvider.getLocal(stackId, idx);
+    }
+
+    public void setLocal(int idx, long value){
+        module.stackProvider.setLocal(stackId, idx, value);
+    }
+
     public long[] popN(int n) {
         if (n == 0) return Constants.EMPTY_LONGS;
         long[] res = new long[n];
-        System.arraycopy(stackData, stackPointer - n, res, 0, n);
-        stackPointer -= n;
+        int index = module.stackProvider.popN(stackId, n);
+        for(int i = 0; i < n; i++){
+            res[i] = module.stackProvider.getUnchecked(stackId, i + index);
+        }
         return res;
     }
-
-    private void growStack() {
-        if (stackPointer >= stackData.length) {
-            for (int i = 0; i < module.hooks.length; i++) {
-                module.hooks[i].onStackGrow(this.stackData.length, this.stackData.length * 2 + 1);
-            }
-            long[] tmp = stackData;
-            this.stackData = new long[tmp.length * 2 + 1];
-            System.arraycopy(tmp, 0, this.stackData, 0, tmp.length);
-        }
-    }
-
     public void push(long i) {
-        growStack();
-        stackData[stackPointer++] = i;
+        module.stackProvider.push(stackId, i);
     }
 
     private boolean labelIsEmpty() {
@@ -186,9 +178,15 @@ public class Frame {
         // clear stack and local variables
     }
 
+    private void drop() {
+        module.stackProvider.drop(stackId);
+    }
+
     private long returns() {
-        if (type.getResultTypes().size() == 0)
+        if (type.getResultTypes().size() == 0) {
+            drop();
             return 0;
+        }
         long res = pop();
         switch (type.getResultTypes().get(0)) {
             case F32:
@@ -196,6 +194,7 @@ public class Frame {
                 // shadow bits
                 res = res & 0xffffffffL;
         }
+        drop();
         return res;
     }
 
@@ -207,7 +206,7 @@ public class Frame {
         this.labelsPC[labelPos] = 0;
         this.labelPos++;
 
-        startPC[this.startPCPos] = stackPointer;
+        startPC[this.startPCPos] = module.stackProvider.getStackSize(stackId);
         this.startPCPos++;
     }
 
@@ -217,7 +216,7 @@ public class Frame {
     }
 
     private void popAndClearLabel() {
-        this.stackPointer = this.startPC[this.startPCPos - 1];
+        this.module.stackProvider.setStackSize(stackId, this.startPC[this.startPCPos - 1]);
         this.startPCPos--;
         this.labelPos--;
     }
@@ -300,10 +299,9 @@ public class Frame {
                             popN(function.parametersLength())
                     );
                 } else {
-                    int sp = this.stackPointer;
-                    this.stackPointer -= function.parametersLength();
+                    long[] params = popN(function.parametersLength());
                     res = ((WASMFunction) function).newFrame(
-                            this.stackData, sp - function.parametersLength(), function.parametersLength()
+                            params, 0, params.length
                     ).execute();
                 }
 
@@ -333,10 +331,9 @@ public class Frame {
                             popN(function.parametersLength())
                     );
                 } else {
-                    int sp = this.stackPointer;
-                    this.stackPointer -= function.parametersLength();
+                    long[] params = popN(function.parametersLength());
                     r = ((WASMFunction) function).newFrame(
-                            this.stackData, sp - function.parametersLength(), function.parametersLength()
+                            params, 0, params.length
                     ).execute();
                 }
                 if (module.validateFunctionType && !function.getType().equals(module.types.get(ins.getOperandInt(0)))) {
@@ -360,16 +357,16 @@ public class Frame {
             }
             // variable instructions
             case GET_LOCAL:
-                push(localVariables[ins.getOperandInt(0)]);
+                push(getLocal(ins.getOperandInt(0)));
                 break;
             case SET_LOCAL:
-                localVariables[ins.getOperandInt(0)] = pop();
+                setLocal(ins.getOperandInt(0), pop());
                 break;
             case TEE_LOCAL: {
                 long val = pop();
                 push(val);
                 push(val);
-                localVariables[ins.getOperandInt(0)] = pop();
+                setLocal(ins.getOperandInt(0), pop());
                 break;
             }
             case GET_GLOBAL:
