@@ -1,5 +1,7 @@
 package org.tdf.lotusvm.runtime;
 
+import org.tdf.lotusvm.types.Instruction;
+
 // stack provider to avoid array create
 public interface StackProvider {
     // create a stack, return the stackId
@@ -32,4 +34,20 @@ public interface StackProvider {
     int getStackSize(int stackId);
 
     void setStackSize(int stackId, int size);
+
+    void pushLabel(int stackId, boolean arity, Instruction[] body, boolean loop);
+
+    void popLabel(int stackId);
+
+    void popAndClearLabel(int stackId);
+
+    void branch(int stackId, int l);
+
+    int getLabelsLength(int stackId);
+
+    Instruction[] getInstructions(int stackId, int idx);
+
+    int getPc(int stackId, int idx);
+
+    void setPc(int stackId, int idx, int pc);
 }

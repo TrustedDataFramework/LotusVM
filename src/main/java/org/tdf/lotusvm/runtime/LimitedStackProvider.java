@@ -1,15 +1,38 @@
 package org.tdf.lotusvm.runtime;
 
 
+import org.tdf.lotusvm.types.Instruction;
+
 public class LimitedStackProvider implements StackProvider{
+    private static final long ARITY_MASK =     0x000000000000ff00L;
+    private static final int ARITY_OFFSET =    8;
+
+    private static final long LOOP_MASK =      0x00000000000000ffL;
+    private static final int  LOOP_OFFSET = 0;
+
+    private static final long STACK_PC_MASK =  0xffff000000000000L;
+    private static final int STACK_PC_OFFSET = 48;
+
+    private static final long LABELS_PC_MASK = 0x0000ffff00000000L;
+    private static final int LABELS_PC_OFFSET = 32;
+
+
     private final int maxStackSize;
     private final int maxFrames;
+    private final int maxLabelSize;
+
     private final long[] stackData;
     private final int[] stackLengths;
     private final int[] localLengths;
+    private final long[] labelData;
+    private final int[] labelLengths;
+
+    // stack id -> position
+    private final Instruction[][] labels;
+
     private int count;
 
-    public LimitedStackProvider(int maxStackSize, int maxFrames) {
+    public LimitedStackProvider(int maxStackSize, int maxFrames, int maxLabelSize) {
         if(maxStackSize > (1 << 16))
             throw new RuntimeException("invalid max stack size, should less than or equals to " + (1 << 16));
         this.maxStackSize = maxStackSize;
@@ -17,6 +40,10 @@ public class LimitedStackProvider implements StackProvider{
         this.stackData = new long[maxStackSize * maxFrames];
         this.stackLengths = new int[maxFrames];
         this.localLengths = new int[maxFrames];
+        this.labelData = new long[maxFrames * maxLabelSize];
+        this.labelLengths = new int[maxFrames];
+        this.labels = new Instruction[maxFrames * maxLabelSize][];
+        this.maxLabelSize = maxLabelSize;
     }
 
 
@@ -98,6 +125,7 @@ public class LimitedStackProvider implements StackProvider{
         // clear
         localLengths[count] = 0;
         stackLengths[count] = 0;
+        labels[stackId] = null;
     }
 
     @Override
@@ -109,4 +137,99 @@ public class LimitedStackProvider implements StackProvider{
     public void setStackSize(int stackId, int size) {
         stackLengths[stackId] = size;
     }
+
+    @Override
+    public void pushLabel(int stackId, boolean arity, Instruction[] body, boolean loop) {
+        int size = labelLengths[stackId];
+        int base = stackId * maxLabelSize;
+        if (size == maxLabelSize)
+            throw new RuntimeException("label overflow");
+
+        int p = base + size;
+        labels[p] = body;
+        labelData[p] &= ~ARITY_MASK;
+        labelData[p] |= (arity ? 1L : 0L) << ARITY_OFFSET;
+        labelData[p] &= ~LOOP_MASK;
+        labelData[p] |= (loop ? 1L : 0L) << LOOP_OFFSET;
+        labelData[p] &= ~LABELS_PC_MASK;
+
+        labelData[p] &= ~STACK_PC_MASK;
+        int stackSize = getStackSize(stackId);
+        labelData[p] |= Integer.toUnsignedLong(stackSize) << STACK_PC_OFFSET;
+        localLengths[stackId]++;
+    }
+
+    @Override
+    public void popLabel(int stackId) {
+        this.labelLengths[stackId]--;
+    }
+
+    @Override
+    public void popAndClearLabel(int stackId) {
+        int size = labelLengths[stackId];
+        setStackSize(
+            stackId,
+            (int) ((this.labelData[size - 1] & STACK_PC_MASK) >>> STACK_PC_OFFSET)
+        );
+        labelLengths[stackId]--;
+    }
+
+    @Override
+    public void branch(int stackId, int l) {
+        int idx = getLabelsLength(stackId) - 1 - l;
+        int p = stackId * maxLabelSize + idx;
+
+        boolean arity = (labelData[p] & ARITY_MASK) != 0;
+        long val = arity? pop(stackId) : 0;
+        // Repeat l+1 times
+        for (int i = 0; i < l + 1; i++) {
+            popAndClearLabel(stackId);
+        }
+        if (arity) {
+            push(stackId, val);
+        }
+        boolean loop = (labelData[p] & LOOP_MASK) != 0;
+        labelData[p] &= ~LABELS_PC_MASK;
+        if (!loop) {
+            long prev = Integer.toUnsignedLong(labels[p].length);
+            if(prev > 0xffff)
+                throw new RuntimeException("labels overflow");
+            labelData[p] |= prev << LABELS_PC_OFFSET;
+        }
+        int prevPc = (int) ((labelData[p] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
+        pushLabel(
+            stackId,
+            arity,
+            labels[p],
+            loop
+        );
+        p = stackId * maxLabelSize + labelLengths[stackId] - 1;
+        labelData[p] &= ~LABELS_PC_MASK;
+        labelData[p] |= Integer.toUnsignedLong(prevPc) << LABELS_PC_OFFSET;
+    }
+
+    @Override
+    public int getLabelsLength(int stackId) {
+        return labelLengths[stackId];
+    }
+
+    @Override
+    public Instruction[] getInstructions(int stackId, int idx) {
+        int base = stackId * maxLabelSize;
+        return labels[base + idx];
+    }
+
+    @Override
+    public int getPc(int stackId, int idx) {
+        int base = stackId * maxLabelSize;
+        return (int) ((labelData[base + idx] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
+    }
+
+    @Override
+    public void setPc(int stackId, int idx, int pc) {
+        int p = stackId * maxLabelSize + idx;
+        labelData[p] &= ~LABELS_PC_MASK;
+        labelData[p] |= Integer.toUnsignedLong(pc + 1) << LABELS_PC_OFFSET;
+    }
+
 }

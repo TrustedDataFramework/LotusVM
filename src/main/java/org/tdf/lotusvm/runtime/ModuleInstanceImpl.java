@@ -50,7 +50,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     List<FunctionType> types;
     boolean validateFunctionType;
 
-    StackProvider stackProvider = new LimitedStackProvider(256, 32768);
+    StackProvider stackProvider = new LimitedStackProvider(256, 32768, 128);
 
     public ModuleInstanceImpl(Builder builder) {
         Module module = builder.getModule() == null ? new Module(builder.getBinary()) : builder.getModule();

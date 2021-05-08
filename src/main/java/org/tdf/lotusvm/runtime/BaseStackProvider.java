@@ -1,5 +1,7 @@
 package org.tdf.lotusvm.runtime;
 
+import org.tdf.lotusvm.types.Instruction;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -126,5 +128,45 @@ public class BaseStackProvider implements StackProvider{
 
     public void setStackSize(int stackId, int size) {
         stackLengths.set(stackId, size);
+    }
+
+    @Override
+    public void pushLabel(int stackId, boolean arity, Instruction[] body, boolean loop) {
+
+    }
+
+    @Override
+    public void popLabel(int stackId) {
+
+    }
+
+    @Override
+    public void popAndClearLabel(int stackId) {
+
+    }
+
+    @Override
+    public void branch(int stackId, int l) {
+
+    }
+
+    @Override
+    public int getLabelsLength(int stackId) {
+        return 0;
+    }
+
+    @Override
+    public Instruction[] getInstructions(int stackId, int idx) {
+        return new Instruction[0];
+    }
+
+    @Override
+    public int getPc(int stackId, int idx) {
+        return 0;
+    }
+
+    @Override
+    public void setPc(int stackId, int idx, int pc) {
+
     }
 }
