@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.lotusvm.runtime.LimitedStackProvider;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -135,6 +136,7 @@ public class RuntimeTest {
                         .builder()
                         .validateFunctionType()
                 .binary(Util.readClassPathFileAsByteArray("testdata/spec/" + filename))
+                    .stackProvider(new LimitedStackProvider(32768 * 128, 32768, 32768 * 128))
                 .build()
         ;
         TestConfig config = getTestConfig("testdata/spec/modules.json", filename);
@@ -192,6 +194,7 @@ public class RuntimeTest {
         ModuleInstance instance =
                 ModuleInstance.Builder.builder()
                 .binary(Util.readClassPathFileAsByteArray("expression-tests/add.wasm"))
+                    .stackProvider(new LimitedStackProvider(32768 * 128, 32768, 32768 * 128))
                 .build()
         ;
         assert instance.execute(0, 1, 1)[0] == 2;

@@ -50,4 +50,6 @@ public interface StackProvider {
     int getPc(int stackId, int idx);
 
     void setPc(int stackId, int idx, int pc);
+
+    void clear();
 }

@@ -3,6 +3,7 @@ package org.tdf.lotusvm;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.lotusvm.runtime.LimitedStackProvider;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -16,6 +17,7 @@ public class NumericTest {
         ModuleInstance instance =
                 ModuleInstance.Builder.builder()
                         .binary(Util.readClassPathFileAsByteArray("testdata/" + filename))
+                    .stackProvider(new LimitedStackProvider(32768 * 128, 32768, 32768 * 128))
                 .build()
         ;
         RuntimeTest.TestConfig config = RuntimeTest.getTestConfig("testdata/modules.json", filename);

@@ -169,4 +169,9 @@ public class BaseStackProvider implements StackProvider{
     public void setPc(int stackId, int idx, int pc) {
 
     }
+
+    @Override
+    public void clear() {
+
+    }
 }

@@ -311,4 +311,9 @@ public class LimitedStackProvider implements StackProvider{
         labelData[p] |= (Integer.toUnsignedLong(pc) << LABELS_PC_OFFSET);
     }
 
+    @Override
+    public void clear() {
+        this.count = 0;
+    }
+
 }

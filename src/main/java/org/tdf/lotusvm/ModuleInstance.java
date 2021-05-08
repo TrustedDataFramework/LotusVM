@@ -50,7 +50,7 @@ public interface ModuleInstance {
         private long[] globals;
         private byte[] memory;
         private Module module;
-        private StackProvider stackProvider = new LimitedStackProvider(256, 32768, 128);
+        private StackProvider stackProvider;
 
         private Builder() {
         }
