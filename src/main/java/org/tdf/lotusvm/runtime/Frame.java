@@ -1054,12 +1054,12 @@ public class Frame {
         boolean loop = (labelData[idx] & LOOP_MASK) != 0;
         labelData[idx] &= ~LABELS_PC_MASK;
         if (!loop) {
-            long p = Integer.toUnsignedLong(labelsBody[idx].length & 0xffff);
+            long p = Integer.toUnsignedLong(labelsBody[idx].length);
             if(p > 0xffff)
                 throw new RuntimeException("labels overflow");
             labelData[idx] |= p << LABELS_PC_OFFSET;
         }
-        int prevPc = (int) (labelData[idx] & LABELS_PC_MASK >>> LABELS_PC_OFFSET);
+        int prevPc = (int) ((labelData[idx] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
         pushLabel(
             arity,
             labelsBody[idx],
