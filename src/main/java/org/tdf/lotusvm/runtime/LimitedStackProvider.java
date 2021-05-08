@@ -74,7 +74,7 @@ public class LimitedStackProvider implements StackProvider{
         int newStackBase = c == 0 ? 0 : (getStackBase(c - 1) + getLocalSize(c - 1) + getStackSize(c - 1));
         int newLabelBase = c == 0 ? 0 : (getLabelBase(c - 1) + getLabelSize(c - 1));
         offsets[c]
-            = (Integer.toUnsignedLong(newStackBase) << STACK_SIZE_OFFSET) |
+            = (Integer.toUnsignedLong(newStackBase) << STACK_BASE_OFFSET) |
             (Integer.toUnsignedLong(newLabelBase) << LABEL_BASE_OFFSET);
         count++;
         return c;
