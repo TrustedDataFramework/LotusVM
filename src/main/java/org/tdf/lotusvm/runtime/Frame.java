@@ -62,7 +62,7 @@ public class Frame {
         int end = start + paramsLength;
         for (int i = start; i < start + localLength; i++) {
             module.stackProvider.pushLocal(stackId, i < end ?
-                module.stackProvider.getUnchecked(parentStackId, i)
+                module.stackProvider.getUnchecked(i)
                 : 0
             );
         }
@@ -149,7 +149,7 @@ public class Frame {
         long[] res = new long[n];
         int index = module.stackProvider.popN(stackId, n);
         for (int i = 0; i < n; i++) {
-            res[i] = module.stackProvider.getUnchecked(stackId, i + index);
+            res[i] = module.stackProvider.getUnchecked( i + index);
         }
         return res;
     }
@@ -159,7 +159,7 @@ public class Frame {
     }
 
     private boolean labelIsEmpty() {
-        return module.stackProvider.getLabelsLength(stackId) == 0;
+        return module.stackProvider.getLabelSize(stackId) == 0;
     }
 
 //    private void growLabel1() {
@@ -186,7 +186,7 @@ public class Frame {
     long execute() throws RuntimeException {
         pushLabel(type.getResultTypes().size() != 0, body, false);
         while (!labelIsEmpty()) {
-            int idx = this.module.stackProvider.getLabelsLength(stackId) - 1;
+            int idx = this.module.stackProvider.getLabelSize(stackId) - 1;
             int pc = this.module.stackProvider.getPc(stackId, idx);
             Instruction[] body = this.module.stackProvider.getInstructions(stackId, idx);
             if (pc >= body.length) {

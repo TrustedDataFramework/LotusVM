@@ -83,10 +83,10 @@ public class BaseStackProvider implements StackProvider{
     }
 
     @Override
-    public long getUnchecked(int stackId, int index) {
-        long[] data = this.stackData.get(stackId);
-        return data[index];
+    public long getUnchecked(int index) {
+        return 0;
     }
+
 
     @Override
     public long getLocal(int stackId, int index) {
@@ -151,7 +151,7 @@ public class BaseStackProvider implements StackProvider{
     }
 
     @Override
-    public int getLabelsLength(int stackId) {
+    public int getLabelSize(int stackId) {
         return 0;
     }
 

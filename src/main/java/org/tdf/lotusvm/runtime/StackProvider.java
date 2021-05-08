@@ -19,7 +19,7 @@ public interface StackProvider {
     long pop(int stackId);
 
     // get from stack by index, unchecked
-    long getUnchecked(int stackId, int index);
+    long getUnchecked(int index);
 
     // get local from stack by index
     long getLocal(int stackId, int index);
@@ -43,7 +43,7 @@ public interface StackProvider {
 
     void branch(int stackId, int l);
 
-    int getLabelsLength(int stackId);
+    int getLabelSize(int stackId);
 
     Instruction[] getInstructions(int stackId, int idx);
 
