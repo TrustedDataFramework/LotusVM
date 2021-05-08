@@ -179,7 +179,7 @@ public class LimitedStackProvider implements StackProvider{
         int size = getStackSize(stackId);
         if(size < length)
             throw new RuntimeException("stack overflow");
-        int r = getStackBase(stackId) + size - length;
+        int r = getStackBase(stackId) + getLocalSize(stackId) + size - length;
         setStackSize(stackId, size - length);
         return r;
     }
