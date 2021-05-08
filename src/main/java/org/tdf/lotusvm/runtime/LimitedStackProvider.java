@@ -280,7 +280,7 @@ public class LimitedStackProvider implements StackProvider{
 
     @Override
     public int getLabelSize(int stackId) {
-        return (int) ((frameData[stackId] & LABEL_SIZE_MASK) >> LABEL_SIZE_OFFSET);
+        return (int) ((frameData[stackId] & LABEL_SIZE_MASK) >>> LABEL_SIZE_OFFSET);
     }
 
     @Override
