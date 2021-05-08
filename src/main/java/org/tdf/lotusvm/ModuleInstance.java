@@ -34,13 +34,6 @@ public interface ModuleInstance {
 
     long[] execute(String funcName, long... parameters) throws RuntimeException;
 
-    /**
-     * create a module instance with empty hooks, the cloned module instance has its own globals and memory
-     *
-     * @return cloned module instance
-     */
-    ModuleInstance clone();
-
     @Getter
     class Builder {
         boolean validateFunctionType;

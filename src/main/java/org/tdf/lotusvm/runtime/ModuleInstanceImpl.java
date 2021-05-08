@@ -225,24 +225,4 @@ public class ModuleInstanceImpl implements ModuleInstance {
     public boolean containsExport(String funcName) {
         return exports.containsKey(funcName);
     }
-
-    @Override
-    public ModuleInstance clone() {
-        ModuleInstance ret = new ModuleInstanceImpl(
-                null,
-                globalTypes,
-                new Memory(memory.getLimit()),
-                table,
-                functions,
-                startFunction,
-                hooks,
-                exports,
-                types,
-                validateFunctionType,
-                new BaseStackProvider()
-        );
-        ret.setGlobals(globals);
-        ret.setMemory(memory.getData());
-        return ret;
-    }
 }
