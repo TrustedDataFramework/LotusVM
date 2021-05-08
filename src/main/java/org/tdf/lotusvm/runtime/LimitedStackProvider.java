@@ -125,7 +125,6 @@ public class LimitedStackProvider implements StackProvider{
         // clear
         localLengths[count] = 0;
         stackLengths[count] = 0;
-        labels[stackId] = null;
     }
 
     @Override
@@ -163,12 +162,16 @@ public class LimitedStackProvider implements StackProvider{
 
     @Override
     public void popLabel(int stackId) {
+        if(labelLengths[stackId] == 0)
+            throw new RuntimeException("label underflow");
         this.labelLengths[stackId]--;
     }
 
     @Override
     public void popAndClearLabel(int stackId) {
         int size = labelLengths[stackId];
+        if(size == 0)
+            throw new RuntimeException("label underflow");
         setStackSize(
             stackId,
             (int) ((this.labelData[size - 1] & STACK_PC_MASK) >>> STACK_PC_OFFSET)
