@@ -10,6 +10,19 @@ import org.tdf.lotusvm.types.ResultType;
 
 @Getter
 public class Frame {
+    private static final long ARITY_MASK =     0x000000000000ff00L;
+    private static final int ARITY_OFFSET =    8;
+
+    private static final long LOOP_MASK =      0x00000000000000ffL;
+    private static final int  LOOP_OFFSET = 0;
+
+    private static final long STACK_PC_MASK =  0xffff000000000000L;
+    private static final int STACK_PC_OFFSET = 40;
+
+    private static final long LABELS_PC_MASK = 0x0000ffff00000000L;
+    private static final int LABELS_PC_OFFSET = 32;
+
+
     private static final long MAXIMUM_UNSIGNED_I32 = 0xFFFFFFFFL;
     private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
     public static int DEFAULT_INITIAL_STACK_CAP = 8;
@@ -21,14 +34,12 @@ public class Frame {
 
     private final int stackId;
 
-    // label
-    private int[] startPC;
-    private int startPCPos;
+    // bit map
+    private long[] labelData;
+
     private int labelPos;
-    private int[] labelsPC;
     private Instruction[][] labelsBody;
-    private boolean[] labelsArity;
-    private boolean[] labelsLoop;
+
 
     Frame(
         Instruction[] body,
@@ -152,31 +163,21 @@ public class Frame {
     }
 
     private void growLabel1() {
-        if (this.labelsPC == null) {
-            this.labelsPC = new int[DEFAULT_INITIAL_STACK_CAP];
+        if (this.labelData == null) {
+            this.labelData = new long[DEFAULT_INITIAL_STACK_CAP];
             this.labelsBody = new Instruction[DEFAULT_INITIAL_STACK_CAP][];
-            this.labelsArity = new boolean[DEFAULT_INITIAL_STACK_CAP];
-            this.labelsLoop = new boolean[DEFAULT_INITIAL_STACK_CAP];
-            this.startPC = new int[DEFAULT_INITIAL_STACK_CAP];
         }
 
-        if (labelPos >= this.labelsPC.length) {
-            int[] tmp0 = this.labelsPC;
+        if (labelPos >= this.labelData.length) {
+            long[] tmp0 = this.labelData;
             Instruction[][] tmp1 = this.labelsBody;
-            boolean[] tmp2 = this.labelsArity;
-            boolean[] tmp3 = this.labelsLoop;
-            int[] tmp4 = this.startPC;
+
             int l = tmp0.length * 2 + 1;
-            this.labelsPC = new int[l];
+            this.labelData = new long[l];
             this.labelsBody = new Instruction[l][];
-            this.labelsArity = new boolean[l];
-            this.labelsLoop = new boolean[l];
-            this.startPC = new int[l];
-            System.arraycopy(tmp0, 0, this.labelsPC, 0, tmp0.length);
+
+            System.arraycopy(tmp0, 0, this.labelData, 0, tmp0.length);
             System.arraycopy(tmp1, 0, this.labelsBody, 0, tmp1.length);
-            System.arraycopy(tmp2, 0, this.labelsArity, 0, tmp2.length);
-            System.arraycopy(tmp3, 0, this.labelsLoop, 0, tmp3.length);
-            System.arraycopy(tmp4, 0, this.startPC, 0, tmp4.length);
         }
     }
 
@@ -186,7 +187,7 @@ public class Frame {
         pushLabel(type.getResultTypes().size() != 0, body, false);
         while (!labelIsEmpty()) {
             int idx = this.labelPos - 1;
-            int pc = this.labelsPC[idx];
+            int pc = (int) ((this.labelData[idx] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
             Instruction[] body = this.labelsBody[idx];
             if (pc >= body.length) {
                 popLabel();
@@ -196,7 +197,8 @@ public class Frame {
             if (ins.getCode().equals(OpCode.RETURN)) {
                 return returns();
             }
-            labelsPC[idx]++;
+            labelData[idx] &= ~LABELS_PC_MASK;
+            labelData[idx] |= Integer.toUnsignedLong(pc + 1) << LABELS_PC_OFFSET;
             invoke(ins);
         }
         for (int i = 0; i < module.hooks.length; i++) {
@@ -229,23 +231,29 @@ public class Frame {
     private void pushLabel(boolean arity, Instruction[] body, boolean loop) {
         this.growLabel1();
         this.labelsBody[labelPos] = body;
-        this.labelsArity[labelPos] = arity;
-        this.labelsLoop[labelPos] = loop;
-        this.labelsPC[labelPos] = 0;
+        this.labelData[labelPos] &= ~ARITY_MASK; // inv(arity mask)
+        this.labelData[labelPos] |= (arity ? 1L : 0L) << ARITY_OFFSET;
+        this.labelData[labelPos] &= ~LOOP_MASK;
+        this.labelData[labelPos] |= (loop ? 1L : 0L) << LOOP_OFFSET;
+
+        // set label pc to zero
+        this.labelData[labelPos] &= ~LABELS_PC_MASK;
+
+        labelData[this.labelPos] &= ~STACK_PC_MASK;
+        labelData[this.labelPos] |= Integer.toUnsignedLong(module.stackProvider.getStackSize(stackId)) << STACK_PC_OFFSET;
         this.labelPos++;
 
-        startPC[this.startPCPos] = module.stackProvider.getStackSize(stackId);
-        this.startPCPos++;
     }
 
     private void popLabel() {
-        this.startPCPos--;
         this.labelPos--;
     }
 
     private void popAndClearLabel() {
-        this.module.stackProvider.setStackSize(stackId, this.startPC[this.startPCPos - 1]);
-        this.startPCPos--;
+        this.module.stackProvider.setStackSize(
+            stackId,
+            (int) ((this.labelData[this.labelPos - 1] & STACK_PC_MASK) >>> STACK_PC_OFFSET)
+        );
         this.labelPos--;
     }
 
@@ -1034,22 +1042,30 @@ public class Frame {
     // br l
     private void branch(int l) {
         int idx = this.labelPos - 1 - l;
-        long val = labelsArity[idx] ? pop() : 0;
+        boolean arity = (labelData[idx] & ARITY_MASK) != 0;
+        long val = arity? pop() : 0;
         // Repeat l+1 times
         for (int i = 0; i < l + 1; i++) {
             popAndClearLabel();
         }
-        if (labelsArity[idx]) {
+        if (arity) {
             push(val);
         }
-        if (labelsLoop[idx]) {
-            labelsPC[idx] = 0;
-        } else {
-            labelsPC[idx] = labelsBody[idx].length;
+        boolean loop = (labelData[idx] & LOOP_MASK) != 0;
+        labelData[idx] &= ~LABELS_PC_MASK;
+        if (!loop) {
+            long p = Integer.toUnsignedLong(labelsBody[idx].length & 0xffff);
+            if(p > 0xffff)
+                throw new RuntimeException("labels overflow");
+            labelData[idx] |= p << LABELS_PC_OFFSET;
         }
-        int prevPc = labelsPC[idx];
-        pushLabel(labelsArity[idx], labelsBody[idx], labelsLoop[idx]);
-        labelsPC[labelPos - 1] = prevPc;
+        int prevPc = (int) (labelData[idx] & LABELS_PC_MASK);
+        pushLabel(
+            arity,
+            labelsBody[idx],
+            loop
+        );
+        labelData[labelPos - 1] &= ~LABELS_PC_MASK;
+        labelData[labelPos - 1] |= Integer.toUnsignedLong(prevPc) << LABELS_PC_OFFSET;
     }
-
 }

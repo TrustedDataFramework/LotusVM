@@ -10,6 +10,8 @@ public class LimitedStackProvider implements StackProvider{
     private int count;
 
     public LimitedStackProvider(int maxStackSize, int maxFrames) {
+        if(maxStackSize > (1 << 16))
+            throw new RuntimeException("invalid max stack size, should less than or equals to " + (1 << 16));
         this.maxStackSize = maxStackSize;
         this.maxFrames = maxFrames;
         this.stackData = new long[maxStackSize * maxFrames];
