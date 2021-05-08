@@ -154,9 +154,11 @@ public class LimitedStackProvider implements StackProvider{
         labelData[p] &= ~LABELS_PC_MASK;
 
         labelData[p] &= ~STACK_PC_MASK;
+
         int stackSize = getStackSize(stackId);
         labelData[p] |= Integer.toUnsignedLong(stackSize) << STACK_PC_OFFSET;
-        localLengths[stackId]++;
+
+        labelLengths[stackId]++;
     }
 
     @Override

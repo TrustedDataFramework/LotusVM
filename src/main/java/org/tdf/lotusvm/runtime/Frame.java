@@ -35,10 +35,10 @@ public class Frame {
     private final int stackId;
 
     // bit map
-    private long[] labelData;
+//    private long[] labelData;
 
-    private int labelPos;
-    private Instruction[][] labelsBody;
+//    private int labelPos;
+//    private Instruction[][] labelsBody;
 
 
     Frame(
@@ -159,36 +159,36 @@ public class Frame {
     }
 
     private boolean labelIsEmpty() {
-        return labelPos <= 0;
+        return module.stackProvider.getLabelsLength(stackId) == 0;
     }
 
-    private void growLabel1() {
-        if (this.labelData == null) {
-            this.labelData = new long[DEFAULT_INITIAL_STACK_CAP];
-            this.labelsBody = new Instruction[DEFAULT_INITIAL_STACK_CAP][];
-        }
-
-        if (labelPos >= this.labelData.length) {
-            long[] tmp0 = this.labelData;
-            Instruction[][] tmp1 = this.labelsBody;
-
-            int l = tmp0.length * 2 + 1;
-            this.labelData = new long[l];
-            this.labelsBody = new Instruction[l][];
-
-            System.arraycopy(tmp0, 0, this.labelData, 0, tmp0.length);
-            System.arraycopy(tmp1, 0, this.labelsBody, 0, tmp1.length);
-        }
-    }
+//    private void growLabel1() {
+//        if (this.labelData == null) {
+//            this.labelData = new long[DEFAULT_INITIAL_STACK_CAP];
+//            this.labelsBody = new Instruction[DEFAULT_INITIAL_STACK_CAP][];
+//        }
+//
+//        if (labelPos >= this.labelData.length) {
+//            long[] tmp0 = this.labelData;
+//            Instruction[][] tmp1 = this.labelsBody;
+//
+//            int l = tmp0.length * 2 + 1;
+//            this.labelData = new long[l];
+//            this.labelsBody = new Instruction[l][];
+//
+//            System.arraycopy(tmp0, 0, this.labelData, 0, tmp0.length);
+//            System.arraycopy(tmp1, 0, this.labelsBody, 0, tmp1.length);
+//        }
+//    }
 
     // A result is the outcome of a computation. It is either a sequence of values or a trap.
     // In the current version of WebAssembly, a result can consist of at most one value.
     long execute() throws RuntimeException {
         pushLabel(type.getResultTypes().size() != 0, body, false);
         while (!labelIsEmpty()) {
-            int idx = this.labelPos - 1;
-            int pc = (int) ((this.labelData[idx] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
-            Instruction[] body = this.labelsBody[idx];
+            int idx = this.module.stackProvider.getLabelsLength(stackId) - 1;
+            int pc = this.module.stackProvider.getPc(stackId, idx);
+            Instruction[] body = this.module.stackProvider.getInstructions(stackId, idx);
             if (pc >= body.length) {
                 popLabel();
                 continue;
@@ -197,8 +197,9 @@ public class Frame {
             if (ins.getCode().equals(OpCode.RETURN)) {
                 return returns();
             }
-            labelData[idx] &= ~LABELS_PC_MASK;
-            labelData[idx] |= Integer.toUnsignedLong(pc + 1) << LABELS_PC_OFFSET;
+            module.stackProvider.setPc(stackId, idx, pc + 1);
+//            labelData[idx] &= ~LABELS_PC_MASK;
+//            labelData[idx] |= Integer.toUnsignedLong(pc + 1) << LABELS_PC_OFFSET;
             invoke(ins);
         }
         for (int i = 0; i < module.hooks.length; i++) {
@@ -229,33 +230,35 @@ public class Frame {
     }
 
     private void pushLabel(boolean arity, Instruction[] body, boolean loop) {
-        this.growLabel1();
-        this.labelsBody[labelPos] = body;
-        this.labelData[labelPos] &= ~ARITY_MASK; // inv(arity mask)
-        this.labelData[labelPos] |= (arity ? 1L : 0L) << ARITY_OFFSET;
-        this.labelData[labelPos] &= ~LOOP_MASK;
-        this.labelData[labelPos] |= (loop ? 1L : 0L) << LOOP_OFFSET;
-
-        // set label pc to zero
-        this.labelData[labelPos] &= ~LABELS_PC_MASK;
-
-        labelData[this.labelPos] &= ~STACK_PC_MASK;
-        int stackSize = module.stackProvider.getStackSize(stackId);
-        labelData[this.labelPos] |= Integer.toUnsignedLong(stackSize) << STACK_PC_OFFSET;
-        this.labelPos++;
-
+//        this.growLabel1();
+//        this.labelsBody[labelPos] = body;
+//        this.labelData[labelPos] &= ~ARITY_MASK; // inv(arity mask)
+//        this.labelData[labelPos] |= (arity ? 1L : 0L) << ARITY_OFFSET;
+//        this.labelData[labelPos] &= ~LOOP_MASK;
+//        this.labelData[labelPos] |= (loop ? 1L : 0L) << LOOP_OFFSET;
+//
+//        // set label pc to zero
+//        this.labelData[labelPos] &= ~LABELS_PC_MASK;
+//
+//        labelData[this.labelPos] &= ~STACK_PC_MASK;
+//        int stackSize = module.stackProvider.getStackSize(stackId);
+//        labelData[this.labelPos] |= Integer.toUnsignedLong(stackSize) << STACK_PC_OFFSET;
+//        this.labelPos++;
+        module.stackProvider.pushLabel(stackId, arity, body, loop);
     }
 
     private void popLabel() {
-        this.labelPos--;
+//        this.labelPos--;
+        module.stackProvider.popLabel(stackId);
     }
 
     private void popAndClearLabel() {
-        this.module.stackProvider.setStackSize(
-            stackId,
-            (int) ((this.labelData[this.labelPos - 1] & STACK_PC_MASK) >>> STACK_PC_OFFSET)
-        );
-        this.labelPos--;
+//        this.module.stackProvider.setStackSize(
+//            stackId,
+//            (int) ((this.labelData[this.labelPos - 1] & STACK_PC_MASK) >>> STACK_PC_OFFSET)
+//        );
+//        this.labelPos--;
+        this.module.stackProvider.popAndClearLabel(stackId);
     }
 
     private void invoke(Instruction ins) throws RuntimeException {
@@ -1042,31 +1045,32 @@ public class Frame {
 
     // br l
     private void branch(int l) {
-        int idx = this.labelPos - 1 - l;
-        boolean arity = (labelData[idx] & ARITY_MASK) != 0;
-        long val = arity? pop() : 0;
-        // Repeat l+1 times
-        for (int i = 0; i < l + 1; i++) {
-            popAndClearLabel();
-        }
-        if (arity) {
-            push(val);
-        }
-        boolean loop = (labelData[idx] & LOOP_MASK) != 0;
-        labelData[idx] &= ~LABELS_PC_MASK;
-        if (!loop) {
-            long p = Integer.toUnsignedLong(labelsBody[idx].length);
-            if(p > 0xffff)
-                throw new RuntimeException("labels overflow");
-            labelData[idx] |= p << LABELS_PC_OFFSET;
-        }
-        int prevPc = (int) ((labelData[idx] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
-        pushLabel(
-            arity,
-            labelsBody[idx],
-            loop
-        );
-        labelData[labelPos - 1] &= ~LABELS_PC_MASK;
-        labelData[labelPos - 1] |= Integer.toUnsignedLong(prevPc) << LABELS_PC_OFFSET;
+//        int idx = this.labelPos - 1 - l;
+//        boolean arity = (labelData[idx] & ARITY_MASK) != 0;
+//        long val = arity? pop() : 0;
+//        // Repeat l+1 times
+//        for (int i = 0; i < l + 1; i++) {
+//            popAndClearLabel();
+//        }
+//        if (arity) {
+//            push(val);
+//        }
+//        boolean loop = (labelData[idx] & LOOP_MASK) != 0;
+//        labelData[idx] &= ~LABELS_PC_MASK;
+//        if (!loop) {
+//            long p = Integer.toUnsignedLong(labelsBody[idx].length);
+//            if(p > 0xffff)
+//                throw new RuntimeException("labels overflow");
+//            labelData[idx] |= p << LABELS_PC_OFFSET;
+//        }
+//        int prevPc = (int) ((labelData[idx] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
+//        pushLabel(
+//            arity,
+//            labelsBody[idx],
+//            loop
+//        );
+//        labelData[labelPos - 1] &= ~LABELS_PC_MASK;
+//        labelData[labelPos - 1] |= Integer.toUnsignedLong(prevPc) << LABELS_PC_OFFSET;
+        module.stackProvider.branch(stackId, l);
     }
 }
