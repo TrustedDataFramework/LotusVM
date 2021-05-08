@@ -113,6 +113,9 @@ public class Frame {
 
     private void growStack() {
         if (stackPointer >= stackData.length) {
+            for (int i = 0; i < module.hooks.length; i++) {
+                module.hooks[i].onStackGrow(this.stackData.length, this.stackData.length * 2 + 1);
+            }
             long[] tmp = stackData;
             this.stackData = new long[tmp.length * 2 + 1];
             System.arraycopy(tmp, 0, this.stackData, 0, tmp.length);

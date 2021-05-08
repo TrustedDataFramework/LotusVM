@@ -10,4 +10,8 @@ public interface Hook {
     void onNewFrame(Frame frame);
 
     void onFrameExit(Frame frame);
+
+    default void onStackGrow(int beforeGrow, int afterGrow) {
+
+    }
 }

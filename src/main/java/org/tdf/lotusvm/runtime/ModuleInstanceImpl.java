@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.*;
+import org.tdf.lotusvm.types.Module;
 
 import java.util.*;
 import java.util.stream.Collectors;
