@@ -32,7 +32,6 @@ public class LimitedStackProvider implements StackProvider{
     private static final long LABEL_SIZE_OFFSET = 16;
 
 
-
     // offset = stack offset + label offset
 
     private final long[] stackData;
@@ -102,8 +101,8 @@ public class LimitedStackProvider implements StackProvider{
 
     private void increaseLocalSize(int stackId) {
         int before = (int) ((frameData[stackId] & LOCAL_SIZE_MASK) >>> LOCAL_SIZE_OFFSET);
-        frameData[stackId] &= ~LOCAL_SIZE_OFFSET;
-        frameData[stackId] |= Integer.toUnsignedLong(before + 1) << LOCAL_SIZE_OFFSET;
+        frameData[stackId] &= ~LOCAL_SIZE_MASK;
+        frameData[stackId] |= (Integer.toUnsignedLong(before + 1) << LOCAL_SIZE_OFFSET);
     }
 
     private void increaseStackSize(int stackId) {
