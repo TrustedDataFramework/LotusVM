@@ -17,7 +17,7 @@ public class Frame {
     private static final int  LOOP_OFFSET = 0;
 
     private static final long STACK_PC_MASK =  0xffff000000000000L;
-    private static final int STACK_PC_OFFSET = 40;
+    private static final int STACK_PC_OFFSET = 48;
 
     private static final long LABELS_PC_MASK = 0x0000ffff00000000L;
     private static final int LABELS_PC_OFFSET = 32;
@@ -240,7 +240,8 @@ public class Frame {
         this.labelData[labelPos] &= ~LABELS_PC_MASK;
 
         labelData[this.labelPos] &= ~STACK_PC_MASK;
-        labelData[this.labelPos] |= Integer.toUnsignedLong(module.stackProvider.getStackSize(stackId)) << STACK_PC_OFFSET;
+        int stackSize = module.stackProvider.getStackSize(stackId);
+        labelData[this.labelPos] |= Integer.toUnsignedLong(stackSize) << STACK_PC_OFFSET;
         this.labelPos++;
 
     }
