@@ -223,15 +223,15 @@ public class LimitedStackProvider implements StackProvider{
 
     @Override
     public int getPc(int stackId, int idx) {
-        int base = stackId * maxLabelSize;
-        return (int) ((labelData[base + idx] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
+        int p = stackId * maxLabelSize + idx;
+        return (int) ((labelData[p] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
     }
 
     @Override
     public void setPc(int stackId, int idx, int pc) {
         int p = stackId * maxLabelSize + idx;
         labelData[p] &= ~LABELS_PC_MASK;
-        labelData[p] |= (Integer.toUnsignedLong(pc + 1) << LABELS_PC_OFFSET) & LABELS_PC_MASK;
+        labelData[p] |= (Integer.toUnsignedLong(pc) << LABELS_PC_OFFSET) & LABELS_PC_MASK;
     }
 
 }
