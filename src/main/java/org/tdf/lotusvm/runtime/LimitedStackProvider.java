@@ -231,7 +231,7 @@ public class LimitedStackProvider implements StackProvider{
     public void setPc(int stackId, int idx, int pc) {
         int p = stackId * maxLabelSize + idx;
         labelData[p] &= ~LABELS_PC_MASK;
-        labelData[p] |= Integer.toUnsignedLong(pc + 1) << LABELS_PC_OFFSET;
+        labelData[p] |= (Integer.toUnsignedLong(pc + 1) << LABELS_PC_OFFSET) & LABELS_PC_MASK;
     }
 
 }
