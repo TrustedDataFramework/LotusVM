@@ -1059,7 +1059,7 @@ public class Frame {
                 throw new RuntimeException("labels overflow");
             labelData[idx] |= p << LABELS_PC_OFFSET;
         }
-        int prevPc = (int) (labelData[idx] & LABELS_PC_MASK);
+        int prevPc = (int) (labelData[idx] & LABELS_PC_MASK >>> LABELS_PC_OFFSET);
         pushLabel(
             arity,
             labelsBody[idx],
