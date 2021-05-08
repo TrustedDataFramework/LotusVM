@@ -4,9 +4,9 @@ package org.tdf.lotusvm.runtime;
 public class LimitedStackProvider implements StackProvider{
     private final int maxStackSize;
     private final int maxFrames;
-    private long[] stackData;
-    private int[] stackLengths;
-    private int[] localLengths;
+    private final long[] stackData;
+    private final int[] stackLengths;
+    private final int[] localLengths;
     private int count;
 
     public LimitedStackProvider(int maxStackSize, int maxFrames) {
@@ -20,6 +20,9 @@ public class LimitedStackProvider implements StackProvider{
 
     @Override
     public int create() {
+        if(count == maxFrames) {
+            throw new RuntimeException("frame overflow");
+        }
         return count++;
     }
 
@@ -76,6 +79,8 @@ public class LimitedStackProvider implements StackProvider{
 
     @Override
     public int popN(int stackId, int length) {
+        if(length == 0)
+            return 0;
         if(stackLengths[stackId] < length)
             throw new RuntimeException("stack overflow");
         int r = stackLengths[stackId] - length;
@@ -91,10 +96,6 @@ public class LimitedStackProvider implements StackProvider{
         // clear
         localLengths[count] = 0;
         stackLengths[count] = 0;
-        int base = maxStackSize * count;
-        for(int i = base; i < base + maxStackSize; i++) {
-            stackData[i] = 0L;
-        }
     }
 
     @Override

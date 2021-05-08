@@ -30,6 +30,33 @@ public class Frame {
     private boolean[] labelsArity;
     private boolean[] labelsLoop;
 
+    Frame(
+        Instruction[] body,
+        FunctionType type,
+        ModuleInstanceImpl module,
+        int parentStackId,
+        int start,
+        int paramsLength,
+        int localLength
+    ) {
+        this.body = body;
+        this.type = type;
+        this.module = module;
+        this.stackId = module.stackProvider.create();
+
+        for (int i = 0; i < module.hooks.length; i++) {
+            module.hooks[i].onNewFrame(this);
+        }
+
+        int end = start + paramsLength;
+        for (int i = start; i < start + localLength; i++) {
+            module.stackProvider.pushLocal(stackId, i < end ?
+                module.stackProvider.getUnchecked(parentStackId, i)
+                : 0
+            );
+        }
+    }
+
     Frame(Instruction[] body, FunctionType type, ModuleInstanceImpl module, long[] localVariables) {
         this.body = body;
         this.type = type;
@@ -99,10 +126,10 @@ public class Frame {
     }
 
     public long getLocal(int idx) {
-       return module.stackProvider.getLocal(stackId, idx);
+        return module.stackProvider.getLocal(stackId, idx);
     }
 
-    public void setLocal(int idx, long value){
+    public void setLocal(int idx, long value) {
         module.stackProvider.setLocal(stackId, idx, value);
     }
 
@@ -110,11 +137,12 @@ public class Frame {
         if (n == 0) return Constants.EMPTY_LONGS;
         long[] res = new long[n];
         int index = module.stackProvider.popN(stackId, n);
-        for(int i = 0; i < n; i++){
+        for (int i = 0; i < n; i++) {
             res[i] = module.stackProvider.getUnchecked(stackId, i + index);
         }
         return res;
     }
+
     public void push(long i) {
         module.stackProvider.push(stackId, i);
     }
@@ -296,12 +324,13 @@ public class Frame {
                         module.hooks[i].onHostFunction((HostFunction) function, module);
                     }
                     res = function.execute(
-                            popN(function.parametersLength())
+                        popN(function.parametersLength())
                     );
                 } else {
-                    long[] params = popN(function.parametersLength());
+                    int start = module.stackProvider.popN(this.stackId, function.parametersLength());
                     res = ((WASMFunction) function).newFrame(
-                            params, 0, params.length
+//                        popN(function.parametersLength())
+                        stackId, start, function.parametersLength()
                     ).execute();
                 }
 
@@ -311,7 +340,7 @@ public class Frame {
                 }
                 if (function.getArity() > 0) {
                     push(
-                            res
+                        res
                     );
                 }
                 break;
@@ -328,12 +357,13 @@ public class Frame {
                         module.hooks[i].onHostFunction((HostFunction) function, module);
                     }
                     r = function.execute(
-                            popN(function.parametersLength())
+                        popN(function.parametersLength())
                     );
                 } else {
-                    long[] params = popN(function.parametersLength());
+                    int start = module.stackProvider.popN(stackId, function.parametersLength());
                     r = ((WASMFunction) function).newFrame(
-                            params, 0, params.length
+//                        popN(function.parametersLength())
+                        stackId, start, function.parametersLength()
                     ).execute();
                 }
                 if (module.validateFunctionType && !function.getType().equals(module.types.get(ins.getOperandInt(0)))) {
@@ -374,7 +404,7 @@ public class Frame {
                 break;
             case SET_GLOBAL:
                 if (!module.globalTypes.get(
-                        ins.getOperandInt(0)
+                    ins.getOperandInt(0)
                 ).isMutable()) throw new RuntimeException("modify a immutable global");
                 module.globals[ins.getOperandInt(0)] = pop();
                 break;
@@ -383,13 +413,13 @@ public class Frame {
             case F32_LOAD:
             case I64_LOAD32_U:
                 pushI32(
-                        module.memory.load32(popI32() + ins.getOperandInt(1))
+                    module.memory.load32(popI32() + ins.getOperandInt(1))
                 );
                 break;
             case I64_LOAD:
             case F64_LOAD:
                 push(
-                        module.memory.load64(popI32() + ins.getOperandInt(1))
+                    module.memory.load64(popI32() + ins.getOperandInt(1))
                 );
                 break;
             case I32_LOAD8_S:
@@ -948,7 +978,7 @@ public class Frame {
                 if (f < 0 || l != f)
                     throw new RuntimeException("trunc " + src + " to u64 failed, math overflow");
                 push(
-                        l
+                    l
                 );
                 break;
             }
