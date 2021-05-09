@@ -76,6 +76,7 @@ public class LimitedStackProvider implements StackProvider{
         offsets[c]
             = (Integer.toUnsignedLong(newStackBase) << STACK_BASE_OFFSET) |
             (Integer.toUnsignedLong(newLabelBase) << LABEL_BASE_OFFSET);
+        frameData[c] = 0;
         count++;
         return c;
     }

@@ -1,10 +1,13 @@
 package org.tdf.lotusvm;
 
 import com.google.common.io.ByteStreams;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.lotusvm.common.BytesReader;
+import org.tdf.lotusvm.runtime.LimitedStackProvider;
+import org.tdf.lotusvm.runtime.StackProvider;
 import org.tdf.lotusvm.types.Module;
 
 import java.io.File;
@@ -13,6 +16,7 @@ import java.io.FileInputStream;
 
 @RunWith(JUnit4.class)
 public class ModuleTest {
+
     @Test
     public void test1() throws Exception {
         File file = Util.readClassPathFile("testdata/spec");

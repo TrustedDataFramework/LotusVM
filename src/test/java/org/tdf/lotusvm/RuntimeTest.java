@@ -5,10 +5,12 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.lotusvm.runtime.LimitedStackProvider;
+import org.tdf.lotusvm.runtime.StackProvider;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -18,6 +20,8 @@ import java.util.stream.Stream;
 
 @RunWith(JUnit4.class)
 public class RuntimeTest {
+    private static final StackProvider provider = new LimitedStackProvider(32768 * 128, 32768, 32768 * 128);
+
     public static ObjectMapper MAPPER = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .enable(JsonParser.Feature.ALLOW_COMMENTS);
@@ -136,7 +140,7 @@ public class RuntimeTest {
                         .builder()
                         .validateFunctionType()
                 .binary(Util.readClassPathFileAsByteArray("testdata/spec/" + filename))
-                    .stackProvider(new LimitedStackProvider(32768 * 128, 32768, 32768 * 128))
+                    .stackProvider(provider)
                 .build()
         ;
         TestConfig config = getTestConfig("testdata/spec/modules.json", filename);
@@ -189,12 +193,17 @@ public class RuntimeTest {
         testSpecFunctions(filename, config.tests.stream().map(x -> x.function).collect(Collectors.toList()), 0, -1);
     }
 
+    @Before
+    public void beforeTest(){
+        provider.clear();
+    }
+
     @Test
     public void testAddWasm() throws Exception {
         ModuleInstance instance =
                 ModuleInstance.Builder.builder()
                 .binary(Util.readClassPathFileAsByteArray("expression-tests/add.wasm"))
-                    .stackProvider(new LimitedStackProvider(32768 * 128, 32768, 32768 * 128))
+                    .stackProvider(provider)
                 .build()
         ;
         assert instance.execute(0, 1, 1)[0] == 2;
