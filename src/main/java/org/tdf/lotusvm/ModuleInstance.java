@@ -43,7 +43,7 @@ public interface ModuleInstance {
         private long[] globals;
         private byte[] memory;
         private Module module;
-        private StackProvider stackProvider;
+        private StackAllocator stackAllocator;
 
         private Builder() {
         }
@@ -58,8 +58,8 @@ public interface ModuleInstance {
             return this;
         }
 
-        public Builder stackProvider(StackProvider provider) {
-            this.stackProvider = provider;
+        public Builder stackProvider(StackAllocator provider) {
+            this.stackAllocator = provider;
             return this;
         }
 

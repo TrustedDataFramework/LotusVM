@@ -50,10 +50,10 @@ public class ModuleInstanceImpl implements ModuleInstance {
     List<FunctionType> types;
     boolean validateFunctionType;
 
-    StackProvider stackProvider;
+    StackAllocator stackAllocator;
 
     public ModuleInstanceImpl(Builder builder) {
-        this.stackProvider = Objects.requireNonNull(builder.getStackProvider());
+        this.stackAllocator = Objects.requireNonNull(builder.getStackAllocator());
 
         Module module = builder.getModule() == null ? new Module(builder.getBinary()) : builder.getModule();
         types = module.getTypeSection().getFunctionTypes();

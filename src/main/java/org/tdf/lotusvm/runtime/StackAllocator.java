@@ -3,7 +3,7 @@ package org.tdf.lotusvm.runtime;
 import org.tdf.lotusvm.types.Instruction;
 
 // stack provider to avoid array create
-public interface StackProvider {
+public interface StackAllocator {
     // create a stack, return the stackId
     int create();
 

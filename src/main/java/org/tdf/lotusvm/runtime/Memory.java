@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 // TODO: limit memory size in block chain
 @Getter
 public class Memory {
-    private static final int PAGE_SIZE = 64 * (1 << 10); // 64 KB
+    public static final int PAGE_SIZE = 64 * (1 << 10); // 64 KB
     private final LimitType limit;
     private byte[] data;
     private int pages;
@@ -101,9 +101,6 @@ public class Memory {
         this.data[offset] = n;
     }
 
-    int getPageSize() {
-        return pages;
-    }
 
     // The memory.grow instruction is non-deterministic.
     // It may either succeed, returning the old memory size sz, or fail, returning -1
@@ -111,7 +108,7 @@ public class Memory {
     // However, failure can occur in other cases as well.
     // In practice, the choice depends on the resources available to the embedder.
     public int grow(int n) {
-        if (limit.isBounded() && getPageSize() + n > limit.getMaximum()) {
+        if (limit.isBounded() && getPages() + n > limit.getMaximum()) {
             return -1;
         }
         int prev = this.pages;

@@ -52,7 +52,7 @@ public class Frame {
         this.body = body;
         this.type = type;
         this.module = module;
-        this.stackId = module.stackProvider.create();
+        this.stackId = module.stackAllocator.create();
 
         for (int i = 0; i < module.hooks.length; i++) {
             module.hooks[i].onNewFrame(this);
@@ -60,8 +60,8 @@ public class Frame {
 
         int end = start + paramsLength;
         for (int i = start; i < start + localLength; i++) {
-            module.stackProvider.pushLocal(stackId, i < end ?
-                module.stackProvider.getUnchecked(i)
+            module.stackAllocator.pushLocal(stackId, i < end ?
+                module.stackAllocator.getUnchecked(i)
                 : 0
             );
         }
@@ -71,14 +71,14 @@ public class Frame {
         this.body = body;
         this.type = type;
         this.module = module;
-        this.stackId = module.stackProvider.create();
+        this.stackId = module.stackAllocator.create();
 
         for (int i = 0; i < module.hooks.length; i++) {
             module.hooks[i].onNewFrame(this);
         }
 
         for (int i = 0; i < localVariables.length; i++) {
-            module.stackProvider.pushLocal(stackId, localVariables[i]);
+            module.stackAllocator.pushLocal(stackId, localVariables[i]);
         }
     }
 
@@ -96,7 +96,7 @@ public class Frame {
     }
 
     public long pop() {
-        return module.stackProvider.pop(stackId);
+        return module.stackAllocator.pop(stackId);
     }
 
     public int popI32() {
@@ -136,29 +136,29 @@ public class Frame {
     }
 
     public long getLocal(int idx) {
-        return module.stackProvider.getLocal(stackId, idx);
+        return module.stackAllocator.getLocal(stackId, idx);
     }
 
     public void setLocal(int idx, long value) {
-        module.stackProvider.setLocal(stackId, idx, value);
+        module.stackAllocator.setLocal(stackId, idx, value);
     }
 
     public long[] popN(int n) {
         if (n == 0) return Constants.EMPTY_LONGS;
         long[] res = new long[n];
-        int index = module.stackProvider.popN(stackId, n);
+        int index = module.stackAllocator.popN(stackId, n);
         for (int i = 0; i < n; i++) {
-            res[i] = module.stackProvider.getUnchecked( i + index);
+            res[i] = module.stackAllocator.getUnchecked( i + index);
         }
         return res;
     }
 
     public void push(long i) {
-        module.stackProvider.push(stackId, i);
+        module.stackAllocator.push(stackId, i);
     }
 
     private boolean labelIsEmpty() {
-        return module.stackProvider.getLabelSize(stackId) == 0;
+        return module.stackAllocator.getLabelSize(stackId) == 0;
     }
 
 //    private void growLabel1() {
@@ -185,9 +185,9 @@ public class Frame {
     long execute() throws RuntimeException {
         pushLabel(type.getResultTypes().size() != 0, body, false);
         while (!labelIsEmpty()) {
-            int idx = this.module.stackProvider.getLabelSize(stackId) - 1;
-            int pc = this.module.stackProvider.getPc(stackId, idx);
-            Instruction[] body = this.module.stackProvider.getInstructions(stackId, idx);
+            int idx = this.module.stackAllocator.getLabelSize(stackId) - 1;
+            int pc = this.module.stackAllocator.getPc(stackId, idx);
+            Instruction[] body = this.module.stackAllocator.getInstructions(stackId, idx);
             if (pc >= body.length) {
                 popLabel();
                 continue;
@@ -196,7 +196,7 @@ public class Frame {
             if (ins.getCode().equals(OpCode.RETURN)) {
                 return returns();
             }
-            module.stackProvider.setPc(stackId, idx, pc + 1);
+            module.stackAllocator.setPc(stackId, idx, pc + 1);
 //            labelData[idx] &= ~LABELS_PC_MASK;
 //            labelData[idx] |= Integer.toUnsignedLong(pc + 1) << LABELS_PC_OFFSET;
             invoke(ins);
@@ -209,7 +209,7 @@ public class Frame {
     }
 
     private void drop() {
-        module.stackProvider.drop(stackId);
+        module.stackAllocator.drop(stackId);
     }
 
     private long returns() {
@@ -243,12 +243,12 @@ public class Frame {
 //        int stackSize = module.stackProvider.getStackSize(stackId);
 //        labelData[this.labelPos] |= Integer.toUnsignedLong(stackSize) << STACK_PC_OFFSET;
 //        this.labelPos++;
-        module.stackProvider.pushLabel(stackId, arity, body, loop);
+        module.stackAllocator.pushLabel(stackId, arity, body, loop);
     }
 
     private void popLabel() {
 //        this.labelPos--;
-        module.stackProvider.popLabel(stackId);
+        module.stackAllocator.popLabel(stackId);
     }
 
     private void popAndClearLabel() {
@@ -257,7 +257,7 @@ public class Frame {
 //            (int) ((this.labelData[this.labelPos - 1] & STACK_PC_MASK) >>> STACK_PC_OFFSET)
 //        );
 //        this.labelPos--;
-        this.module.stackProvider.popAndClearLabel(stackId);
+        this.module.stackAllocator.popAndClearLabel(stackId);
     }
 
     private void invoke(Instruction ins) throws RuntimeException {
@@ -338,7 +338,7 @@ public class Frame {
                         popN(function.parametersLength())
                     );
                 } else {
-                    int start = module.stackProvider.popN(this.stackId, function.parametersLength());
+                    int start = module.stackAllocator.popN(this.stackId, function.parametersLength());
                     res = ((WASMFunction) function).newFrame(
 //                        popN(function.parametersLength())
                          start, function.parametersLength()
@@ -371,7 +371,7 @@ public class Frame {
                         popN(function.parametersLength())
                     );
                 } else {
-                    int start = module.stackProvider.popN(stackId, function.parametersLength());
+                    int start = module.stackAllocator.popN(stackId, function.parametersLength());
                     r = ((WASMFunction) function).newFrame(
 //                        popN(function.parametersLength())
                         start, function.parametersLength()
@@ -484,10 +484,15 @@ public class Frame {
                 break;
             }
             case CURRENT_MEMORY:
-                pushI32(module.memory.getPageSize());
+                pushI32(module.memory.getPages());
                 break;
             case GROW_MEMORY: {
                 int n = popI32();
+                int before = module.memory.getPages() * Memory.PAGE_SIZE;
+                int after = (module.memory.getPages() + n) * Memory.PAGE_SIZE;
+                for (int i = 0; i < module.hooks.length; i++) {
+                    module.hooks[i].onMemoryGrow(before, after);
+                }
                 pushI32(module.memory.grow(n));
                 break;
             }
@@ -1070,6 +1075,6 @@ public class Frame {
 //        );
 //        labelData[labelPos - 1] &= ~LABELS_PC_MASK;
 //        labelData[labelPos - 1] |= Integer.toUnsignedLong(prevPc) << LABELS_PC_OFFSET;
-        module.stackProvider.branch(stackId, l);
+        module.stackAllocator.branch(stackId, l);
     }
 }

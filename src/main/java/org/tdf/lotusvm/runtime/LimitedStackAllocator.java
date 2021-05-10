@@ -3,7 +3,7 @@ package org.tdf.lotusvm.runtime;
 
 import org.tdf.lotusvm.types.Instruction;
 
-public class LimitedStackProvider implements StackProvider{
+public class LimitedStackAllocator implements StackAllocator {
     private static final int MAX_SIZE_PER_FRAME = 0xffff;
 
     private static final long ARITY_MASK =     0x000000000000ff00L;
@@ -55,7 +55,7 @@ public class LimitedStackProvider implements StackProvider{
 
     private int count;
 
-    public LimitedStackProvider(int maxStackSize, int maxFrames, int maxLabelSize) {
+    public LimitedStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
         if(maxStackSize <= 0 || maxFrames <=0 || maxLabelSize <= 0)
             throw new RuntimeException("invalid limits <= 0" + maxStackSize + " " + maxFrames + " " + maxLabelSize);
         this.offsets = new long[maxFrames];

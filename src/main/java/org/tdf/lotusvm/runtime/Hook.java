@@ -11,7 +11,7 @@ public interface Hook {
 
     void onFrameExit(Frame frame);
 
-    default void onStackGrow(int beforeGrow, int afterGrow) {
+    default void onMemoryGrow(int beforeGrow, int afterGrow) {
 
     }
 }

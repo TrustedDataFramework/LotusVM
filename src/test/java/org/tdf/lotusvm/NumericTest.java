@@ -4,8 +4,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.lotusvm.runtime.LimitedStackProvider;
-import org.tdf.lotusvm.runtime.StackProvider;
+import org.tdf.lotusvm.runtime.LimitedStackAllocator;
+import org.tdf.lotusvm.runtime.StackAllocator;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
 public class NumericTest {
-    private static final StackProvider provider = new LimitedStackProvider(32768 * 128, 32768, 32768 * 128);
+    private static final StackAllocator provider = new LimitedStackAllocator(32768 * 128, 32768, 32768 * 128);
 
     @Before
     public void before(){
