@@ -1,218 +1,121 @@
 package org.tdf.lotusvm.runtime;
 
-import lombok.Getter;
+
 import org.tdf.lotusvm.common.Constants;
 import org.tdf.lotusvm.common.OpCode;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.Instruction;
 import org.tdf.lotusvm.types.ResultType;
 
+public abstract class AbstractStackAllocator implements StackAllocator{
+    protected ModuleInstanceImpl module;
 
-@Getter
-public class Frame {
-    private static final long ARITY_MASK =     0x000000000000ff00L;
-    private static final int ARITY_OFFSET =    8;
+    public ModuleInstanceImpl getModule() {
+        return module;
+    }
 
-    private static final long LOOP_MASK =      0x00000000000000ffL;
-    private static final int  LOOP_OFFSET = 0;
-
-    private static final long STACK_PC_MASK =  0xffff000000000000L;
-    private static final int STACK_PC_OFFSET = 48;
-
-    private static final long LABELS_PC_MASK = 0x0000ffff00000000L;
-    private static final int LABELS_PC_OFFSET = 32;
-
-
-    private static final long MAXIMUM_UNSIGNED_I32 = 0xFFFFFFFFL;
-    private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
-    public static int DEFAULT_INITIAL_STACK_CAP = 8;
-    private final Instruction[] body;
-
-    private final FunctionType type;
-
-    private final ModuleInstanceImpl module;
-
-    private final int stackId;
-
-    // bit map
-//    private long[] labelData;
-
-//    private int labelPos;
-//    private Instruction[][] labelsBody;
-
-
-    Frame(
-        Instruction[] body,
-        FunctionType type,
-        ModuleInstanceImpl module,
-        int start,
-        int paramsLength,
-        int localLength
-    ) {
-        this.body = body;
-        this.type = type;
+    public void setModule(ModuleInstanceImpl module) {
         this.module = module;
-        this.stackId = module.stackAllocator.create();
-
-        for (int i = 0; i < module.hooks.length; i++) {
-            module.hooks[i].onNewFrame(this);
-        }
-
-        int end = start + paramsLength;
-        for (int i = start; i < start + localLength; i++) {
-            module.stackAllocator.pushLocal(stackId, i < end ?
-                module.stackAllocator.getUnchecked(i)
-                : 0
-            );
-        }
     }
 
-    Frame(Instruction[] body, FunctionType type, ModuleInstanceImpl module, long[] localVariables) {
-        this.body = body;
-        this.type = type;
-        this.module = module;
-        this.stackId = module.stackAllocator.create();
-
-        for (int i = 0; i < module.hooks.length; i++) {
-            module.hooks[i].onNewFrame(this);
-        }
-
-        for (int i = 0; i < localVariables.length; i++) {
-            module.stackAllocator.pushLocal(stackId, localVariables[i]);
-        }
+    // push a value into a stack
+    void push(long value) {
+        push(current(), value);
     }
 
-    // math trunc
-    private static double truncDouble(double d) {
-        if (d > 0) {
-            return Math.floor(d);
-        } else {
-            return Math.ceil(d);
-        }
+    long pop() {
+        return pop(current());
     }
 
-    private static float truncFloat(float f) {
-        return (float) truncDouble(f);
-    }
-
-    public long pop() {
-        return module.stackAllocator.pop(stackId);
-    }
-
-    public int popI32() {
+    int popI32() {
         return (int) pop();
     }
 
-    public void pushI32(int i) {
-        push(i & 0xffffffffL);
+    void pushI32(int i) {
+        push(current(), i & 0xffffffffL);
     }
 
-    public void pushI8(byte x) {
-        push(((long) x) & 0xffL);
+    void pushI8(byte x) {
+        push(current(), ((long) x) & 0xffL);
     }
 
-    public void pushI16(short x) {
-        push(((long) x) & 0xffffL);
+    void pushI16(short x) {
+        push(current(), ((long) x) & 0xffffL);
     }
 
-    public float popF32() {
+    float popF32() {
         return Float.intBitsToFloat(popI32());
     }
 
-    public double popF64() {
+    double popF64() {
         return Double.longBitsToDouble(pop());
     }
 
-    public void pushF32(float i) {
+    void pushF32(float i) {
         pushI32(Float.floatToIntBits(i));
     }
 
-    public void pushF64(double i) {
-        push(Double.doubleToLongBits(i));
+    void pushF64(double i) {
+        push(current(), Double.doubleToLongBits(i));
     }
 
-    public void pushBoolean(boolean b) {
-        push(b ? 1 : 0);
+    void pushBoolean(boolean b) {
+        push(current(), b ? 1 : 0);
     }
 
-    public long getLocal(int idx) {
-        return module.stackAllocator.getLocal(stackId, idx);
+    long getLocal(int idx) {
+        return getLocal(current(), idx);
     }
 
-    public void setLocal(int idx, long value) {
-        module.stackAllocator.setLocal(stackId, idx, value);
+    void setLocal(int idx, long value) {
+        setLocal(current(), idx, value);
     }
 
-    public long[] popN(int n) {
+    void pushLabel(boolean arity, Instruction[] body, boolean loop) {
+        pushLabel(current(), arity, body, loop);
+    }
+
+    void branch(int l) {
+        branch(current(), l);
+    }
+
+    boolean labelIsEmpty() {
+        return getLabelSize(current()) == 0;
+    }
+
+    void drop() {
+        drop(current());
+    }
+
+    void popLabel() {
+        popLabel(current());
+    }
+
+    WASMFunction getFunction() {
+        return getFunction(current());
+    }
+
+    Instruction[] getBody(int frameId) {
+        return getFunction(frameId).getBody();
+    }
+
+    Instruction[] getBody() {
+        return getFunction().getBody();
+    }
+
+    long[] popLongs(int n) {
         if (n == 0) return Constants.EMPTY_LONGS;
         long[] res = new long[n];
-        int index = module.stackAllocator.popN(stackId, n);
+        int index = popN(current(), n);
         for (int i = 0; i < n; i++) {
-            res[i] = module.stackAllocator.getUnchecked( i + index);
+            res[i] = getUnchecked( i + index);
         }
         return res;
     }
 
-    public void push(long i) {
-        module.stackAllocator.push(stackId, i);
-    }
 
-    private boolean labelIsEmpty() {
-        return module.stackAllocator.getLabelSize(stackId) == 0;
-    }
-
-//    private void growLabel1() {
-//        if (this.labelData == null) {
-//            this.labelData = new long[DEFAULT_INITIAL_STACK_CAP];
-//            this.labelsBody = new Instruction[DEFAULT_INITIAL_STACK_CAP][];
-//        }
-//
-//        if (labelPos >= this.labelData.length) {
-//            long[] tmp0 = this.labelData;
-//            Instruction[][] tmp1 = this.labelsBody;
-//
-//            int l = tmp0.length * 2 + 1;
-//            this.labelData = new long[l];
-//            this.labelsBody = new Instruction[l][];
-//
-//            System.arraycopy(tmp0, 0, this.labelData, 0, tmp0.length);
-//            System.arraycopy(tmp1, 0, this.labelsBody, 0, tmp1.length);
-//        }
-//    }
-
-    // A result is the outcome of a computation. It is either a sequence of values or a trap.
-    // In the current version of WebAssembly, a result can consist of at most one value.
-    long execute() throws RuntimeException {
-        pushLabel(type.getResultTypes().size() != 0, body, false);
-        while (!labelIsEmpty()) {
-            int idx = this.module.stackAllocator.getLabelSize(stackId) - 1;
-            int pc = this.module.stackAllocator.getPc(stackId, idx);
-            Instruction[] body = this.module.stackAllocator.getInstructions(stackId, idx);
-            if (pc >= body.length) {
-                popLabel();
-                continue;
-            }
-            Instruction ins = body[pc];
-            if (ins.getCode().equals(OpCode.RETURN)) {
-                return returns();
-            }
-            module.stackAllocator.setPc(stackId, idx, pc + 1);
-//            labelData[idx] &= ~LABELS_PC_MASK;
-//            labelData[idx] |= Integer.toUnsignedLong(pc + 1) << LABELS_PC_OFFSET;
-            invoke(ins);
-        }
-        for (int i = 0; i < module.hooks.length; i++) {
-            module.hooks[i].onFrameExit(this);
-        }
-        return returns();
-        // clear stack and local variables
-    }
-
-    private void drop() {
-        module.stackAllocator.drop(stackId);
-    }
-
-    private long returns() {
+    long returns() {
+        FunctionType type = getFunction(current()).getType();
         if (type.getResultTypes().size() == 0) {
             drop();
             return 0;
@@ -228,41 +131,34 @@ public class Frame {
         return res;
     }
 
-    private void pushLabel(boolean arity, Instruction[] body, boolean loop) {
-//        this.growLabel1();
-//        this.labelsBody[labelPos] = body;
-//        this.labelData[labelPos] &= ~ARITY_MASK; // inv(arity mask)
-//        this.labelData[labelPos] |= (arity ? 1L : 0L) << ARITY_OFFSET;
-//        this.labelData[labelPos] &= ~LOOP_MASK;
-//        this.labelData[labelPos] |= (loop ? 1L : 0L) << LOOP_OFFSET;
-//
-//        // set label pc to zero
-//        this.labelData[labelPos] &= ~LABELS_PC_MASK;
-//
-//        labelData[this.labelPos] &= ~STACK_PC_MASK;
-//        int stackSize = module.stackProvider.getStackSize(stackId);
-//        labelData[this.labelPos] |= Integer.toUnsignedLong(stackSize) << STACK_PC_OFFSET;
-//        this.labelPos++;
-        module.stackAllocator.pushLabel(stackId, arity, body, loop);
+    public long execute() throws RuntimeException {
+        FunctionType type = getFunction().getType();
+        pushLabel(type.getResultTypes().size() != 0, getBody(), false);
+        while (!labelIsEmpty()) {
+            int idx = getLabelSize(current()) - 1;
+            int pc = getPc(current(), idx);
+            Instruction[] body = getInstructions(current(), idx);
+            if (pc >= body.length) {
+                popLabel();
+                continue;
+            }
+            Instruction ins = body[pc];
+            if (ins.getCode().equals(OpCode.RETURN)) {
+                return returns();
+            }
+            setPc(current(), idx, pc + 1);
+            invoke(ins);
+        }
+        for (int i = 0; i < getModule().hooks.length; i++) {
+            getModule().hooks[i].onFrameExit();
+        }
+        return returns();
+        // clear stack and local variables
     }
 
-    private void popLabel() {
-//        this.labelPos--;
-        module.stackAllocator.popLabel(stackId);
-    }
-
-    private void popAndClearLabel() {
-//        this.module.stackProvider.setStackSize(
-//            stackId,
-//            (int) ((this.labelData[this.labelPos - 1] & STACK_PC_MASK) >>> STACK_PC_OFFSET)
-//        );
-//        this.labelPos--;
-        this.module.stackAllocator.popAndClearLabel(stackId);
-    }
-
-    private void invoke(Instruction ins) throws RuntimeException {
-        for (int i = 0; i < module.hooks.length; i++) {
-            module.hooks[i].onInstruction(ins, module);
+    void invoke(Instruction ins) throws RuntimeException {
+        for (int i = 0; i < getModule().hooks.length; i++) {
+            getModule().hooks[i].onInstruction(ins, getModule());
         }
         switch (ins.getCode()) {
             // these operations are essentially no-ops.
@@ -328,25 +224,22 @@ public class Frame {
 //            case RETURN:
 //                break;
             case CALL: {
-                FunctionInstance function = module.functions.get(ins.getOperandInt(0));
+                FunctionInstance function = getModule().functions.get(ins.getOperandInt(0));
                 long res;
                 if (function.isHost()) {
-                    for (int i = 0; i < module.hooks.length; i++) {
-                        module.hooks[i].onHostFunction((HostFunction) function, module);
+                    for (int i = 0; i < getModule().hooks.length; i++) {
+                        getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
                     }
                     res = function.execute(
-                        popN(function.parametersLength())
+                        popLongs(function.parametersLength())
                     );
                 } else {
-                    int start = module.stackAllocator.popN(this.stackId, function.parametersLength());
-                    res = ((WASMFunction) function).newFrame(
-//                        popN(function.parametersLength())
-                         start, function.parametersLength()
-                    ).execute();
+                    pushFrame(ins.getOperandInt(0));
+                    res = execute();
                 }
 
                 int resLength = function.getArity();
-                if (module.validateFunctionType && resLength != function.getArity()) {
+                if (getModule().validateFunctionType && resLength != function.getArity()) {
                     throw new RuntimeException("the result of function " + function + " is not equals to its arity");
                 }
                 if (function.getArity() > 0) {
@@ -358,30 +251,27 @@ public class Frame {
             }
             case CALL_INDIRECT: {
                 int elementIndex = popI32();
-                if (elementIndex < 0 || elementIndex >= module.table.getFunctions().length) {
+                if (elementIndex < 0 || elementIndex >= getModule().table.getFunctions().length) {
                     throw new RuntimeException("undefined element index");
                 }
-                FunctionInstance function = module.table.getFunctions()[elementIndex];
+                FunctionInstance function = getModule().table.getFunctions()[elementIndex];
                 long r;
                 if (function.isHost()) {
-                    for (int i = 0; i < module.hooks.length; i++) {
-                        module.hooks[i].onHostFunction((HostFunction) function, module);
+                    for (int i = 0; i < getModule().hooks.length; i++) {
+                        getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
                     }
                     r = function.execute(
-                        popN(function.parametersLength())
+                        popLongs(function.parametersLength())
                     );
                 } else {
-                    int start = module.stackAllocator.popN(stackId, function.parametersLength());
-                    r = ((WASMFunction) function).newFrame(
-//                        popN(function.parametersLength())
-                        start, function.parametersLength()
-                    ).execute();
+                    pushFrame((int) (elementIndex | TABLE_MASK));
+                    r = execute();
                 }
-                if (module.validateFunctionType && !function.getType().equals(module.types.get(ins.getOperandInt(0)))) {
+                if (getModule().validateFunctionType && !function.getType().equals(getModule().types.get(ins.getOperandInt(0)))) {
                     throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
                 }
                 if (function.getArity() > 0) {
-                    push(r);
+                    push(current(), r);
                 }
                 break;
             }
@@ -390,110 +280,110 @@ public class Frame {
                 long val2 = pop();
                 long val1 = pop();
                 if (c != 0) {
-                    push(val1);
+                    push(current(), val1);
                     break;
                 }
-                push(val2);
+                push(current(), val2);
                 break;
             }
             // variable instructions
             case GET_LOCAL:
-                push(getLocal(ins.getOperandInt(0)));
+                push(current(), getLocal(ins.getOperandInt(0)));
                 break;
             case SET_LOCAL:
                 setLocal(ins.getOperandInt(0), pop());
                 break;
             case TEE_LOCAL: {
                 long val = pop();
-                push(val);
-                push(val);
+                push(current(), val);
+                push(current(), val);
                 setLocal(ins.getOperandInt(0), pop());
                 break;
             }
             case GET_GLOBAL:
-                push(module.globals[ins.getOperandInt(0)]);
+                push(getModule().globals[ins.getOperandInt(0)]);
                 break;
             case SET_GLOBAL:
-                if (!module.globalTypes.get(
+                if (!getModule().globalTypes.get(
                     ins.getOperandInt(0)
                 ).isMutable()) throw new RuntimeException("modify a immutable global");
-                module.globals[ins.getOperandInt(0)] = pop();
+                getModule().globals[ins.getOperandInt(0)] = pop();
                 break;
             // memory instructions
             case I32_LOAD:
             case F32_LOAD:
             case I64_LOAD32_U:
                 pushI32(
-                    module.memory.load32(popI32() + ins.getOperandInt(1))
+                    getModule().memory.load32(popI32() + ins.getOperandInt(1))
                 );
                 break;
             case I64_LOAD:
             case F64_LOAD:
                 push(
-                    module.memory.load64(popI32() + ins.getOperandInt(1))
+                    getModule().memory.load64(popI32() + ins.getOperandInt(1))
                 );
                 break;
             case I32_LOAD8_S:
-                pushI32(module.memory.load8(popI32() + ins.getOperandInt(1)));
+                pushI32(getModule().memory.load8(popI32() + ins.getOperandInt(1)));
                 break;
             case I64_LOAD8_S: {
-                push(module.memory.load8(popI32() + ins.getOperandInt(1)));
+                push(getModule().memory.load8(popI32() + ins.getOperandInt(1)));
                 break;
             }
             case I32_LOAD8_U:
             case I64_LOAD8_U:
-                pushI8(module.memory.load8(popI32() + ins.getOperandInt(1)));
+                pushI8(getModule().memory.load8(popI32() + ins.getOperandInt(1)));
                 break;
             case I32_LOAD16_S: {
-                pushI32(module.memory.load16(popI32() + ins.getOperandInt(1)));
+                pushI32(getModule().memory.load16(popI32() + ins.getOperandInt(1)));
                 break;
             }
             case I64_LOAD16_S:
-                push(module.memory.load16(popI32() + ins.getOperandInt(1)));
+                push(getModule().memory.load16(popI32() + ins.getOperandInt(1)));
                 break;
             case I32_LOAD16_U:
             case I64_LOAD16_U:
-                pushI16(module.memory.load16(popI32() + ins.getOperandInt(1)));
+                pushI16(getModule().memory.load16(popI32() + ins.getOperandInt(1)));
                 break;
             case I64_LOAD32_S:
-                push(module.memory.load32(popI32() + ins.getOperandInt(1)));
+                push(getModule().memory.load32(popI32() + ins.getOperandInt(1)));
                 break;
             case I32_STORE8:
             case I64_STORE8: {
                 byte c = (byte) pop();
-                module.memory.storeI8(popI32() + ins.getOperandInt(1), c);
+                getModule().memory.storeI8(popI32() + ins.getOperandInt(1), c);
                 break;
             }
             case I32_STORE16:
             case I64_STORE16: {
                 short c = (short) pop();
-                module.memory.storeI16(popI32() + ins.getOperandInt(1), c);
+                getModule().memory.storeI16(popI32() + ins.getOperandInt(1), c);
                 break;
             }
             case I32_STORE:
             case F32_STORE:
             case I64_STORE32: {
                 int c = popI32();
-                module.memory.storeI32(popI32() + ins.getOperandInt(1), c);
+                getModule().memory.storeI32(popI32() + ins.getOperandInt(1), c);
                 break;
             }
             case I64_STORE:
             case F64_STORE: {
                 long c = pop();
-                module.memory.storeI64(popI32() + ins.getOperandInt(1), c);
+                getModule().memory.storeI64(popI32() + ins.getOperandInt(1), c);
                 break;
             }
             case CURRENT_MEMORY:
-                pushI32(module.memory.getPages());
+                pushI32(getModule().memory.getPages());
                 break;
             case GROW_MEMORY: {
                 int n = popI32();
-                int before = module.memory.getPages() * Memory.PAGE_SIZE;
-                int after = (module.memory.getPages() + n) * Memory.PAGE_SIZE;
-                for (int i = 0; i < module.hooks.length; i++) {
-                    module.hooks[i].onMemoryGrow(before, after);
+                int before = getModule().memory.getPages() * BaseMemory.PAGE_SIZE;
+                int after = (getModule().memory.getPages() + n) * BaseMemory.PAGE_SIZE;
+                for (int i = 0; i < getModule().hooks.length; i++) {
+                    getModule().hooks[i].onMemoryGrow(before, after);
                 }
-                pushI32(module.memory.grow(n));
+                pushI32(getModule().memory.grow(n));
                 break;
             }
             case I32_CONST:
@@ -1047,34 +937,17 @@ public class Frame {
     }
 
 
-    // br l
-    private void branch(int l) {
-//        int idx = this.labelPos - 1 - l;
-//        boolean arity = (labelData[idx] & ARITY_MASK) != 0;
-//        long val = arity? pop() : 0;
-//        // Repeat l+1 times
-//        for (int i = 0; i < l + 1; i++) {
-//            popAndClearLabel();
-//        }
-//        if (arity) {
-//            push(val);
-//        }
-//        boolean loop = (labelData[idx] & LOOP_MASK) != 0;
-//        labelData[idx] &= ~LABELS_PC_MASK;
-//        if (!loop) {
-//            long p = Integer.toUnsignedLong(labelsBody[idx].length);
-//            if(p > 0xffff)
-//                throw new RuntimeException("labels overflow");
-//            labelData[idx] |= p << LABELS_PC_OFFSET;
-//        }
-//        int prevPc = (int) ((labelData[idx] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
-//        pushLabel(
-//            arity,
-//            labelsBody[idx],
-//            loop
-//        );
-//        labelData[labelPos - 1] &= ~LABELS_PC_MASK;
-//        labelData[labelPos - 1] |= Integer.toUnsignedLong(prevPc) << LABELS_PC_OFFSET;
-        module.stackAllocator.branch(stackId, l);
+
+    // math trunc
+    protected static double truncDouble(double d) {
+        if (d > 0) {
+            return Math.floor(d);
+        } else {
+            return Math.ceil(d);
+        }
+    }
+
+    protected static float truncFloat(float f) {
+        return (float) truncDouble(f);
     }
 }

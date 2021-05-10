@@ -6,7 +6,7 @@ plugins {
 apply from: 'config/config.gradle'
 
 group 'org.tdf'
-version = '2.0.0'
+version = '2.0.1'
 
 sourceCompatibility = 11
 
@@ -27,6 +27,7 @@ dependencies {
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testCompile "com.google.guava:guava:${guavaVersion}"
+    testCompile "commons-codec:commons-codec:${commonsCodecVersion}"
 }
 
 jar{

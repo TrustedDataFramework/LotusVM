@@ -25,7 +25,7 @@ public class LimitType {
         this.minimum = minimum;
     }
 
-    private LimitType(int minimum, int maximum) {
+    public LimitType(int minimum, int maximum) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.bounded = true;

@@ -1,6 +1,5 @@
 package org.tdf.lotusvm.runtime;
 
-import lombok.Getter;
 import org.tdf.lotusvm.ModuleInstance;
 import org.tdf.lotusvm.types.FunctionType;
 
@@ -81,14 +80,6 @@ public abstract class HostFunction implements FunctionInstance {
     }
 
     protected byte[] loadMemory(int offset, int length) {
-        return instance.memory.loadN(offset, length);
-    }
-
-    protected void putStringIntoMemory(int offset, String data) {
-        instance.memory.putString(offset, data);
-    }
-
-    protected String loadStringFromMemory(int offset, int length) {
-        return instance.memory.loadString(offset, length);
+        return instance.memory.load(offset, length);
     }
 }

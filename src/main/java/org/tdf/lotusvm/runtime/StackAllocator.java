@@ -4,52 +4,84 @@ import org.tdf.lotusvm.types.Instruction;
 
 // stack provider to avoid array create
 public interface StackAllocator {
-    // create a stack, return the stackId
-    int create();
+    long MAXIMUM_UNSIGNED_I32 = 0xFFFFFFFFL;
+    long UNSIGNED_MASK = 0x7fffffffffffffffL;
+    long FUNCTION_INDEX_MASK = 0x0000000000007fffL;
+    long TABLE_MASK = 0x0000000000008000L;
 
-    // push local variable into stack
-    void pushLocal(int stackId, long value);
+    void setModule(ModuleInstanceImpl module);
 
-    void setLocal(int stackId, int index, long value);
+    WASMFunction getFunction(int frameId);
+
+    long execute();
+
+    int current();
+
+    // create a frame, return the frame Id, the function referred by index must be wasm function
+    int pushFrame(int functionIndex);
+
+    // create a frame, return the frame Id, the function referred by index must be wasm function
+    int pushFrame(int functionIndex, long[] params);
+
+    // push local variable into frame
+    void pushLocal(int frameId, long value);
+
+    // set frame local variable
+    void setLocal(int frameId, int index, long value);
+
 
     // push a value into a stack
-    void push(int stackId, long value);
+    void push(int frameId, long value);
 
     // pop a value from a stack
-    long pop(int stackId);
+    long pop(int frameId);
 
     // get from stack by index, unchecked
     long getUnchecked(int index);
 
     // get local from stack by index
-    long getLocal(int stackId, int index);
+    long getLocal(int frameId, int index);
 
     // pop n value into target stack
     // the return value is the offset of stack
-    int popN(int stackId, int length);
+    int popN(int frameId, int length);
 
-    // drop the stack
-    void drop(int stackId);
+    // drop the frame
+    void drop(int frameId);
 
-    int getStackSize(int stackId);
+    // get stack size of a frame
+    int getStackSize(int frameId);
 
-    void setStackSize(int stackId, int size);
+    // set stack of the frame
+    void setStackSize(int frameId, int size);
 
-    void pushLabel(int stackId, boolean arity, Instruction[] body, boolean loop);
+    // push label of the frame
+    void pushLabel(int frameId, boolean arity, Instruction[] body, boolean loop);
 
-    void popLabel(int stackId);
+    // pop label of the frame
+    void popLabel(int frameId);
 
-    void popAndClearLabel(int stackId);
+    // pop and clear label of the frame
+    void popAndClearLabel(int frameId);
 
-    void branch(int stackId, int l);
+    // branch on frame
+    void branch(int frameId, int l);
 
-    int getLabelSize(int stackId);
+    // get label size of the frame
+    int getLabelSize(int frameId);
 
-    Instruction[] getInstructions(int stackId, int idx);
+    // get instruction by label index
+    Instruction[] getInstructions(int frameId, int idx);
 
-    int getPc(int stackId, int idx);
+    // get play count by label index
+    int getPc(int frameId, int idx);
 
-    void setPc(int stackId, int idx, int pc);
+    // set play count by label index
+    void setPc(int frameId, int idx, int pc);
 
+    // clear frames
     void clear();
+
+    // get current module instance
+    ModuleInstanceImpl getModule();
 }

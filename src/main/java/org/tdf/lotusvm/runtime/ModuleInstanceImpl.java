@@ -29,7 +29,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     // memories
     // In the current version of WebAssembly, all memory instructions implicitly operate on memory index 0.
     // This restriction may be lifted in future versions.
-    Memory memory = new Memory();
+    Memory memory;
 
     // In the current version of WebAssembly, at most one table may be defined or imported in a single module,
     // and all constructs implicitly reference this table 0. This restriction may be lifted in future versions.
@@ -45,8 +45,9 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     // hooks
     Hook[] hooks;
+
     // exported functions
-    Map<String, FunctionInstance> exports;
+    Map<String, Integer> exports;
     List<FunctionType> types;
     boolean validateFunctionType;
 
@@ -54,7 +55,9 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     public ModuleInstanceImpl(Builder builder) {
         this.stackAllocator = Objects.requireNonNull(builder.getStackAllocator());
+        this.stackAllocator.setModule(this);
 
+        this.memory = builder.getMemory() == null ? new BaseMemory() : builder.getMemory();
         Module module = builder.getModule() == null ? new Module(builder.getBinary()) : builder.getModule();
         types = module.getTypeSection().getFunctionTypes();
         hooks = new ArrayList<>(builder.getHooks()).toArray(new Hook[]{});
@@ -138,26 +141,25 @@ public class ModuleInstanceImpl implements ModuleInstance {
         }
 
         if (module.getMemorySection() != null) {
-            memory = new Memory(module.getMemorySection().getMemories()
+            if(module.getMemorySection().getMemories().size() > 1)
+                throw new RuntimeException("too much memory section");
+            memory.setLimit(module.getMemorySection().getMemories()
                     .get(0));
         }
 
         // put data into memory
-        if (module.getDataSection() != null && builder.getMemory() == null) {
+        if (module.getDataSection() != null) {
             module.getDataSection().getDataSegments().forEach(x -> {
                 int offset = (int) executeExpression(x.getExpression(), ValueType.I32);
                 memory.put(offset, x.getInit());
             });
         }
 
-        if (builder.getMemory() != null && memory != null) {
-            memory.copyFrom(builder.getMemory());
-        }
-
         // load and execute start function
         if (module.getStartSection() != null) {
             startFunction = functions.get(module.getStartSection().getFunctionIndex());
-            startFunction.execute(EMPTY_LONGS);
+            stackAllocator.pushFrame(module.getStartSection().getFunctionIndex(), EMPTY_LONGS);
+            stackAllocator.execute();
         }
 
         // exports
@@ -165,8 +167,12 @@ public class ModuleInstanceImpl implements ModuleInstance {
             exports = new HashMap<>();
             module.getExportSection().getExports().stream()
                     .filter(x -> x.getType() == ExportSection.ExportType.FUNCTION_INDEX)
-                    .forEach(x -> exports.put(x.getName(), functions.get(x.getIndex())));
+                    .forEach(x -> exports.put(x.getName(), x.getIndex()));
         }
+
+
+        if(table != null && table.getFunctions() != null && table.getFunctions().length > StackAllocator.FUNCTION_INDEX_MASK || functions.size() > StackAllocator.FUNCTION_INDEX_MASK)
+            throw new RuntimeException("function index overflow");
     }
 
     public Set<Hook> getHooks() {
@@ -196,29 +202,36 @@ public class ModuleInstanceImpl implements ModuleInstance {
     }
 
     @Override
-    public void setMemory(@NonNull byte[] memory) {
-        if (this.memory == null) throw new IllegalArgumentException("this module instance contains non memory");
-        this.memory.copyFrom(memory);
-    }
-
-    @Override
     public long[] execute(int functionIndex, long... parameters) {
+        stackAllocator.pushFrame(functionIndex, parameters);
         FunctionInstance ins = functions.get(functionIndex);
-        long r = ins.execute(parameters);
+        long r = stackAllocator.execute();
         return ins.getArity() > 0 ? new long[]{r} : EMPTY_LONGS;
     }
 
     @Override
     public long[] execute(String funcName, long... parameters) throws RuntimeException {
-        FunctionInstance ins = exports.get(funcName);
-        long r = ins.execute(parameters);
+        int idx = exports.get(funcName);
+        FunctionInstance ins = functions.get(exports.get(funcName));
+        stackAllocator.pushFrame(idx, parameters);
+        long r = stackAllocator.execute();
         return ins.getArity() > 0 ? new long[]{r} : EMPTY_LONGS;
     }
 
 
     private long executeExpression(Instruction[] instructions, ValueType type) {
-        return new Frame(instructions, new FunctionType(Collections.emptyList(), Collections.singletonList(type)), this,
-                EMPTY_LONGS).execute();
+        WASMFunction func = new WASMFunction(
+            new FunctionType(Collections.emptyList(), Collections.singletonList(type)),
+            this,
+                instructions,
+                Collections.emptyList()
+            );
+        this.functions.add(func);
+        int idx = this.functions.size() - 1;
+        stackAllocator.pushFrame(this.functions.size() - 1, EMPTY_LONGS);
+        long r = stackAllocator.execute();
+        this.functions.remove(idx);
+        return r;
     }
 
     @Override

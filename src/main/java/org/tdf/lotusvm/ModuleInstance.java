@@ -22,8 +22,6 @@ public interface ModuleInstance {
 
     Memory getMemory();
 
-    void setMemory(byte[] memory);
-
     Set<Hook> getHooks();
 
     void setHooks(Set<Hook> hooks);
@@ -41,7 +39,7 @@ public interface ModuleInstance {
         private Set<Hook> hooks = Collections.emptySet();
         private byte[] binary;
         private long[] globals;
-        private byte[] memory;
+        private Memory memory;
         private Module module;
         private StackAllocator stackAllocator;
 
@@ -84,7 +82,7 @@ public interface ModuleInstance {
             return this;
         }
 
-        public Builder memory(byte[] memory) {
+        public Builder memory(Memory memory) {
             this.memory = memory;
             return this;
         }

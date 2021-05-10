@@ -9,8 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.lotusvm.runtime.LimitedStackAllocator;
-import org.tdf.lotusvm.runtime.StackAllocator;
+import org.tdf.lotusvm.runtime.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -135,9 +134,12 @@ public class RuntimeTest {
     }
 
     public void testSpecFunctions(String filename, Collection<String> functions, int skip, int limit) throws Exception {
+        Memory m = new UnsafeMemory();
         ModuleInstance instance =
                 ModuleInstance.Builder
+
                         .builder()
+                    .memory(m)
                         .validateFunctionType()
                 .binary(Util.readClassPathFileAsByteArray("testdata/spec/" + filename))
                     .stackProvider(provider)
@@ -186,6 +188,7 @@ public class RuntimeTest {
                 throw new RuntimeException(filename + " " + function.function + " failed, the result should be null");
             }
         }
+        m.close();
     }
 
     public void testSpecFile(String filename) throws Exception {

@@ -7,9 +7,9 @@ public interface Hook {
 
     void onHostFunction(HostFunction function, ModuleInstanceImpl module);
 
-    void onNewFrame(Frame frame);
+    void onNewFrame();
 
-    void onFrameExit(Frame frame);
+    void onFrameExit();
 
     default void onMemoryGrow(int beforeGrow, int afterGrow) {
 

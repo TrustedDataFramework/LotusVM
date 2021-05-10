@@ -1,5 +1,6 @@
 package org.tdf.lotusvm.runtime;
 
+import lombok.Getter;
 import org.tdf.lotusvm.types.CodeSection;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.Instruction;
@@ -10,6 +11,8 @@ class WASMFunction implements FunctionInstance {
     private final FunctionType type;
     // params + localvars
     private final ModuleInstanceImpl module;
+
+    @Getter
     private final Instruction[] body;
     private final List<CodeSection.Local> locals;
 
@@ -33,25 +36,15 @@ class WASMFunction implements FunctionInstance {
         return type;
     }
 
-    Frame newFrame(long[] parameters) {
-        long[] localVariables = new long[parameters.length + getLocals()];
-        System.arraycopy(parameters, 0, localVariables, 0, parameters.length);
-        return new Frame(body, type, module, localVariables);
+    @Override
+    public long execute(long[] parameters) {
+        throw new UnsupportedOperationException();
     }
 
-    Frame newFrame(int start, int parameterLen) {
-        // init localvars
-        return new Frame(body, type, module, start, parameterLen, getLocals() + parameterLen);
-    }
 
     @Override
     public boolean isHost() {
         return false;
-    }
-
-    @Override
-    public long execute(long[] parameters) throws RuntimeException {
-        return newFrame(parameters).execute();
     }
 
 
