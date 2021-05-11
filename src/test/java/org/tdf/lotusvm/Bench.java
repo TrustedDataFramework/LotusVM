@@ -61,7 +61,7 @@ public class Bench {
     // LimitedStackAllocator: 1934.4 ms
     // BaseStackAllocator:
     @Test
-    @Ignore
+//    @Ignore
     public void test() throws Exception{
         String file = getClass()
             .getClassLoader()
