@@ -11,7 +11,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.stream.Stream;
 
 public class Util {
     public static ObjectMapper MAPPER = new ObjectMapper()
@@ -35,23 +34,14 @@ public class Util {
     }
 
 
-
-    public static TestConfig[] getTestConfig(String directory) throws Exception {
+    public static TestModule getTestModule(String directory) throws Exception {
         String file = Paths.get(directory, "modules.json").toString();
         TestConfig[] cfgs = MAPPER.readValue(
             readClassPathFile(file),
             TestConfig[].class);
-        for (int i = 0; i < cfgs.length; i++) {
-            cfgs[i].directory = directory;
-        }
-        return cfgs;
+        return new TestModule(cfgs, directory);
     }
 
-    public static TestConfig getTestConfig(String dir, String filename) throws Exception {
-        TestConfig[] ms = getTestConfig(dir);
-        return Stream.of(
-            ms).filter(x -> x.file.equals(filename)
-        ).findFirst().get();
-    }
+
 
 }

@@ -1,28 +1,23 @@
 package org.tdf.lotusvm;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.lotusvm.runtime.LimitedStackAllocator;
-import org.tdf.lotusvm.runtime.StackAllocator;
 
 import java.math.BigDecimal;
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
 public class RuntimeTest {
     public void testSpecFunctions(String filename, Collection<String> functions, int skip, int limit) throws Exception {
-        TestConfig config = Util.getTestConfig("testdata/spec", filename);
-        config.testSpecFunctions(filename, functions, skip, limit);
+        TestModule module = Util.getTestModule("testdata/spec");
+        module.testSpecFunctions(filename, functions, skip, limit);
     }
 
     public void testSpecFile(String filename) throws Exception {
-        TestConfig config = Util.getTestConfig("testdata/spec", filename);
-        testSpecFunctions(filename, config.tests.stream().map(x -> x.function).collect(Collectors.toList()), 0, -1);
+        TestModule module = Util.getTestModule("testdata/spec");
+        module.testSpecFunctions(filename, null, 0, -1);
     }
-
 
 
     @Test

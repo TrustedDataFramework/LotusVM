@@ -4,13 +4,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
 public class NumericTest {
     public void testSpecFile(String filename) throws Exception {
-        TestConfig config = Util.getTestConfig("testdata", filename);
-        config.testSpecFunctions(filename, config.tests.stream().map(x -> x.function).collect(Collectors.toList()), 0, -1);
+        TestModule module = Util.getTestModule("testdata");
+        module.testSpecFunctions(filename, null, 0, -1);
     }
 
     @Test
