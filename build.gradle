@@ -28,6 +28,9 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testCompile "com.google.guava:guava:${guavaVersion}"
     testCompile "commons-codec:commons-codec:${commonsCodecVersion}"
+
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 }
 
 jar{

@@ -1,82 +1,16 @@
 package org.tdf.lotusvm;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.lotusvm.runtime.LimitedStackAllocator;
-import org.tdf.lotusvm.runtime.StackAllocator;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @RunWith(JUnit4.class)
 public class NumericTest {
-    private static final StackAllocator provider = new LimitedStackAllocator(32768 * 128, 32768, 32768 * 128);
-
-    @Before
-    public void before(){
-        provider.clear();
-    }
-
-    public void testSpecFunctions(String filename, Collection<String> functions, int skip, int limit) throws Exception {
-        ModuleInstance instance =
-                ModuleInstance.Builder.builder()
-                    .binary(Util.readClassPathFileAsByteArray("testdata/" + filename))
-                    .stackProvider(provider)
-                .build()
-        ;
-        RuntimeTest.TestConfig config = RuntimeTest.getTestConfig("testdata/modules.json", filename);
-        Set<String> all = new HashSet<>(functions);
-        List<RuntimeTest.TestFunction> tests = config.tests.stream().filter(f -> all.contains(f.function)).skip(skip).limit(limit > 0 ? limit : Long.MAX_VALUE).collect(Collectors.toList());
-        for (RuntimeTest.TestFunction function : tests) {
-            Long[] args;
-            if (function.args != null) {
-                args = function.args.stream().map(x -> x.data).toArray(Long[]::new);
-            } else {
-                args = new Long[0];
-            }
-            long[] args1 = new long[args.length];
-            for (int i = 0; i < args.length; i++) {
-                args1[i] = args[i];
-            }
-            if (function.trap != null && !function.trap.equals("")) {
-                Exception e = null;
-                try {
-                    instance.execute(function.function, args1);
-                } catch (Exception e2) {
-                    e = e2;
-                }
-                if (e == null) {
-                    throw new RuntimeException(filename + " " + function.function + " failed" + " " + function.trap + " expected");
-                }
-                continue;
-            }
-            long[] res;
-            try {
-                res = instance.execute(function.function, args1);
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new RuntimeException(filename + " " + function.function + " failed, unexpected exception ");
-            }
-            if (function.returns != null) {
-                if (res[0] != function.returns.data) {
-                    throw new RuntimeException(filename + " " + function.function + " failed");
-                }
-                continue;
-            }
-            if (res.length != 0) {
-                throw new RuntimeException(filename + " " + function.function + " failed, the result should be null");
-            }
-        }
-    }
-
     public void testSpecFile(String filename) throws Exception {
-        RuntimeTest.TestConfig config = RuntimeTest.getTestConfig("testdata/modules.json", filename);
-        testSpecFunctions(filename, config.tests.stream().map(x -> x.function).collect(Collectors.toList()), 0, -1);
+        TestConfig config = Util.getTestConfig("testdata", filename);
+        config.testSpecFunctions(filename, config.tests.stream().map(x -> x.function).collect(Collectors.toList()), 0, -1);
     }
 
     @Test

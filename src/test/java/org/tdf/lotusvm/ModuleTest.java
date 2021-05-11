@@ -16,9 +16,7 @@ public class ModuleTest {
 
     @Test
     public void test1() throws Exception {
-        File file = Util.readClassPathFile("testdata/spec");
-        File[] dirFile = file.listFiles();
-        for (File f : dirFile) {
+        for (File f : Util.readClassPathDir("testdata/spec")) {
             if(f.getName().equals("address.wasm")) continue;
             if (f.isFile() && f.getName().endsWith(".wasm")) {
                 Module module = new Module(ByteStreams.toByteArray(new FileInputStream(f)));
@@ -62,40 +60,40 @@ public class ModuleTest {
 
     @Test
     public void testAddWasm() throws Exception {
-        Module m = new Module(Util.readClassPathFileAsByteArray("expression-tests/add.wasm"));
+        Module m = new Module(Util.readClassPathFile("expression-tests/add.wasm"));
         assert m.getFunctionSection() != null;
     }
 
     @Test
     public void testExportAdd() throws Exception {
-        Module m = new Module(Util.readClassPathFileAsByteArray("expression-tests/export-add.wasm"));
+        Module m = new Module(Util.readClassPathFile("expression-tests/export-add.wasm"));
         assert m.getFunctionSection() != null;
         assert m.getExportSection() != null;
     }
 
     @Test
     public void testCall() throws Exception {
-        Module m = new Module(Util.readClassPathFileAsByteArray("expression-tests/call-another.wasm"));
+        Module m = new Module(Util.readClassPathFile("expression-tests/call-another.wasm"));
         assert m.getFunctionSection() != null;
         assert m.getExportSection() != null;
     }
 
     @Test
     public void testAddress() throws Exception {
-        Module m = new Module(Util.readClassPathFileAsByteArray("testdata/spec/address.wasm"));
+        Module m = new Module(Util.readClassPathFile("testdata/spec/address.wasm"));
         assert m.getFunctionSection() != null;
         assert m.getExportSection() != null;
     }
 
     @Test
     public void testMemory() throws Exception{
-        Module m = new Module(Util.readClassPathFileAsByteArray("expression-tests/memory.wasm"));
+        Module m = new Module(Util.readClassPathFile("expression-tests/memory.wasm"));
         assert m.getDataSection() != null;
     }
 
     @Test
     public void testTable() throws Exception{
-        Module m = new Module(Util.readClassPathFileAsByteArray("expression-tests/table.wasm"));
+        Module m = new Module(Util.readClassPathFile("expression-tests/table.wasm"));
         assert m.getTableSection() != null;
     }
 }
