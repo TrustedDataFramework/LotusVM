@@ -11,8 +11,6 @@ public interface StackAllocator {
 
     void setModule(ModuleInstanceImpl module);
 
-    WASMFunction getFunction(int frameId);
-
     long execute();
 
     int current();

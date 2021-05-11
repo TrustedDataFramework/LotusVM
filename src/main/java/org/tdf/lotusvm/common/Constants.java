@@ -7,12 +7,12 @@ public class Constants {
     public static final long[] EMPTY_LONGS = new long[0];
 
     public static final int MAGIC_NUMBER = ByteBuffer
-            .wrap(new byte[]{0x00, 0x61, 0x73, 0x6d})
-            .order(ByteOrder.LITTLE_ENDIAN).getInt();
+        .wrap(new byte[]{0x00, 0x61, 0x73, 0x6d})
+        .order(ByteOrder.LITTLE_ENDIAN).getInt();
 
     public static final int VERSION = ByteBuffer
-            .wrap(new byte[]{0x01, 0x00, 0x00, 0x00})
-            .order(ByteOrder.LITTLE_ENDIAN).getInt();
+        .wrap(new byte[]{0x01, 0x00, 0x00, 0x00})
+        .order(ByteOrder.LITTLE_ENDIAN).getInt();
 
     public static final int RESULT_EMPTY = 0x40;
 

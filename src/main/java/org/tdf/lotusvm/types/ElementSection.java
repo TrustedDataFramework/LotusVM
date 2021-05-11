@@ -36,8 +36,8 @@ public class ElementSection extends AbstractSection {
 
         public static Element readFrom(BytesReader reader) {
             return new Element(reader.readVarUint32(),
-                    Instruction.readExpressionFrom(reader),
-                    Vector.readUint32VectorFrom(reader));
+                Instruction.readExpressionFrom(reader),
+                Vector.readUint32VectorFrom(reader));
         }
 
         public static List<Element> readElementsFrom(BytesReader reader) {

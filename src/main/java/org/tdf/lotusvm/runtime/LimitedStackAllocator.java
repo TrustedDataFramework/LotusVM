@@ -1,28 +1,27 @@
 package org.tdf.lotusvm.runtime;
 
 
-import lombok.Setter;
 import org.tdf.lotusvm.types.Instruction;
 
 public class LimitedStackAllocator extends AbstractStackAllocator {
     private static final int MAX_SIZE_PER_FRAME = 0xffff;
 
-    private static final long ARITY_MASK =     0x000000000000ff00L;
-    private static final int ARITY_OFFSET =    8;
+    private static final long ARITY_MASK = 0x000000000000ff00L;
+    private static final int ARITY_OFFSET = 8;
 
-    private static final long LOOP_MASK =      0x00000000000000ffL;
-    private static final int  LOOP_OFFSET = 0;
+    private static final long LOOP_MASK = 0x00000000000000ffL;
+    private static final int LOOP_OFFSET = 0;
 
-    private static final long STACK_PC_MASK =  0xffff000000000000L;
+    private static final long STACK_PC_MASK = 0xffff000000000000L;
     private static final int STACK_PC_OFFSET = 48;
 
     private static final long LABELS_PC_MASK = 0x0000ffff00000000L;
     private static final int LABELS_PC_OFFSET = 32;
 
-    private static final long STACK_BASE_MASK =  0xffffffff00000000L;
+    private static final long STACK_BASE_MASK = 0xffffffff00000000L;
     public static final int STACK_BASE_OFFSET = 32;
 
-    private static final long LABEL_BASE_MASK =  0x00000000ffffffffL;
+    private static final long LABEL_BASE_MASK = 0x00000000ffffffffL;
     public static final int LABEL_BASE_OFFSET = 0;
 
     private static final long STACK_SIZE_MASK = 0xffff000000000000L;
@@ -58,8 +57,10 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     // frame count
     private int count;
 
+    private WASMFunction function;
+
     public LimitedStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
-        if(maxStackSize <= 0 || maxFrames <=0 || maxLabelSize <= 0)
+        if (maxStackSize <= 0 || maxFrames <= 0 || maxLabelSize <= 0)
             throw new RuntimeException("invalid limits <= 0" + maxStackSize + " " + maxFrames + " " + maxLabelSize);
         this.offsets = new long[maxFrames];
         this.stackData = new long[maxStackSize];
@@ -72,7 +73,7 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     public int pushFrame(int functionIndex, long[] params) {
         initFrame(functionIndex);
         WASMFunction func = getFunction();
-        for(int i = 0; i < func.getLocals() + params.length; i++) {
+        for (int i = 0; i < func.getLocals() + params.length; i++) {
             pushLocal(current(), i < params.length ?
                 params[i]
                 : 0
@@ -83,11 +84,11 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
 
 
     private void initFrame(int functionIndex) {
-        if(count == offsets.length) {
+        if (count == offsets.length) {
             throw new RuntimeException("frame overflow");
         }
         // push locals
-        if(functionIndex > 0xffff)
+        if (functionIndex > 0xffff)
             throw new RuntimeException("function index overflow");
 
         int c = this.count;
@@ -98,7 +99,14 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
             = (Integer.toUnsignedLong(newStackBase) << STACK_BASE_OFFSET) |
             (Integer.toUnsignedLong(newLabelBase) << LABEL_BASE_OFFSET);
         frameData[c] = functionIndex;
+        resetBody(functionIndex);
         this.count++;
+    }
+
+    private void resetBody(int functionIndex) {
+        this.function = (WASMFunction) ((functionIndex & TABLE_MASK) != 0 ?
+            getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
+            getModule().functions.get((int) (functionIndex & FUNCTION_INDEX_MASK)));
     }
 
     @Override
@@ -106,13 +114,13 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
         initFrame(functionIndex);
         WASMFunction func = getFunction();
         int start;
-        try{
+        try {
             start = popN(current() - 1, func.parametersLength());
-        }catch (Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException("");
         }
         int end = start + func.parametersLength();
-        for(int i = start; i < start + func.getLocals() + func.parametersLength(); i++) {
+        for (int i = start; i < start + func.getLocals() + func.parametersLength(); i++) {
             pushLocal(current(), i < end ?
                 getUnchecked(i)
                 : 0
@@ -167,11 +175,11 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     @Override
     public void pushLocal(int frameId, long value) {
         int stackSize = getStackSize(frameId);
-        if(stackSize > 0)
+        if (stackSize > 0)
             throw new RuntimeException("push local failed: stack is not empty");
         int base = getStackBase(frameId);
         int localSize = getLocalSize(frameId);
-        if(localSize == MAX_SIZE_PER_FRAME)
+        if (localSize == MAX_SIZE_PER_FRAME)
             throw new RuntimeException("frame's local var overflow");
         stackData[base + localSize] = value;
         increaseLocalSize(frameId);
@@ -179,7 +187,7 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
 
     @Override
     public void setLocal(int frameId, int index, long value) {
-        if(index >= getLocalSize(frameId))
+        if (index >= getLocalSize(frameId))
             throw new RuntimeException("local variable overflow");
         int base = getStackBase(frameId);
         stackData[base + index] = value;
@@ -187,9 +195,9 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
 
     @Override
     public void push(int frameId, long value) {
-        int base = getStackBase(frameId) + getLocalSize(frameId) ;
+        int base = getStackBase(frameId) + getLocalSize(frameId);
         int stackSize = getStackSize(frameId);
-        if(stackSize == MAX_SIZE_PER_FRAME)
+        if (stackSize == MAX_SIZE_PER_FRAME)
             throw new RuntimeException("frame's stack overflow");
         stackData[base + stackSize] = value;
         increaseStackSize(frameId);
@@ -199,7 +207,7 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     public long pop(int frameId) {
         int base = getStackBase(frameId) + getLocalSize(frameId);
         int size = getStackSize(frameId);
-        if(size == 0)
+        if (size == 0)
             throw new RuntimeException("stack underflow");
         long v = stackData[base + size - 1];
         decreaseStackSize(frameId);
@@ -219,11 +227,11 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
 
     @Override
     public int popN(int frameId, int length) {
-        if(length == 0)
+        if (length == 0)
             return 0;
 
         int size = getStackSize(frameId);
-        if(size < length)
+        if (size < length)
             throw new RuntimeException("stack underflow");
         int r = getStackBase(frameId) + getLocalSize(frameId) + size - length;
         setStackSize(frameId, size - length);
@@ -232,12 +240,14 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
 
     @Override
     public void drop(int frameId) {
-        if(frameId != count - 1)
+        if (frameId != count - 1)
             throw new RuntimeException("stack should be dropped sequentially");
         count--;
         // clear
         frameData[count] = 0;
         offsets[count] = 0;
+        if (count > 0)
+            resetBody((int) (frameData[current()] & 0xffff));
     }
 
     @Override
@@ -256,7 +266,7 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
         int size = getLabelSize(frameId);
         int base = getLabelBase(frameId);
 
-        if(size == MAX_SIZE_PER_FRAME)
+        if (size == MAX_SIZE_PER_FRAME)
             throw new RuntimeException("frame's label overflow");
 
         int p = base + size;
@@ -277,7 +287,7 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
 
     @Override
     public void popLabel(int frameId) {
-        if(getLabelSize(frameId) == 0)
+        if (getLabelSize(frameId) == 0)
             throw new RuntimeException("label underflow");
         decreaseLabelSize(frameId);
     }
@@ -285,7 +295,7 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     @Override
     public void popAndClearLabel(int frameId) {
         int size = getLabelSize(frameId);
-        if(size == 0)
+        if (size == 0)
             throw new RuntimeException("label underflow");
         int base = getLabelBase(frameId);
         setStackSize(
@@ -301,7 +311,7 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
         int p = getLabelBase(frameId) + idx;
 
         boolean arity = (labelData[p] & ARITY_MASK) != 0;
-        long val = arity? pop(frameId) : 0;
+        long val = arity ? pop(frameId) : 0;
         // Repeat l+1 times
         for (int i = 0; i < l + 1; i++) {
             popAndClearLabel(frameId);
@@ -335,7 +345,7 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     @Override
     public Instruction[] getInstructions(int frameId, int idx) {
         int size = getLabelSize(frameId);
-        if(idx < 0 || idx >= size)
+        if (idx < 0 || idx >= size)
             throw new RuntimeException("label index overflow");
         int base = getLabelBase(frameId);
         return labels[base + idx];
@@ -344,7 +354,7 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     @Override
     public int getPc(int frameId, int idx) {
         int size = getLabelSize(frameId);
-        if(idx < 0 || idx >= size)
+        if (idx < 0 || idx >= size)
             throw new RuntimeException("label index overflow");
         int p = getLabelBase(frameId) + idx;
         return (int) ((labelData[p] & LABELS_PC_MASK) >>> LABELS_PC_OFFSET);
@@ -353,7 +363,7 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     @Override
     public void setPc(int frameId, int idx, int pc) {
         int size = getLabelSize(frameId);
-        if(idx < 0 || idx >= size)
+        if (idx < 0 || idx >= size)
             throw new RuntimeException("label index overflow");
         int p = getLabelBase(frameId) + idx;
         labelData[p] &= ~LABELS_PC_MASK;
@@ -366,17 +376,15 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     }
 
     @Override
-    public WASMFunction getFunction(int frameId) {
-        long bits = frameData[frameId];
-        if ((bits & TABLE_MASK) != 0 )
-            return (WASMFunction) getModule().table.getFunctions()[(int) (bits & FUNCTION_INDEX_MASK)];
-        return (WASMFunction) getModule().functions.get((int) (bits & FUNCTION_INDEX_MASK));
-    }
-
-    @Override
     public int current() {
-        if(count == 0)
+        if (count == 0)
             throw new RuntimeException("frame underflow");
         return count - 1;
+    }
+
+
+    @Override
+    public WASMFunction getFunction() {
+        return function;
     }
 }

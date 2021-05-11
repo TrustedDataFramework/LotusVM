@@ -18,7 +18,7 @@ public class SectionReader {
         T section = null;
         try {
             section = clazz.getConstructor(SectionID.class, long.class, BytesReader.class, int.class, int.class)
-                    .newInstance(id, size, contents, current, contents.getLimit());
+                .newInstance(id, size, contents, current, contents.getLimit());
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

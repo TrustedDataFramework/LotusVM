@@ -33,8 +33,8 @@ public class DataSection extends AbstractSection {
 
         public static DataSegment readFrom(BytesReader reader) {
             return new DataSegment(reader.readVarUint32(),
-                    Instruction.readExpressionFrom(reader),
-                    Vector.readBytesFrom(reader)
+                Instruction.readExpressionFrom(reader),
+                Vector.readBytesFrom(reader)
             );
         }
 

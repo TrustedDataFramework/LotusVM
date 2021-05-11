@@ -1,15 +1,12 @@
 package org.tdf.lotusvm.common;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 /**
  * little endian encoding helpers
  */
 public class LittleEndian {
 
     public static short decodeInt16(byte[] data, int offset) {
-        return (short) ((data[offset] & 0xff)| ((data[offset + 1] & 0xff) << 8));
+        return (short) ((data[offset] & 0xff) | ((data[offset + 1] & 0xff) << 8));
     }
 
     public static void encodeInt16(short num, byte[] data, int offset) {
@@ -18,7 +15,7 @@ public class LittleEndian {
     }
 
     public static int decodeInt32(byte[] data, int offset) {
-        return (data[offset] & 0xff)| ((data[offset + 1] & 0xff) << 8) | ((data[offset + 2] & 0xff )<< 16) | ((data[offset + 3] & 0xff)<< 24);
+        return (data[offset] & 0xff) | ((data[offset + 1] & 0xff) << 8) | ((data[offset + 2] & 0xff) << 16) | ((data[offset + 3] & 0xff) << 24);
     }
 
     public static void encodeInt32(int val, byte[] data, int offset) {
@@ -41,15 +38,15 @@ public class LittleEndian {
     }
 
     public static long decodeInt64(byte[] data, int offset) {
-        return (((long) data[offset]) & 0xffL)|
-                (((long) data[offset + 1]) & 0xffL) << 8 |
-                (((long) data[offset + 2]) & 0xffL) << 16 |
-                (((long) data[offset + 3]) & 0xffL) << 24 |
-                (((long) data[offset + 4]) & 0xffL) << 32 |
-                (((long) data[offset + 5]) & 0xffL) << 40 |
-                (((long) data[offset + 6]) & 0xffL) << 48 |
-                (((long) data[offset + 7]) & 0xffL) << 56
-                ;
+        return (((long) data[offset]) & 0xffL) |
+            (((long) data[offset + 1]) & 0xffL) << 8 |
+            (((long) data[offset + 2]) & 0xffL) << 16 |
+            (((long) data[offset + 3]) & 0xffL) << 24 |
+            (((long) data[offset + 4]) & 0xffL) << 32 |
+            (((long) data[offset + 5]) & 0xffL) << 40 |
+            (((long) data[offset + 6]) & 0xffL) << 48 |
+            (((long) data[offset + 7]) & 0xffL) << 56
+            ;
     }
 
     public static void encodeIEEE754Float(float number, byte[] data, int offset) {

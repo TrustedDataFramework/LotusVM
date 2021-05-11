@@ -6,12 +6,20 @@ import sun.misc.Unsafe;
 
 import java.io.Closeable;
 import java.lang.reflect.Field;
+import java.nio.ByteOrder;
 
 public class UnsafeMemory implements Memory, Closeable {
     private LimitType limit = new LimitType();
-    private Unsafe unsafe = reflectGetUnsafe();
+    private final Unsafe unsafe = reflectGetUnsafe();
+    private final int ARRAY_OFFSET = unsafe.arrayBaseOffset(byte[].class);
+
     private long pointer;
     private long overflow;
+
+    public UnsafeMemory() {
+        if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN)
+            throw new RuntimeException("create unsafe memory failed: native byte order is not le!");
+    }
 
     @Getter
     private int pages;
@@ -38,40 +46,32 @@ public class UnsafeMemory implements Memory, Closeable {
 
     @Override
     public void put(int offset, byte[] data) {
-        for (int i = 0; i < data.length; i++) {
-            storeI8(offset + i, data[i]);
-        }
+        if (offset < 0 || pointer + offset + data.length > overflow)
+            throw new RuntimeException("memory access overflow");
+        unsafe.copyMemory(data, ARRAY_OFFSET, null, pointer + offset, data.length);
     }
 
     @Override
     public byte[] load(int offset, int length) {
+        if (offset < 0 || pointer + offset + length > overflow)
+            throw new RuntimeException("memory access overflow");
         byte[] r = new byte[length];
-        for (int i = 0; i < length; i++) {
-            r[i] = load8(offset + i);
-        }
+        unsafe.copyMemory(null, pointer + offset, r, ARRAY_OFFSET, length);
         return r;
     }
 
     @Override
     public int load32(int offset) {
-        if (pointer + offset + 4 > overflow)
+        if (offset < 0 || pointer + offset + 4 > overflow)
             throw new RuntimeException("memory access overflow");
-        return (load8(offset) & 0xff) | ((load8(offset + 1) & 0xff) << 8) | ((load8(offset + 2) & 0xff) << 16) | ((load8(offset + 3) & 0xff) << 24);
+        return unsafe.getInt(pointer + offset);
     }
 
     @Override
     public long load64(int offset) {
-        if (pointer + offset + 8 > overflow)
+        if (offset < 0 || pointer + offset + 8 > overflow)
             throw new RuntimeException("memory access overflow");
-        return (((long) load8(offset)) & 0xffL) |
-            (((long) load8(offset + 1)) & 0xffL) << 8 |
-            (((long) load8(offset + 2)) & 0xffL) << 16 |
-            (((long) load8(offset + 3)) & 0xffL) << 24 |
-            (((long) load8(offset + 4)) & 0xffL) << 32 |
-            (((long) load8(offset + 5)) & 0xffL) << 40 |
-            (((long) load8(offset + 6)) & 0xffL) << 48 |
-            (((long) load8(offset + 7)) & 0xffL) << 56
-            ;
+        return unsafe.getLong(pointer + offset);
     }
 
     @Override
@@ -83,42 +83,37 @@ public class UnsafeMemory implements Memory, Closeable {
 
     @Override
     public short load16(int offset) {
-        return (short) ((load8(offset) & 0xff) | ((load8(offset + 1) & 0xff) << 8));
+        if (offset < 0 || pointer + offset + 2 > overflow)
+            throw new RuntimeException("memory access overflow");
+        return unsafe.getShort(pointer + offset);
     }
 
     @Override
     public void storeI32(int offset, int val) {
-        storeI8(offset, (byte) (val & 0xff));
-        storeI8(offset + 1, (byte) ((val >>> 8) & 0xff));
-        storeI8(offset + 2, (byte) ((val >>> 16) & 0xff));
-        storeI8(offset + 3, (byte) ((val >>> 24) & 0xff));
+        if (offset < 0 || pointer + offset + 4 > overflow)
+            throw new RuntimeException("memory access overflow");
+        unsafe.putInt(pointer + offset, val);
     }
 
     @Override
     public void storeI64(int offset, long n) {
-        storeI8(offset, (byte) (n & 0xff));
-        storeI8(offset + 1, (byte) ((n >>> 8) & 0xff));
-        storeI8(offset + 2, (byte) ((n >>> 16) & 0xff));
-        storeI8(offset + 3, (byte) ((n >>> 24) & 0xff));
-        storeI8(offset + 4, (byte) ((n >>> 32) & 0xff));
-        storeI8(offset + 5, (byte) ((n >>> 40) & 0xff));
-        storeI8(offset + 6, (byte) ((n >>> 48) & 0xff));
-        storeI8(offset + 7, (byte) ((n >>> 56) & 0xff));
+        if (offset < 0 || pointer + offset + 8 > overflow)
+            throw new RuntimeException("memory access overflow");
+        unsafe.putLong(pointer + offset, n);
     }
 
     @Override
     public void storeI16(int offset, short num) {
-        storeI8(offset, (byte) (num & 0xff));
-        storeI8(offset + 1, (byte) ((num >>> 8) & 0xff));
+        if (offset < 0 || pointer + offset + 2 > overflow)
+            throw new RuntimeException("memory access overflow");
+        unsafe.putShort(pointer + offset, num);
     }
 
     @Override
     public void storeI8(int offset, byte n) {
         if (offset < 0 || pointer + offset >= overflow)
             throw new RuntimeException("memory access overflow");
-
         unsafe.putByte(pointer + offset, n);
-
     }
 
     @Override

@@ -8,7 +8,7 @@ import java.io.InputStream;
 public class BytesReader extends InputStream {// io.reader
     private final byte[] buffer;
     private int offset;
-    private int limit;
+    private final int limit;
 
     public BytesReader(byte[] buffer) {
         this.buffer = buffer;
@@ -120,14 +120,14 @@ public class BytesReader extends InputStream {// io.reader
             long b = read() & 0xffffffffL;
             //  b < 1<<6 && uint64(b) < uint64(1<<(n-1))
             if (b < 1 << 6 &&
-                    Long.compareUnsigned(b, 1L << (n - 1)) < 0) {
+                Long.compareUnsigned(b, 1L << (n - 1)) < 0) {
                 res += (1L << shift) * b;
                 break;
             }
             // b >= 1<<6 && b < 1<<7 && uint64(b)+1<<(n-1) >= 1<<7
             if (b >= 1 << 6 &&
-                    b < 1 << 7 &&
-                    Long.compareUnsigned(b + (1L << (n - 1)), 1L << 7) >= 0
+                b < 1 << 7 &&
+                Long.compareUnsigned(b + (1L << (n - 1)), 1L << 7) >= 0
             ) {
                 res += (1L << shift) * (b - (1 << 7));
                 break;

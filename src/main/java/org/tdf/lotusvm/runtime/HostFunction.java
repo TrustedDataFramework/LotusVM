@@ -11,8 +11,8 @@ public abstract class HostFunction implements FunctionInstance {
     ModuleInstanceImpl instance;
     private Set<String> alias;
 
-    public Set<String> getAlias(){
-        if(alias == null)
+    public Set<String> getAlias() {
+        if (alias == null)
             return Collections.emptySet();
         return alias;
     }

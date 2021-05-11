@@ -7,7 +7,7 @@ import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.Instruction;
 import org.tdf.lotusvm.types.ResultType;
 
-public abstract class AbstractStackAllocator implements StackAllocator{
+public abstract class AbstractStackAllocator implements StackAllocator {
     protected ModuleInstanceImpl module;
 
     public ModuleInstanceImpl getModule() {
@@ -91,31 +91,25 @@ public abstract class AbstractStackAllocator implements StackAllocator{
         popLabel(current());
     }
 
-    WASMFunction getFunction() {
-        return getFunction(current());
-    }
-
-    Instruction[] getBody(int frameId) {
-        return getFunction(frameId).getBody();
-    }
-
     Instruction[] getBody() {
         return getFunction().getBody();
     }
+
+    protected abstract WASMFunction getFunction();
 
     long[] popLongs(int n) {
         if (n == 0) return Constants.EMPTY_LONGS;
         long[] res = new long[n];
         int index = popN(current(), n);
         for (int i = 0; i < n; i++) {
-            res[i] = getUnchecked( i + index);
+            res[i] = getUnchecked(i + index);
         }
         return res;
     }
 
 
     long returns() {
-        FunctionType type = getFunction(current()).getType();
+        FunctionType type = getFunction().getType();
         if (type.getResultTypes().size() == 0) {
             drop();
             return 0;
@@ -935,7 +929,6 @@ public abstract class AbstractStackAllocator implements StackAllocator{
                 throw new RuntimeException("unknown opcode " + ins.getCode());
         }
     }
-
 
 
     // math trunc

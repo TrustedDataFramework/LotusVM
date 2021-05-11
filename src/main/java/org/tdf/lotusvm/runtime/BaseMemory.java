@@ -3,11 +3,9 @@ package org.tdf.lotusvm.runtime;
 import lombok.Getter;
 import org.tdf.lotusvm.types.LimitType;
 
-import java.nio.charset.StandardCharsets;
-
 // TODO: limit memory size in block chain
 @Getter
-public class BaseMemory implements Memory{
+public class BaseMemory implements Memory {
     private LimitType limit;
     private byte[] data;
     private int pages;
@@ -35,19 +33,19 @@ public class BaseMemory implements Memory{
     }
 
     public int load32(int offset) {
-        return (data[offset] & 0xff)| ((data[offset + 1] & 0xff) << 8) | ((data[offset + 2] & 0xff )<< 16) | ((data[offset + 3] & 0xff)<< 24);
+        return (data[offset] & 0xff) | ((data[offset + 1] & 0xff) << 8) | ((data[offset + 2] & 0xff) << 16) | ((data[offset + 3] & 0xff) << 24);
     }
 
     public long load64(int offset) {
-        return (((long) data[offset]) & 0xffL)|
-                (((long) data[offset + 1]) & 0xffL) << 8 |
-                (((long) data[offset + 2]) & 0xffL) << 16 |
-                (((long) data[offset + 3]) & 0xffL) << 24 |
-                (((long) data[offset + 4]) & 0xffL) << 32 |
-                (((long) data[offset + 5]) & 0xffL) << 40 |
-                (((long) data[offset + 6]) & 0xffL) << 48 |
-                (((long) data[offset + 7]) & 0xffL) << 56
-                ;
+        return (((long) data[offset]) & 0xffL) |
+            (((long) data[offset + 1]) & 0xffL) << 8 |
+            (((long) data[offset + 2]) & 0xffL) << 16 |
+            (((long) data[offset + 3]) & 0xffL) << 24 |
+            (((long) data[offset + 4]) & 0xffL) << 32 |
+            (((long) data[offset + 5]) & 0xffL) << 40 |
+            (((long) data[offset + 6]) & 0xffL) << 48 |
+            (((long) data[offset + 7]) & 0xffL) << 56
+            ;
     }
 
     public byte load8(int offset) {
@@ -55,7 +53,7 @@ public class BaseMemory implements Memory{
     }
 
     public short load16(int offset) {
-        return (short) ((data[offset] & 0xff)| ((data[offset + 1] & 0xff) << 8));
+        return (short) ((data[offset] & 0xff) | ((data[offset + 1] & 0xff) << 8));
     }
 
     public void storeI32(int offset, int val) {

@@ -81,7 +81,7 @@ public class Register {
 
     public long[] popAll() {
         long[] res = new long[pc];
-        System.arraycopy(data, 0 , res, 0, pc);
+        System.arraycopy(data, 0, res, 0, pc);
         pc = 0;
         return res;
     }
@@ -222,7 +222,7 @@ public class Register {
     @Override
     public String toString() {
         return Arrays.stream(Arrays.copyOfRange(data, 0, pc))
-                .mapToObj(x -> "[" + x + "]").collect(Collectors.joining());
+            .mapToObj(x -> "[" + x + "]").collect(Collectors.joining());
     }
 
     // set pc to maximum

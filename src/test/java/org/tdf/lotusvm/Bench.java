@@ -10,6 +10,7 @@ import org.tdf.lotusvm.types.LimitType;
 import org.tdf.lotusvm.types.Module;
 import org.apache.commons.codec.binary.Hex;
 
+import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -60,6 +61,7 @@ public class Bench {
     // LimitedStackAllocator: 1934.4 ms
     // BaseStackAllocator:
     @Test
+    @Ignore
     public void test() throws Exception{
         String file = getClass()
             .getClassLoader()
@@ -106,10 +108,6 @@ public class Bench {
 
     @Test
     public void unsafeTest() {
-        try (Memory m = new UnsafeMemory()) {
-            m.setLimit(new LimitType(2, 10));
-            m.storeI64(256, Long.MAX_VALUE);;
-            System.out.println(m.load64(256) == Long.MAX_VALUE);
-        }
+        System.out.println(ByteOrder.nativeOrder());
     }
 }
