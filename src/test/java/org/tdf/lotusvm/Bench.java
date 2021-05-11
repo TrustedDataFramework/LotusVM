@@ -1,14 +1,13 @@
 package org.tdf.lotusvm;
 
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.tdf.lotusvm.runtime.*;
-import org.tdf.lotusvm.types.FunctionType;
-import org.tdf.lotusvm.types.LimitType;
-import org.tdf.lotusvm.types.Module;
 import org.apache.commons.codec.binary.Hex;
+import org.junit.Test;
+import org.tdf.lotusvm.runtime.HostFunction;
+import org.tdf.lotusvm.runtime.LimitedStackAllocator;
+import org.tdf.lotusvm.runtime.Memory;
+import org.tdf.lotusvm.runtime.UnsafeMemory;
+import org.tdf.lotusvm.types.FunctionType;
+import org.tdf.lotusvm.types.Module;
 
 import java.nio.ByteOrder;
 import java.nio.file.Files;
@@ -17,7 +16,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-@RunWith(JUnit4.class)
 public class Bench {
     private static final String WBI_MALLOC = "__malloc";
     private static final String WBI_CHANGE_TYPE = "__change_t";
@@ -60,10 +58,9 @@ public class Bench {
 
     // LimitedStackAllocator: 1934.4 ms
     // BaseStackAllocator:
-    @Test
-//    @Ignore
-    public void test() throws Exception{
-        String file = getClass()
+
+    public static void main(String... args) throws Exception {
+        String file = Bench.class
             .getClassLoader()
             .getResource("bench/main.wasm")
             .getFile();
@@ -81,12 +78,10 @@ public class Bench {
         LimitedStackAllocator allocator = new LimitedStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
 
 
-
-
         long start = System.currentTimeMillis();
 
         allocator.clear();
-        for(int i = 0; i < loop; i++) {
+        for (int i = 0; i < loop; i++) {
             Memory mem = new UnsafeMemory();
             ModuleInstance ins = ModuleInstance
                 .builder()
