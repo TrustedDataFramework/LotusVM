@@ -1,12 +1,5 @@
 package org.tdf.lotusvm.common;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public enum OpCode {
     // control Instructions
     UNREACHABLE(0x00, "unreachable", "", 0),
@@ -186,190 +179,15 @@ public enum OpCode {
     I64_REINTERPRET_F64(0xbd, "i64.reinterpret_f64", "", 0),
     F32_REINTERPRET_I32(0xbe, "f32.reinterpret_i32", "", 0),
     F64_REINTERPRET_I64(0xbf, "f64.reinterpret_i64", "", 0);
-    public static final Set<OpCode> CONTROL_INSTRUCTIONS = Stream.of(
-        UNREACHABLE,
-        NOP,
-        BLOCK,
-        LOOP,
-        IF,
-        ELSE,
-        END,
-        BR,
-        BR_IF,
-        BR_TABLE,
-        RETURN,
-        CALL,
-        CALL_INDIRECT
-    ).collect(Collectors.toSet());
-    public static final Set<OpCode> PARAMETRIC_INSTRUCTIONS = Stream.of(
-        DROP,
-        SELECT
-    ).collect(Collectors.toSet());
-    public static final Set<OpCode> VARIABLE_INSTRUCTIONS = Stream.of(
-        GET_LOCAL,
-        SET_LOCAL,
-        TEE_LOCAL,
-        GET_GLOBAL,
-        SET_GLOBAL
-    ).collect(Collectors.toSet());
-    public static final Set<OpCode> MEMORY_INSTRUCTIONS = Stream.of(
-        I64_LOAD,
-        F32_LOAD,
-        F64_LOAD,
-        I32_LOAD8_S,
-        I32_LOAD8_U,
-        I32_LOAD16_S,
-        I32_LOAD16_U,
-        I64_LOAD8_S,
-        I64_LOAD8_U,
-        I64_LOAD16_S,
-        I64_LOAD16_U,
-        I32_LOAD,
-        I64_LOAD32_S,
-        I64_LOAD32_U,
-        I32_STORE,
-        I64_STORE,
-        F32_STORE,
-        F64_STORE,
-        I32_STORE8,
-        I32_STORE16,
-        I64_STORE8,
-        I64_STORE16,
-        I64_STORE32,
-        CURRENT_MEMORY,
-        GROW_MEMORY
-    ).collect(Collectors.toSet());
-    private static final Map<Integer, OpCode> CODES = Arrays.stream(OpCode.values())
-        .collect(Collectors.toMap(o -> o.code, Function.identity()));
-    public static Set<OpCode> NUMERIC_INSTRUCTIONS = Stream.of(
-        I64_CONST,
-        F32_CONST,
-        F64_CONST,
-        I32_EQZ,
-        I32_EQ,
-        I32_NE,
-        I32_CONST,
-        I32_LTS,
-        I32_LTU,
-        I32_GTS,
-        I32_GTU,
-        I32_LES,
-        I32_LEU,
-        I32_GES,
-        I32_GEU,
-        I64_EQZ,
-        I64_EQ,
-        I64_NE,
-        I64_LTS,
-        I64_LTU,
-        I64_GTS,
-        I64_GTU,
-        I64_LES,
-        I64_LEU,
-        I64_GES,
-        I64_GEU,
-        F32_EQ,
-        F32_NE,
-        F32_LT,
-        F32_GT,
-        F32_LE,
-        F32_GE,
-        F64_EQ,
-        F64_NE,
-        F64_LT,
-        F64_GT,
-        F64_LE,
-        F64_GE,
-        I32_CLZ,
-        I32_CTZ,
-        I32_POPCNT,
-        I32_ADD,
-        I32_SUB,
-        I32_MUL,
-        I32_DIVS,
-        I32_DIVU,
-        I32_REMS,
-        I32_REMU,
-        I32_AND,
-        I32_OR,
-        I32_XOR,
-        I32_SHL,
-        I32_SHRS,
-        I32_SHRU,
-        I32_ROTL,
-        I32_ROTR,
-        I64_CLZ,
-        I64_CTZ,
-        I64_POPCNT,
-        I64_ADD,
-        I64_SUB,
-        I64_MUL,
-        I64_DIVS,
-        I64_DIVU,
-        I64_REMS,
-        I64_REMU,
-        I64_AND,
-        I64_OR,
-        I64_XOR,
-        I64_SHL,
-        I64_SHRS,
-        I64_SHRU,
-        I64_ROTL,
-        I64_ROTR,
-        F32_ABS,
-        F32_NEG,
-        F32_CEIL,
-        F32_FLOOR,
-        F32_TRUNC,
-        F32_NEAREST,
-        F32_SQRT,
-        F32_ADD,
-        F32_SUB,
-        F32_MUL,
-        F32_DIV,
-        F32_MIN,
-        F32_MAX,
-        F32_COPYSIGN,
-        F64_ABS,
-        F64_NEG,
-        F64_CEIL,
-        F64_FLOOR,
-        F64_TRUNC,
-        F64_NEAREST,
-        F64_SQRT,
-        F64_ADD,
-        F64_SUB,
-        F64_MUL,
-        F64_DIV,
-        F64_MIN,
-        F64_MAX,
-        F64_COPYSIGN,
-        I32_WRAP_I64,
-        I32_TRUNC_SF32,
-        I32_TRUNC_UF32,
-        I32_TRUNC_SF64,
-        I32_TRUNC_UF64,
-        I64_EXTEND_SI32,
-        I64_EXTEND_UI32,
-        I64_TRUNC_SF32,
-        I64_TRUNC_UF32,
-        I64_TRUNC_SF64,
-        I64_TRUNC_UF64,
-        F32_CONVERT_SI32,
-        F32_CONVERT_UI32,
-        F32_CONVERT_SI64,
-        F32_CONVERT_UI64,
-        F32_DEMOTE_F64,
-        F64_CONVERT_SI32,
-        F64_CONVERT_UI32,
-        F64_CONVERT_SI64,
-        F64_CONVERT_UI64,
-        F64_PROMOTE_F32,
-        I32_REINTERPRET_F32,
-        I64_REINTERPRET_F64,
-        F32_REINTERPRET_I32,
-        F64_REINTERPRET_I64
-    ).collect(Collectors.toSet());
+
+    static OpCode[] CODES = new OpCode[0xbf + 1];
+
+    static {
+        for (int i = 0; i < OpCode.values().length; i++) {
+            CODES[OpCode.values()[i].code] = OpCode.values()[i];
+        }
+    }
+
     public final int code;
     public final String name;
     public final String codeSize;
@@ -384,7 +202,7 @@ public enum OpCode {
     }
 
     public static OpCode fromCode(int b) {
-        OpCode c = CODES.get(b);
+        OpCode c = CODES[b];
         if (c == null) throw new RuntimeException(String.format("unknown opcode %x", b));
         return c;
     }

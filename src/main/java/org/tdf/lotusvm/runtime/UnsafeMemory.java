@@ -46,14 +46,16 @@ public class UnsafeMemory implements Memory, Closeable {
 
     @Override
     public void put(int offset, byte[] data) {
-        if (offset < 0 || pointer + offset + data.length > overflow)
+        long o = Integer.toUnsignedLong(offset);
+        if (pointer + o + data.length > overflow)
             throw new RuntimeException("memory access overflow");
         unsafe.copyMemory(data, ARRAY_OFFSET, null, pointer + offset, data.length);
     }
 
     @Override
     public byte[] load(int offset, int length) {
-        if (offset < 0 || pointer + offset + length > overflow)
+        long o = Integer.toUnsignedLong(offset);
+        if (pointer + o + length > overflow)
             throw new RuntimeException("memory access overflow");
         byte[] r = new byte[length];
         unsafe.copyMemory(null, pointer + offset, r, ARRAY_OFFSET, length);
@@ -62,56 +64,64 @@ public class UnsafeMemory implements Memory, Closeable {
 
     @Override
     public int load32(int offset) {
-        if (offset < 0 || pointer + offset + 4 > overflow)
+        long o = Integer.toUnsignedLong(offset);
+        if (pointer + o + 4 > overflow)
             throw new RuntimeException("memory access overflow");
         return unsafe.getInt(pointer + offset);
     }
 
     @Override
     public long load64(int offset) {
-        if (offset < 0 || pointer + offset + 8 > overflow)
+        long o = Integer.toUnsignedLong(offset);
+        if (pointer + o + 8 > overflow)
             throw new RuntimeException("memory access overflow");
         return unsafe.getLong(pointer + offset);
     }
 
     @Override
     public byte load8(int offset) {
-        if (offset < 0 || pointer + offset >= overflow)
+        long o = Integer.toUnsignedLong(offset);
+        if (pointer + o >= overflow)
             throw new RuntimeException("memory access overflow");
         return unsafe.getByte(pointer + offset);
     }
 
     @Override
     public short load16(int offset) {
-        if (offset < 0 || pointer + offset + 2 > overflow)
+        long o = Integer.toUnsignedLong(offset);
+        if (pointer + o + 2 > overflow)
             throw new RuntimeException("memory access overflow");
         return unsafe.getShort(pointer + offset);
     }
 
     @Override
     public void storeI32(int offset, int val) {
-        if (offset < 0 || pointer + offset + 4 > overflow)
+        long o = Integer.toUnsignedLong(offset);
+        if (pointer + o + 4 > overflow)
             throw new RuntimeException("memory access overflow");
         unsafe.putInt(pointer + offset, val);
     }
 
     @Override
     public void storeI64(int offset, long n) {
-        if (offset < 0 || pointer + offset + 8 > overflow)
+        long o = Integer.toUnsignedLong(offset);
+        if (pointer + o + 8 > overflow)
             throw new RuntimeException("memory access overflow");
         unsafe.putLong(pointer + offset, n);
     }
 
     @Override
     public void storeI16(int offset, short num) {
-        if (offset < 0 || pointer + offset + 2 > overflow)
+        long o = Integer.toUnsignedLong(offset);
+        if (pointer + o + 2 > overflow)
             throw new RuntimeException("memory access overflow");
         unsafe.putShort(pointer + offset, num);
     }
 
     @Override
     public void storeI8(int offset, byte n) {
-        if (offset < 0 || pointer + offset >= overflow)
+        long o = Integer.toUnsignedLong(offset);
+        if (pointer + o >= overflow)
             throw new RuntimeException("memory access overflow");
         unsafe.putByte(pointer + offset, n);
     }

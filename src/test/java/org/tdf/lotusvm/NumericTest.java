@@ -4,12 +4,20 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.util.Collection;
+import java.util.Collections;
+
 
 @RunWith(JUnit4.class)
 public class NumericTest {
     public void testSpecFile(String filename) throws Exception {
         TestModule module = Util.getTestModule("testdata");
         module.testSpecFunctions(filename, null, 0, -1);
+    }
+
+    public void testSpecFunctions(String filename, Collection<String> functions, int skip, int limit) throws Exception {
+        TestModule module = Util.getTestModule("testdata");
+        module.testSpecFunctions(filename, functions, skip, limit);
     }
 
     @Test
@@ -39,7 +47,7 @@ public class NumericTest {
 
     @Test
     public void testBug49() throws Exception {
-        testSpecFile("bug-49.wasm");
+        testSpecFunctions("bug-49.wasm", Collections.singletonList("sample"), 0, -1);
     }
 
     @Test

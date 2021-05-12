@@ -13,6 +13,14 @@ import java.util.List;
 import java.util.Optional;
 
 public class TestConfig {
+    public static long f2l(float f) {
+        return Integer.toUnsignedLong(Float.floatToIntBits(f));
+    }
+
+    public static long d2l(double f) {
+        return Double.doubleToLongBits(f);
+    }
+
     public String file;
     public List<TestFunction> tests;
 
@@ -58,6 +66,8 @@ public class TestConfig {
             String[] typeValue = encoded.split(":");
             String type = typeValue[0];
             String val = typeValue[1];
+            String lower = val.trim().toLowerCase();
+
             switch (type.toLowerCase().trim()) {
                 case "i32":
                     if (val.startsWith("0x"))
@@ -74,9 +84,15 @@ public class TestConfig {
                     }
                     return new Argument(Long.parseUnsignedLong(val));
                 case "f32":
-                    if (val.toLowerCase().trim().equals("nan")) {
-                        return new Argument(Integer.toUnsignedLong(Float.floatToRawIntBits(Float.NaN)));
+                    switch (lower) {
+                        case "nan":
+                            return new Argument(f2l(Float.NaN));
+                        case "inf":
+                            return new Argument(f2l(Float.POSITIVE_INFINITY));
+                        case "-inf":
+                            return new Argument(f2l(Float.NEGATIVE_INFINITY));
                     }
+
                     if (val.startsWith("0x")) {
                         Optional<Long> o = tryParseHexLong(val.substring(2));
 
@@ -86,14 +102,17 @@ public class TestConfig {
                             );
                         }
                     }
-                    return new Argument(
-                        Integer.toUnsignedLong(
-                            Float.floatToIntBits(Float.parseFloat(val))
-                        ));
+                    return new Argument(f2l(Float.parseFloat(val)));
                 case "f64":
-                    if (val.toLowerCase().trim().equals("nan")) {
-                        return new Argument(Double.doubleToLongBits(Double.NaN));
+                    switch (lower) {
+                        case "nan":
+                            return new Argument(d2l(Double.NaN));
+                        case "inf":
+                            return new Argument(d2l(Double.POSITIVE_INFINITY));
+                        case "-inf":
+                            return new Argument(d2l(Double.NEGATIVE_INFINITY));
                     }
+
                     if (val.startsWith("0x")) {
                         Optional<Long> o = tryParseHexLong(val.substring(2));
 
@@ -104,7 +123,7 @@ public class TestConfig {
                         }
                     }
                     return new Argument(
-                        Double.doubleToLongBits(Double.parseDouble(val))
+                        d2l(Double.parseDouble(val))
                     );
             }
             throw new RuntimeException("invalid type " + type);

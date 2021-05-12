@@ -100,9 +100,4 @@ public class Bench {
         long end = System.currentTimeMillis();
         System.out.println((end - start) * 1.0 / loop);
     }
-
-    @Test
-    public void unsafeTest() {
-        System.out.println(ByteOrder.nativeOrder());
-    }
 }

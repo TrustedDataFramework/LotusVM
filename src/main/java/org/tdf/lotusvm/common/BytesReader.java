@@ -6,6 +6,9 @@ import java.io.InputStream;
 
 @Getter
 public class BytesReader extends InputStream {// io.reader
+    private static final long FIRST_BIT = 0x80L;
+    private static final long MASK = 0x7fL;
+
     private final byte[] buffer;
     private int offset;
     private final int limit;
@@ -80,26 +83,23 @@ public class BytesReader extends InputStream {// io.reader
             // the b here is non-negative here
             // n is non-negative also
             // unsigned conversion safety
-            int b = read();
-//            UnsignedLong unsignedB = UnsignedLong.fromLongBits(b);
+            long b = Integer.toUnsignedLong(read());
             // note: can not use b < 1<<n, when n == 64, 1<<n will overflow to 0
-            long r = (n == 64 ? 0L : 1L << n) - 1;
 
-            if (b < 1 << 7 && Long.compareUnsigned(b, r) <= 0) {
-//                res = res.plus(UnsignedLong.valueOf(1L << shift).times(unsignedB));
-                res = res + (1L << shift) * b;
-                break;
+            long r = n == 64 ? 0xFFFFFFFFFFFFFFFFL : ((1L << n) - 1L);
+            if ((b & FIRST_BIT) == 0 && Long.compareUnsigned(b, r) <= 0) {
+                res |=  b << shift;
+                return res;
             }
-            if (b >= 1 << 7 && n > 7) {
-//                res = res.plus(UnsignedLong.valueOf(1L << shift).times(unsignedB.minus(UnsignedLong.valueOf(1 << 7))));
-                res = res + (1L << shift) * (b - (1 << 7));
-                shift += 7;
+
+            if((b & FIRST_BIT) != 0 && n > 7) {
+                res |=  (b & MASK) << shift;
+                shift+= 7;
                 n -= 7;
                 continue;
             }
             throw new RuntimeException("leb128: invalid int");
         }
-        return res;
     }
 
     public int readVarInt32() throws RuntimeException {

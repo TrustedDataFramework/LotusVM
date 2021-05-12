@@ -57,4 +57,13 @@ public class LebTests {
         System.out.println(0x8000000000000000L);
         System.out.println((int) (0xa000000000000000L));
     }
+
+    // 0000000,0001111,11111111,1111111,1111111,
+    @Test
+    public void test2() {
+        byte[] uint32MaxLeb = new byte[] {(byte)0xff, (byte)0xff, (byte)0xff, (byte) 0xff, (byte) 0x0f};
+
+        BytesReader reader = new BytesReader(uint32MaxLeb);
+        assert (reader.readVarUint32() == -1);
+    }
 }

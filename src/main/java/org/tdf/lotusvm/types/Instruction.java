@@ -142,19 +142,19 @@ public class Instruction {
 
     public static Instruction readFrom(BytesReader reader) {
         OpCode c = OpCode.fromCode(reader.peek());
-        if (CONTROL_INSTRUCTIONS.contains(c)) {
+        if (c.code >= UNREACHABLE.code && c.code < DROP.code) {
             return readControlInstruction(reader);
         }
-        if (PARAMETRIC_INSTRUCTIONS.contains(c)) {
+        if (c.code == DROP.code || c.code == SELECT.code) {
             return readParametricInstruction(reader);
         }
-        if (VARIABLE_INSTRUCTIONS.contains(c)) {
+        if (c.code >= GET_LOCAL.code && c.code < I32_LOAD.code) {
             return readVariableInstruction(reader);
         }
-        if (MEMORY_INSTRUCTIONS.contains(c)) {
+        if (c.code >= I32_LOAD.code && c.code < I32_CONST.code) {
             return readMemoryInstruction(reader);
         }
-        if (NUMERIC_INSTRUCTIONS.contains(c)) {
+        if (c.code >= I32_CONST.code) {
             return readNumericInstruction(reader);
         }
         throw new RuntimeException("unknown opcode " + c);

@@ -84,8 +84,9 @@ public class TestModule {
             }
             if (function.trap != null && !function.trap.equals("")) {
                 Exception e = null;
+                long[] r = null;
                 try {
-                    instance.execute(function.function, args1);
+                    r = instance.execute(function.function, args1);
                 } catch (Exception e2) {
                     e = e2;
                 }

@@ -16,7 +16,6 @@
   ;; Stores an i64 value in little-endian format
   (func $i64_store_little (param $address i32) (param $value i64)
     (call $i32_store_little (get_local $address) (i32.wrap/i64 (get_local $value)))
-    (call $i32_store_little (get_local $address) (i32.wrap/i64 (get_local $value)))
     (call $i32_store_little (i32.add (get_local $address) (i32.const 4)) (i32.wrap/i64 (i64.shr_u (get_local $value) (i64.const 32))))
   )
 

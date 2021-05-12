@@ -715,8 +715,7 @@
       {
         "function": "i64_trunc_s_f32",
         "return": "i32:1"
-      }
-    ,
+      },
       {
         "function": "i64_extend_s_i32",
         "return": "i64:18446744073709551615"
@@ -854,8 +853,7 @@
       {
         "function": "i32_load8_u",
         "return": "i32:255"
-      }
-    ,
+      },
       {
         "function": "i32_load",
         "return": "i32:4294967295"
@@ -1115,7 +1113,7 @@
       {
         "function": "sample",
         "args": [],
-        "return": "i32:1"
+        "return": "i32:1" // why trap: "i32:1" here??
       }
     ]
   },

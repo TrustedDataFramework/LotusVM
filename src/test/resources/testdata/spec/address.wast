@@ -45,6 +45,6 @@
   )
 
   (func (export "bad") (param $i i32)
-    (drop (i32.load offset=0x7fffffff (get_local $i)))
+    (drop (i32.load offset=4294967295 (get_local $i)))
   )
 )
