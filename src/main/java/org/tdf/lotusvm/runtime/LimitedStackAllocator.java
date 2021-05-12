@@ -34,7 +34,6 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     private static final long LABEL_SIZE_MASK = 0x00000000ffff0000L;
     private static final long LABEL_SIZE_OFFSET = 16;
 
-
     // offset = stack offset + label offset
 
     private final long[] stackData;
@@ -200,19 +199,6 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
         int before = (int) ((frameData[frameId] & LABEL_SIZE_MASK) >>> LABEL_SIZE_OFFSET);
         frameData[frameId] &= ~LABEL_SIZE_MASK;
         frameData[frameId] |= Integer.toUnsignedLong(before - 1) << LABEL_SIZE_OFFSET;
-    }
-
-    @Override
-    public void pushLocal(int frameId, long value) {
-        int stackSize = getStackSize(frameId);
-        if (stackSize > 0)
-            throw new RuntimeException("push local failed: stack is not empty");
-        int base = getStackBase(frameId);
-        int localSize = getLocalSize(frameId);
-        if (localSize == MAX_SIZE_PER_FRAME)
-            throw new RuntimeException("frame's local var overflow");
-        stackData[base + localSize] = value;
-        increaseLocalSize(frameId);
     }
 
     @Override
@@ -403,6 +389,19 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     @Override
     public void clear() {
         this.count = 0;
+        for(int i = 0; i < frameData.length; i++) {
+            frameData[i] = 0;
+            offsets[i] = 0;
+            labels[i] = null;
+        }
+
+        for(int i = 0; i < stackData.length; i++){
+            stackData[i] = 0;
+        }
+
+        for(int i = 0; i < labelData.length; i++){
+            labelData[i] = 0;
+        }
     }
 
     @Override

@@ -21,9 +21,6 @@ public interface StackAllocator {
 
     void pushExpression(Instruction[] instructions, ValueType type);
 
-    // push local variable into frame
-    void pushLocal(int frameId, long value);
-
     // set frame local variable
     void setLocal(int frameId, int index, long value);
 

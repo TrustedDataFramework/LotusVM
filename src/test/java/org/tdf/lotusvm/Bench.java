@@ -1,7 +1,6 @@
 package org.tdf.lotusvm;
 
 import org.apache.commons.codec.binary.Hex;
-import org.junit.Test;
 import org.tdf.lotusvm.runtime.HostFunction;
 import org.tdf.lotusvm.runtime.LimitedStackAllocator;
 import org.tdf.lotusvm.runtime.Memory;
@@ -9,7 +8,6 @@ import org.tdf.lotusvm.runtime.UnsafeMemory;
 import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.Module;
 
-import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
