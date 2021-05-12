@@ -1,6 +1,7 @@
 package org.tdf.lotusvm.runtime;
 
 import org.tdf.lotusvm.types.Instruction;
+import org.tdf.lotusvm.types.ValueType;
 
 // stack provider to avoid array create
 public interface StackAllocator {
@@ -16,10 +17,9 @@ public interface StackAllocator {
     int current();
 
     // create a frame, return the frame Id, the function referred by index must be wasm function
-    int pushFrame(int functionIndex);
-
-    // create a frame, return the frame Id, the function referred by index must be wasm function
     int pushFrame(int functionIndex, long[] params);
+
+    void pushExpression(Instruction[] instructions, ValueType type);
 
     // push local variable into frame
     void pushLocal(int frameId, long value);

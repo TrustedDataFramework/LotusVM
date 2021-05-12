@@ -203,7 +203,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     @Override
     public long[] execute(int functionIndex, long... parameters) {
-        stackAllocator.pushFrame(functionIndex, parameters);
+        stackAllocator.pushFrame(functionIndex, Objects.requireNonNull(parameters));
         FunctionInstance ins = functions.get(functionIndex);
         long r = stackAllocator.execute();
         return ins.getArity() > 0 ? new long[]{r} : EMPTY_LONGS;
@@ -213,25 +213,15 @@ public class ModuleInstanceImpl implements ModuleInstance {
     public long[] execute(String funcName, long... parameters) throws RuntimeException {
         int idx = exports.get(funcName);
         FunctionInstance ins = functions.get(exports.get(funcName));
-        stackAllocator.pushFrame(idx, parameters);
+        stackAllocator.pushFrame(idx, Objects.requireNonNull(parameters));
         long r = stackAllocator.execute();
         return ins.getArity() > 0 ? new long[]{r} : EMPTY_LONGS;
     }
 
 
     private long executeExpression(Instruction[] instructions, ValueType type) {
-        WASMFunction func = new WASMFunction(
-            new FunctionType(Collections.emptyList(), Collections.singletonList(type)),
-            this,
-            instructions,
-            Collections.emptyList()
-        );
-        this.functions.add(func);
-        int idx = this.functions.size() - 1;
-        stackAllocator.pushFrame(this.functions.size() - 1, EMPTY_LONGS);
-        long r = stackAllocator.execute();
-        this.functions.remove(idx);
-        return r;
+        stackAllocator.pushExpression(instructions, type);
+        return stackAllocator.execute();
     }
 
     @Override

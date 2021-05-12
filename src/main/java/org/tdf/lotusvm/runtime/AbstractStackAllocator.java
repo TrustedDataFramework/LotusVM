@@ -3,9 +3,9 @@ package org.tdf.lotusvm.runtime;
 
 import org.tdf.lotusvm.common.Constants;
 import org.tdf.lotusvm.common.OpCode;
-import org.tdf.lotusvm.types.FunctionType;
 import org.tdf.lotusvm.types.Instruction;
 import org.tdf.lotusvm.types.ResultType;
+import org.tdf.lotusvm.types.ValueType;
 
 public abstract class AbstractStackAllocator implements StackAllocator {
     protected ModuleInstanceImpl module;
@@ -91,11 +91,9 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         popLabel(current());
     }
 
-    Instruction[] getBody() {
-        return getFunction().getBody();
-    }
+    protected abstract Instruction[] getBody();
+    protected abstract ValueType getResultType();
 
-    protected abstract WASMFunction getFunction();
 
     long[] popLongs(int n) {
         if (n == 0) return Constants.EMPTY_LONGS;
@@ -109,13 +107,12 @@ public abstract class AbstractStackAllocator implements StackAllocator {
 
 
     long returns() {
-        FunctionType type = getFunction().getType();
-        if (type.getResultTypes().size() == 0) {
+        if (getResultType() == null) {
             drop();
             return 0;
         }
         long res = pop();
-        switch (type.getResultTypes().get(0)) {
+        switch (getResultType()) {
             case F32:
             case I32:
                 // shadow bits
@@ -126,8 +123,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
     }
 
     public long execute() throws RuntimeException {
-        FunctionType type = getFunction().getType();
-        pushLabel(type.getResultTypes().size() != 0, getBody(), false);
+        pushLabel(getResultType() != null, getBody(), false);
         while (!labelIsEmpty()) {
             int idx = getLabelSize(current()) - 1;
             int pc = getPc(current(), idx);
@@ -228,7 +224,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                         popLongs(function.parametersLength())
                     );
                 } else {
-                    pushFrame(ins.getOperandInt(0));
+                    pushFrame(ins.getOperandInt(0), null);
                     res = execute();
                 }
 
@@ -258,7 +254,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                         popLongs(function.parametersLength())
                     );
                 } else {
-                    pushFrame((int) (elementIndex | TABLE_MASK));
+                    pushFrame((int) (elementIndex | TABLE_MASK), null);
                     r = execute();
                 }
                 if (getModule().validateFunctionType && !function.getType().equals(getModule().types.get(ins.getOperandInt(0)))) {

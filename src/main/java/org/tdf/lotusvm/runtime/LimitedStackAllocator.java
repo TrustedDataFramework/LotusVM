@@ -2,6 +2,7 @@ package org.tdf.lotusvm.runtime;
 
 
 import org.tdf.lotusvm.types.Instruction;
+import org.tdf.lotusvm.types.ValueType;
 
 public class LimitedStackAllocator extends AbstractStackAllocator {
     private static final int MAX_SIZE_PER_FRAME = 0xffff;
@@ -57,7 +58,18 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
     // frame count
     private int count;
 
-    private WASMFunction function;
+    private ValueType resultType;
+    private Instruction[] body;
+
+    @Override
+    protected Instruction[] getBody() {
+        return body;
+    }
+
+    @Override
+    protected ValueType getResultType() {
+        return resultType;
+    }
 
     public LimitedStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
         if (maxStackSize <= 0 || maxFrames <= 0 || maxLabelSize <= 0)
@@ -69,21 +81,29 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
         this.labels = new Instruction[maxLabelSize][];
     }
 
+
     @Override
-    public int pushFrame(int functionIndex, long[] params) {
-        initFrame(functionIndex);
-        WASMFunction func = getFunction();
-        for (int i = 0; i < func.getLocals() + params.length; i++) {
-            pushLocal(current(), i < params.length ?
-                params[i]
-                : 0
-            );
+    public void pushExpression(Instruction[] instructions, ValueType type) {
+        if (count == offsets.length) {
+            throw new RuntimeException("frame overflow");
         }
-        return current();
+        int c = this.count;
+        // new stack base and new label base
+        int newStackBase = c == 0 ? 0 : (getStackBase(c - 1) + getLocalSize(c - 1) + getStackSize(c - 1));
+        int newLabelBase = c == 0 ? 0 : (getLabelBase(c - 1) + getLabelSize(c - 1));
+
+        offsets[c]
+            = (Integer.toUnsignedLong(newStackBase) << STACK_BASE_OFFSET) |
+            (Integer.toUnsignedLong(newLabelBase) << LABEL_BASE_OFFSET);
+
+        this.resultType = type;
+        this.body = instructions;
+
+        this.count++;
     }
 
-
-    private void initFrame(int functionIndex) {
+    // when args = null,
+    public int pushFrame(int functionIndex, long[] args) {
         if (count == offsets.length) {
             throw new RuntimeException("frame overflow");
         }
@@ -98,37 +118,47 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
         offsets[c]
             = (Integer.toUnsignedLong(newStackBase) << STACK_BASE_OFFSET) |
             (Integer.toUnsignedLong(newLabelBase) << LABEL_BASE_OFFSET);
-        frameData[c] = functionIndex;
-        resetBody(functionIndex);
-        this.count++;
-    }
 
-    private void resetBody(int functionIndex) {
-        this.function = (WASMFunction) ((functionIndex & TABLE_MASK) != 0 ?
+        WASMFunction func = (WASMFunction) ((functionIndex & TABLE_MASK) != 0 ?
             getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
             getModule().functions.get((int) (functionIndex & FUNCTION_INDEX_MASK)));
-    }
 
-    @Override
-    public int pushFrame(int functionIndex) {
-        initFrame(functionIndex);
-        WASMFunction func = getFunction();
-        int start;
-        try {
-            start = popN(current() - 1, func.parametersLength());
-        } catch (Exception e) {
-            throw new RuntimeException("");
+        // set function index
+        frameData[c] = functionIndex;
+
+        // set local size
+        int localSize = func.parametersLength() + func.getLocals();
+        frameData[c] &= ~LOCAL_SIZE_MASK;
+        frameData[c] |= Integer.toUnsignedLong(localSize) << LOCAL_SIZE_OFFSET;
+        // set body and value type
+
+        body = func.getBody();
+        // set value type
+        resultType = func.getType().getResultTypes().isEmpty() ? null : func.getType().getResultTypes().get(0);
+
+        if (args == null) {
+            int start = popN(c - 1, func.parametersLength());
+
+            for (int i = 0; i < localSize; i++) {
+                setLocal(c, i, i < func.parametersLength() ? getUnchecked(start + i) : 0);
+            }
+        } else {
+            for (int i = 0; i < localSize; i++) {
+                setLocal(c, i, i < args.length ? args[i] : 0);
+            }
         }
-        int end = start + func.parametersLength();
-        for (int i = start; i < start + func.getLocals() + func.parametersLength(); i++) {
-            pushLocal(current(), i < end ?
-                getUnchecked(i)
-                : 0
-            );
-        }
+        this.count++;
         return current();
     }
 
+    private void resetBody(int functionIndex) {
+        WASMFunction func = (WASMFunction) ((functionIndex & TABLE_MASK) != 0 ?
+            getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
+            getModule().functions.get((int) (functionIndex & FUNCTION_INDEX_MASK)));
+
+        this.body = func.getBody();
+        this.resultType = func.getType().getResultTypes().isEmpty() ? null : func.getType().getResultTypes().get(0);
+    }
 
     private int getStackBase(int frameId) {
         return (int) ((offsets[frameId] & STACK_BASE_MASK) >>> STACK_BASE_OFFSET);
@@ -240,13 +270,13 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
 
     @Override
     public void drop(int frameId) {
-        if (frameId != count - 1)
+        if (frameId != current())
             throw new RuntimeException("stack should be dropped sequentially");
         count--;
         // clear
-        frameData[count] = 0;
-        offsets[count] = 0;
-        if (count > 0)
+        frameData[frameId] = 0;
+        offsets[frameId] = 0;
+        if (frameId > 0)
             resetBody((int) (frameData[current()] & 0xffff));
     }
 
@@ -380,11 +410,5 @@ public class LimitedStackAllocator extends AbstractStackAllocator {
         if (count == 0)
             throw new RuntimeException("frame underflow");
         return count - 1;
-    }
-
-
-    @Override
-    public WASMFunction getFunction() {
-        return function;
     }
 }
