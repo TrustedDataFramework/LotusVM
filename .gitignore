@@ -6,3 +6,4 @@ build
 .project
 *.log
 node_modules
+spec-official
