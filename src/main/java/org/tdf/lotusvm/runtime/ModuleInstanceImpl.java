@@ -57,9 +57,9 @@ public class ModuleInstanceImpl implements ModuleInstance {
         this.stackAllocator = Objects.requireNonNull(builder.getStackAllocator());
         this.stackAllocator.setModule(this);
 
-        this.memory = builder.getMemory() == null ? new BaseMemory() : builder.getMemory();
+        this.memory = Objects.requireNonNull(builder.getMemory());
         Module module = builder.getModule() == null ? new Module(builder.getBinary()) : builder.getModule();
-        types = module.getTypeSection().getFunctionTypes();
+        types = module.getTypeSection() == null ? Collections.emptyList() : module.getTypeSection().getFunctionTypes();
         hooks = new ArrayList<>(builder.getHooks()).toArray(new Hook[]{});
         this.validateFunctionType = builder.isValidateFunctionType();
 
@@ -120,13 +120,15 @@ public class ModuleInstanceImpl implements ModuleInstance {
         }
 
         // init function instances
-        for (int i = 0; i < module.getFunctionSection().getTypeIndices().length; i++) {
-            int typeIndex = module.getFunctionSection().getTypeIndices()[i];
-            CodeSection.Code code = module.getCodeSection().getCodes().get(i);
-            FunctionType type = module.getTypeSection().getFunctionTypes().get(typeIndex);
-            functions.add(
-                new WASMFunction(type, this, code.getCode().getExpression(), code.getCode().getLocals())
-            );
+        if(module.getFunctionSection() != null) {
+            for (int i = 0; i < module.getFunctionSection().getTypeIndices().length; i++) {
+                int typeIndex = module.getFunctionSection().getTypeIndices()[i];
+                CodeSection.Code code = module.getCodeSection().getCodes().get(i);
+                FunctionType type = module.getTypeSection().getFunctionTypes().get(typeIndex);
+                functions.add(
+                    new WASMFunction(type, this, code.getCode().getExpression(), code.getCode().getLocals())
+                );
+            }
         }
 
         // init elements

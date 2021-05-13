@@ -43,6 +43,11 @@ interface WastJson {
     commands: Command[]
 }
 
+function arg2hex(x: {type: "i32" | "i64" | "f32" | "f64", value: string}): string {
+    let v = /^[0-9]+$/.test(x.value) ? ('0x' + BigInt(x.value).toString(16)) : x.value;
+    return `${v.startsWith('0x') ? 'i64' : x.type}:${v}`
+}
+
 function wastJson2Modules(wast: WastJson): TestModule[] {
     const r = []
     let currentModule = null
@@ -61,10 +66,10 @@ function wastJson2Modules(wast: WastJson): TestModule[] {
         if(o.type === "assert_return") {
             let f = {
                 "function": o.action.field,
-                args: o.action.args == null ? [] : o.action.args.map(x => `${x.type}:${x.value}`),
+                args: o.action.args == null ? [] : o.action.args.map(arg2hex),
             }
             if(o.expected && o.expected.length) {
-                f["return"] = `${o.expected[0].type}:${o.expected[0].value}`
+                f["return"] = arg2hex(o.expected[0])
             }
             currentModule.tests.push(
                 f
@@ -74,7 +79,7 @@ function wastJson2Modules(wast: WastJson): TestModule[] {
         if(o.type === "assert_trap") {
             let f = {
                 "function": o.action.field,
-                args: o.action.args == null ? [] : o.action.args.map(x => `${x.type}:${x.value}`),
+                args: o.action.args == null ? [] : o.action.args.map(arg2hex),
             }
             f["trap"] = o.text
             currentModule.tests.push(

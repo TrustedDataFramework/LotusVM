@@ -53,15 +53,20 @@ public class TestModule {
         Memory m = new UnsafeMemory();
         UnsafeStackAllocator u = new UnsafeStackAllocator(32768 * 128, 32768, 32768 * 128);
         this.stackAllocator.clear();
-        ModuleInstance instance =
-            ModuleInstance.Builder
+        ModuleInstance instance;
+            try {
+                instance = ModuleInstance.Builder
+                    .builder()
+                    .memory(m)
+                    .validateFunctionType()
+                    .binary(Util.readClassPathFile(filename))
+                    .stackAllocator(u)
+                    .build();
+            } catch (Exception e) {
+                System.err.println("test file ignored = " + filename + " reason = " + e.getMessage());
+                return;
+            }
 
-                .builder()
-                .memory(m)
-                .validateFunctionType()
-                .binary(Util.readClassPathFile(filename))
-                .stackAllocator(u)
-                .build();
         Set<String> all = new HashSet<>(functions == null ? Collections.emptyList() : functions);
         List<TestConfig.TestFunction> tests = functions == null ? cfg.tests :
             cfg.tests.stream().filter(f -> all.contains(f.function))
@@ -89,8 +94,10 @@ public class TestModule {
                     e = e2;
                 }
                 if (e == null) {
-                    System.out.println("test failed for file = " + cfg.file + " function = " + function.function);
+                    System.err.println("test failed for file = " + cfg.file + " function = " + function.function + " trap expected " + function.trap);
 //                    throw new RuntimeException(filename + " " + function.function + " failed" + " " + function.trap + " expected");
+                } else {
+//                    System.out.println("test passed for file = " + cfg.file + " function = " + function.function);
                 }
                 continue;
             }
@@ -98,23 +105,25 @@ public class TestModule {
             try {
                 res = instance.execute(function.function, args1);
             } catch (Exception e) {
-                System.out.println("test failed for file = " + cfg.file + " function = " + function.function);
-
+                System.err.println("test failed for file = " + cfg.file + " function = " + function.function);
                 e.printStackTrace();
                 continue;
 //                throw new RuntimeException(filename + " " + function.function + " failed, unexpected exception ");
             }
             if (function.returns != null) {
                 if (res[0] != function.returns.data) {
-                    System.out.println("test failed for file = " + cfg.file + " function = " + function.function);
+                    System.err.println("test failed for file = " + cfg.file + " function = " + function.function + " return not match " + res[0] + " " + " expected " + function.returns.data);
 
 //                    throw new RuntimeException(filename + " " + function.function + " failed");
+                } else {
+//                    System.out.println("test passed for file = " + cfg.file + " function = " + function.function);
                 }
                 continue;
             }
             if (res.length != 0) {
                 throw new RuntimeException(filename + " " + function.function + " failed, the result should be null");
             }
+//            System.out.println("test passed for file = " + cfg.file + " function = " + function.function);
         }
         m.close();
     }

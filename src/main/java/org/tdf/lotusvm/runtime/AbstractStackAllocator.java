@@ -159,6 +159,13 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         // clear stack and local variables
     }
 
+    private int getMemoryOffset(Instruction ins) {
+        long l = Integer.toUnsignedLong(popI32()) + Integer.toUnsignedLong(ins.getOperandInt(1));
+        if(Long.compareUnsigned(l, 0xFFFFFFFFL) > 0)
+            throw new RuntimeException("memory access overflow");
+        return (int)l;
+    }
+
     void invoke(Instruction ins) throws RuntimeException {
         for (int i = 0; i < getModule().hooks.length; i++) {
             getModule().hooks[i].onInstruction(ins, getModule());
@@ -317,63 +324,63 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             case F32_LOAD:
             case I64_LOAD32_U:
                 pushI32(
-                    getModule().memory.load32(popI32() + ins.getOperandInt(1))
+                    getModule().memory.load32(getMemoryOffset(ins))
                 );
                 break;
             case I64_LOAD:
             case F64_LOAD:
                 push(
-                    getModule().memory.load64(popI32() + ins.getOperandInt(1))
+                    getModule().memory.load64(getMemoryOffset(ins))
                 );
                 break;
             case I32_LOAD8_S:
-                pushI32(getModule().memory.load8(popI32() + ins.getOperandInt(1)));
+                pushI32(getModule().memory.load8(getMemoryOffset(ins)));
                 break;
             case I64_LOAD8_S: {
-                push(getModule().memory.load8(popI32() + ins.getOperandInt(1)));
+                push(getModule().memory.load8(getMemoryOffset(ins)));
                 break;
             }
             case I32_LOAD8_U:
             case I64_LOAD8_U:
-                pushI8(getModule().memory.load8(popI32() + ins.getOperandInt(1)));
+                pushI8(getModule().memory.load8(getMemoryOffset(ins)));
                 break;
             case I32_LOAD16_S: {
-                pushI32(getModule().memory.load16(popI32() + ins.getOperandInt(1)));
+                pushI32(getModule().memory.load16(getMemoryOffset(ins)));
                 break;
             }
             case I64_LOAD16_S:
-                push(getModule().memory.load16(popI32() + ins.getOperandInt(1)));
+                push(getModule().memory.load16(getMemoryOffset(ins)));
                 break;
             case I32_LOAD16_U:
             case I64_LOAD16_U:
-                pushI16(getModule().memory.load16(popI32() + ins.getOperandInt(1)));
+                pushI16(getModule().memory.load16(getMemoryOffset(ins)));
                 break;
             case I64_LOAD32_S:
-                push(getModule().memory.load32(popI32() + ins.getOperandInt(1)));
+                push(getModule().memory.load32(getMemoryOffset(ins)));
                 break;
             case I32_STORE8:
             case I64_STORE8: {
                 byte c = (byte) pop();
-                getModule().memory.storeI8(popI32() + ins.getOperandInt(1), c);
+                getModule().memory.storeI8(getMemoryOffset(ins), c);
                 break;
             }
             case I32_STORE16:
             case I64_STORE16: {
                 short c = (short) pop();
-                getModule().memory.storeI16(popI32() + ins.getOperandInt(1), c);
+                getModule().memory.storeI16(getMemoryOffset(ins), c);
                 break;
             }
             case I32_STORE:
             case F32_STORE:
             case I64_STORE32: {
                 int c = popI32();
-                getModule().memory.storeI32(popI32() + ins.getOperandInt(1), c);
+                getModule().memory.storeI32(getMemoryOffset(ins), c);
                 break;
             }
             case I64_STORE:
             case F64_STORE: {
                 long c = pop();
-                getModule().memory.storeI64(popI32() + ins.getOperandInt(1), c);
+                getModule().memory.storeI64(getMemoryOffset(ins), c);
                 break;
             }
             case CURRENT_MEMORY:
@@ -381,8 +388,8 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 break;
             case GROW_MEMORY: {
                 int n = popI32();
-                int before = getModule().memory.getPages() * BaseMemory.PAGE_SIZE;
-                int after = (getModule().memory.getPages() + n) * BaseMemory.PAGE_SIZE;
+                int before = getModule().memory.getPages() * Memory.PAGE_SIZE;
+                int after = (getModule().memory.getPages() + n) * Memory.PAGE_SIZE;
                 for (int i = 0; i < getModule().hooks.length; i++) {
                     getModule().hooks[i].onMemoryGrow(before, after);
                 }

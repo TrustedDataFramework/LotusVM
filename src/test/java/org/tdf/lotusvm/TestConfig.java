@@ -102,6 +102,7 @@ public class TestConfig {
                             );
                         }
                     }
+
                     return new Argument(f2l(Float.parseFloat(val)));
                 case "f64":
                     switch (lower) {
