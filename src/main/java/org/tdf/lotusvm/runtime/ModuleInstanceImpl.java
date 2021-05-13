@@ -221,7 +221,8 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     private long executeExpression(Instruction[] instructions, ValueType type) {
         stackAllocator.pushExpression(instructions, type);
-        return stackAllocator.execute();
+        long r = stackAllocator.execute();
+        return r;
     }
 
     @Override

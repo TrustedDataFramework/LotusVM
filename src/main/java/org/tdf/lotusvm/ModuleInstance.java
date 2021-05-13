@@ -9,6 +9,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Not support:
+ * 1. sign-extension operators
+ * 2. return multi-value
+ * 3. per frame stack size < 65536
+ * 4. per frame locals size < 65536
+ * 5. per frame labels size < 65536
+ * 6.
+ */
 public interface ModuleInstance {
     static Builder builder() {
         return Builder.builder();
@@ -56,8 +65,8 @@ public interface ModuleInstance {
             return this;
         }
 
-        public Builder stackProvider(StackAllocator provider) {
-            this.stackAllocator = provider;
+        public Builder stackAllocator(StackAllocator allocator) {
+            this.stackAllocator = allocator;
             return this;
         }
 

@@ -8,6 +8,18 @@ import org.tdf.lotusvm.types.ResultType;
 import org.tdf.lotusvm.types.ValueType;
 
 public abstract class AbstractStackAllocator implements StackAllocator {
+    protected final int maxFrames;
+    protected final int maxLabelSize;
+    protected final int maxStackSize;
+
+    protected AbstractStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
+        if (maxStackSize <= 0 || maxFrames <= 0 || maxLabelSize <= 0)
+            throw new RuntimeException("invalid limits <= 0" + maxStackSize + " " + maxFrames + " " + maxLabelSize);
+        this.maxFrames = maxFrames;
+        this.maxLabelSize = maxLabelSize;
+        this.maxStackSize = maxStackSize;
+    }
+
     protected ModuleInstanceImpl module;
 
     public ModuleInstanceImpl getModule() {
@@ -133,6 +145,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 continue;
             }
             Instruction ins = body[pc];
+
             if (ins.getCode().equals(OpCode.RETURN)) {
                 return returns();
             }

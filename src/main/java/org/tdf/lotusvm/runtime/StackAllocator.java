@@ -3,12 +3,16 @@ package org.tdf.lotusvm.runtime;
 import org.tdf.lotusvm.types.Instruction;
 import org.tdf.lotusvm.types.ValueType;
 
+import java.io.Closeable;
+
 // stack provider to avoid array create
-public interface StackAllocator {
+public interface StackAllocator extends Closeable {
     long MAXIMUM_UNSIGNED_I32 = 0xFFFFFFFFL;
     long UNSIGNED_MASK = 0x7fffffffffffffffL;
     long FUNCTION_INDEX_MASK = 0x0000000000007fffL;
     long TABLE_MASK = 0x0000000000008000L;
+
+    boolean isEmpty();
 
     void setModule(ModuleInstanceImpl module);
 
@@ -79,4 +83,8 @@ public interface StackAllocator {
 
     // get current module instance
     ModuleInstanceImpl getModule();
+
+    default void close() {
+
+    }
 }

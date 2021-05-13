@@ -25,7 +25,7 @@ public class RuntimeTest {
         ModuleInstance instance =
             ModuleInstance.Builder.builder()
                 .binary(Util.readClassPathFile("expression-tests/add.wasm"))
-                .stackProvider(Util.getAllocator())
+                .stackAllocator(Util.getAllocator())
                 .build();
         assert instance.execute(0, 1, 1)[0] == 2;
         assert instance.execute(0, 1, -1)[0] == 0;
