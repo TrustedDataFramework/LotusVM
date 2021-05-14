@@ -3,6 +3,7 @@ package org.tdf.lotusvm;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.tdf.lotusvm.runtime.BaseMemory;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -24,6 +25,7 @@ public class RuntimeTest {
     public void testAddWasm() throws Exception {
         ModuleInstance instance =
             ModuleInstance.Builder.builder()
+                .memory(new BaseMemory())
                 .binary(Util.readClassPathFile("expression-tests/add.wasm"))
                 .stackAllocator(Util.getAllocator())
                 .build();
