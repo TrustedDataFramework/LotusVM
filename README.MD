@@ -13,6 +13,6 @@ See src/test/org.tdf.lotusvm.Bench.java
 Not support:
 1. sign-extension operators
 2. return multi-value
-3. floating number operations, i.e. f32.const, f32_nearest, f64_round (may platform undefined behavior)
+3. floating number operations, i.e. f32.const, f32_nearest, f64_round (undefined behavior in some platform and error-prone)
 
 TODO: module validation
