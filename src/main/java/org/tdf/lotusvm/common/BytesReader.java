@@ -88,13 +88,13 @@ public class BytesReader extends InputStream {// io.reader
 
             long r = n == 64 ? 0xFFFFFFFFFFFFFFFFL : ((1L << n) - 1L);
             if ((b & FIRST_BIT) == 0 && Long.compareUnsigned(b, r) <= 0) {
-                res |=  b << shift;
+                res |= b << shift;
                 return res;
             }
 
-            if((b & FIRST_BIT) != 0 && n > 7) {
-                res |=  (b & MASK) << shift;
-                shift+= 7;
+            if ((b & FIRST_BIT) != 0 && n > 7) {
+                res |= (b & MASK) << shift;
+                shift += 7;
                 n -= 7;
                 continue;
             }
@@ -146,23 +146,18 @@ public class BytesReader extends InputStream {// io.reader
     }
 
     public int readUint32() throws RuntimeException {
-        int r = LittleEndian.decodeInt32(buffer, offset);
-        this.offset += 4;
-        return r;
+        return read() | (read() << 8) | (read() << 16) | (read() << 24);
     }
 
     public long readUint64() {
-        long r = LittleEndian.decodeInt64(buffer, offset);
-        this.offset += 8;
-        return r;
+        return (((long) read()) & 0xffL) |
+            (((long) read()) & 0xffL) << 8 |
+            (((long) read()) & 0xffL) << 16 |
+            (((long) read()) & 0xffL) << 24 |
+            (((long) read()) & 0xffL) << 32 |
+            (((long) read()) & 0xffL) << 40 |
+            (((long) read()) & 0xffL) << 48 |
+            (((long) read()) & 0xffL) << 56
+            ;
     }
-
-    public float readFloat() {
-        return Float.intBitsToFloat(readUint32());
-    }
-
-    public double readDouble() {
-        return Double.longBitsToDouble(readUint64());
-    }
-
 }

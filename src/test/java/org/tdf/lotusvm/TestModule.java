@@ -2,6 +2,8 @@ package org.tdf.lotusvm;
 
 import lombok.SneakyThrows;
 import org.tdf.lotusvm.runtime.*;
+import org.tdf.lotusvm.types.FunctionType;
+import org.tdf.lotusvm.types.ValueType;
 
 import java.nio.file.Paths;
 import java.util.*;
@@ -23,6 +25,23 @@ public class TestModule {
     public void testAll() {
         for(int i = 0; i < configs.length; i++) {
             testSpecFunctions(i, null, 0, -1);
+        }
+    }
+
+    public static class PrintHost extends HostFunction {
+
+        public PrintHost() {
+            super(
+                "print",
+                new FunctionType(Collections.singletonList(ValueType.I64), Collections.emptyList()),
+                "print_i32"
+            );
+        }
+
+        @Override
+        public long execute(long[] parameters) {
+            System.out.println(parameters[0]);
+            return 0;
         }
     }
 
@@ -58,23 +77,27 @@ public class TestModule {
                 instance = ModuleInstance.Builder
                     .builder()
                     .memory(m)
+                    .hostFunctions(Collections.singleton(new PrintHost()))
                     .validateFunctionType()
                     .binary(Util.readClassPathFile(filename))
                     .stackAllocator(u)
                     .build();
             } catch (Exception e) {
-                System.err.println("test file ignored = " + filename + " reason = " + e.getMessage());
+                System.out.println("test file ignored = " + filename + " reason = " + e.getMessage());
                 return;
             }
 
         Set<String> all = new HashSet<>(functions == null ? Collections.emptyList() : functions);
+
         List<TestConfig.TestFunction> tests = functions == null ? cfg.tests :
             cfg.tests.stream().filter(f -> all.contains(f.function))
-                .skip(skip)
-                .limit(limit > 0 ? limit : Long.MAX_VALUE)
                 .collect(Collectors.toList());
 
-        for (TestConfig.TestFunction function : tests) {
+        for (int j = skip; j < Integer.toUnsignedLong(limit) && j < tests.size(); j++) {
+            TestConfig.TestFunction function = tests.get(j);
+            String failedMessage =
+                String.format("test failed for file = %s function = %s  idx = %d", cfg.file, function.function, j);
+
             Long[] args;
             if (function.args != null) {
                 args = function.args.stream().map(x -> x.data).toArray(Long[]::new);
@@ -85,6 +108,14 @@ public class TestModule {
             for (int i = 0; i < args.length; i++) {
                 args1[i] = args[i];
             }
+            if(function.invokeOnly) {
+                try {
+                    instance.execute(function.function, args1);
+                } catch (Exception e) {
+                    System.err.println(e.getMessage());
+                }
+                continue;
+            }
             if (function.trap != null && !function.trap.equals("")) {
                 Exception e = null;
                 long[] r = null;
@@ -94,8 +125,7 @@ public class TestModule {
                     e = e2;
                 }
                 if (e == null) {
-                    System.err.println("test failed for file = " + cfg.file + " function = " + function.function + " trap expected " + function.trap);
-//                    throw new RuntimeException(filename + " " + function.function + " failed" + " " + function.trap + " expected");
+                    System.err.println(failedMessage + " " + function.trap + " expected");
                 } else {
 //                    System.out.println("test passed for file = " + cfg.file + " function = " + function.function);
                 }
@@ -105,14 +135,17 @@ public class TestModule {
             try {
                 res = instance.execute(function.function, args1);
             } catch (Exception e) {
-                System.err.println("test failed for file = " + cfg.file + " function = " + function.function);
-                e.printStackTrace();
+                if(e.getMessage() == null || !e.getMessage().startsWith("float number")) {
+                    System.err.println(failedMessage);
+                    e.printStackTrace();
+                }
                 continue;
 //                throw new RuntimeException(filename + " " + function.function + " failed, unexpected exception ");
             }
             if (function.returns != null) {
                 if (res[0] != function.returns.data) {
-                    System.err.println("test failed for file = " + cfg.file + " function = " + function.function + " return not match " + res[0] + " " + " expected " + function.returns.data);
+                    System.err.println(failedMessage + " return not match ");
+                    System.err.printf("found %d expect %d%n", res[0], function.returns.data);
 
 //                    throw new RuntimeException(filename + " " + function.function + " failed");
                 } else {
@@ -140,4 +173,6 @@ public class TestModule {
             throw new RuntimeException("file not found in module");
         return index;
     }
+
+
 }

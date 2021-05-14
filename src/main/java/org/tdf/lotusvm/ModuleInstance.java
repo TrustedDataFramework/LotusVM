@@ -16,7 +16,7 @@ import java.util.Set;
  * 3. per frame stack size < 65536
  * 4. per frame locals size < 65536
  * 5. per frame labels size < 65536
- * 6.
+ * 6. float number, i.e. f32_nearest, f64_round (platform undefined behavior)
  */
 public interface ModuleInstance {
     static Builder builder() {

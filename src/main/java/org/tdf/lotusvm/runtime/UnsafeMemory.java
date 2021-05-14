@@ -12,6 +12,7 @@ public class UnsafeMemory implements Memory, Closeable {
     private LimitType limit = new LimitType();
     private final Unsafe unsafe = reflectGetUnsafe();
     private final int ARRAY_OFFSET = unsafe.arrayBaseOffset(byte[].class);
+    private final int MAX_PAGES = 0x10000;
 
     private long pointer;
     private long overflow;
@@ -131,6 +132,8 @@ public class UnsafeMemory implements Memory, Closeable {
         if (limit.isBounded() && getPages() + n > limit.getMaximum()) {
             return -1;
         }
+        if(n + this.pages >= MAX_PAGES)
+            return -1;
         long newPointer = unsafe.allocateMemory((pages + n) * PAGE_SIZE);
         unsafe.setMemory(newPointer, (pages + n) * PAGE_SIZE, (byte) 0);
         unsafe.copyMemory(this.pointer, newPointer, this.pages * PAGE_SIZE);
@@ -150,5 +153,4 @@ public class UnsafeMemory implements Memory, Closeable {
         unsafe.freeMemory(pointer);
         pointer = 0;
     }
-
 }

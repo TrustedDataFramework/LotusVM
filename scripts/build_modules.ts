@@ -5,8 +5,14 @@ import fs = require('fs')
 const dir = path.join(__dirname, '../src/test/resources/spec-official')
 
 const modules = []
+
 for(let f of fs.readdirSync(dir)) {
-    if(!f.endsWith(".json") || f === 'modules.json')
+    if(!f.endsWith(".json") ||
+        f === 'modules.json' ||
+        f.startsWith("f32") ||
+        f.startsWith("f64") ||
+        f.startsWith("float")
+    )
         continue
     let p = path.join(dir, f)
     const o = JSON.parse(fs.readFileSync(p, 'utf-8'))
@@ -17,7 +23,7 @@ for(let f of fs.readdirSync(dir)) {
 }
 
 interface Command {
-    type: "module" | "assert_return" | "assert_trap" | "assert_malformed",
+    type: "module" | "assert_return" | "assert_trap" | "assert_malformed" | 'action',
     line: number,
     filename?: string
     action? : {
@@ -63,7 +69,7 @@ function wastJson2Modules(wast: WastJson): TestModule[] {
             }
         }
 
-        if(o.type === "assert_return") {
+        if(o.type === "assert_return" || o.type === 'action') {
             let f = {
                 "function": o.action.field,
                 args: o.action.args == null ? [] : o.action.args.map(arg2hex),
@@ -71,6 +77,7 @@ function wastJson2Modules(wast: WastJson): TestModule[] {
             if(o.expected && o.expected.length) {
                 f["return"] = arg2hex(o.expected[0])
             }
+            f['invokeOnly'] = o.type === 'action'
             currentModule.tests.push(
                 f
             )

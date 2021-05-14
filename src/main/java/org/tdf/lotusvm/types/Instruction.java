@@ -127,12 +127,12 @@ public class Instruction {
             }
             case F32_CONST: {
                 long[] operands = new long[1];
-                operands[0] = Float.floatToIntBits(reader.readFloat()) & 0xffffffffL;
+                operands[0] = reader.readUint32() & 0xffffffffL;
                 return new Instruction(c, operands);
             }
             case F64_CONST: {
                 long[] operands = new long[1];
-                operands[0] = Double.doubleToLongBits(reader.readDouble());
+                operands[0] = reader.readUint64();
                 return new Instruction(c, operands);
             }
             default:

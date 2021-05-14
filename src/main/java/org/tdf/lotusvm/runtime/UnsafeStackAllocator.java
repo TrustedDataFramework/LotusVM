@@ -11,7 +11,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator{
     private final long labelDataPtr;
     private final long frameDataPtr;
     private final long offsetsPtr;
-//    private final long labelsPtr;
 
     private final Instruction[][] labels;
 
@@ -38,10 +37,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator{
 
         this.labelDataPtr = unsafe.allocateMemory(maxLabelSize << 3);
         unsafe.setMemory(labelDataPtr, maxLabelSize << 3, (byte) 0);
-
-//        this.labelsPtr = unsafe.allocateMemory(maxLabels << 3);
-//        unsafe.setMemory(labelDataPtr, maxLabels << 3, (byte) 0);
-
     }
 
     private void setLabels(int p, Instruction[] instructions) {

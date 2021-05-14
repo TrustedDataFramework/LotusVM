@@ -19,4 +19,5 @@ public class UnsafeTests {
         assert u.getShort(ptr | 4) == 0;
         assert  ((7 << 3) | 7 )== (7 * 8 + 7) ;
     }
+
 }

@@ -37,7 +37,7 @@ public class TestConfig {
         public String comment;
 
         public int[] must_native_compile;
-
+        public boolean invokeOnly;
     }
 
     @JsonDeserialize(using = ArgumentDeserializer.class)

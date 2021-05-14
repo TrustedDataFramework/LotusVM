@@ -55,21 +55,6 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         push(current(), ((long) x) & 0xffffL);
     }
 
-    float popF32() {
-        return Float.intBitsToFloat(popI32());
-    }
-
-    double popF64() {
-        return Double.longBitsToDouble(pop());
-    }
-
-    void pushF32(float i) {
-        pushI32(Float.floatToIntBits(i));
-    }
-
-    void pushF64(double i) {
-        push(current(), Double.doubleToLongBits(i));
-    }
 
     void pushBoolean(boolean b) {
         push(current(), b ? 1 : 0);
@@ -175,8 +160,6 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             case NOP:
             case I32_REINTERPRET_F32:
             case I64_REINTERPRET_F64:
-            case F32_REINTERPRET_I32:
-            case F64_REINTERPRET_I64:
             case I64_EXTEND_UI32:
                 break;
             case UNREACHABLE:
@@ -321,14 +304,12 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 break;
             // memory instructions
             case I32_LOAD:
-            case F32_LOAD:
             case I64_LOAD32_U:
                 pushI32(
                     getModule().memory.load32(getMemoryOffset(ins))
                 );
                 break;
             case I64_LOAD:
-            case F64_LOAD:
                 push(
                     getModule().memory.load64(getMemoryOffset(ins))
                 );
@@ -371,14 +352,12 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 break;
             }
             case I32_STORE:
-            case F32_STORE:
             case I64_STORE32: {
                 int c = popI32();
                 getModule().memory.storeI32(getMemoryOffset(ins), c);
                 break;
             }
-            case I64_STORE:
-            case F64_STORE: {
+            case I64_STORE: {
                 long c = pop();
                 getModule().memory.storeI64(getMemoryOffset(ins), c);
                 break;
@@ -398,8 +377,6 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             }
             case I32_CONST:
             case I64_CONST:
-            case F32_CONST:
-            case F64_CONST:
                 push(ins.getOperandLong(0));
                 break;
             case I32_CLZ:
@@ -420,6 +397,8 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             case I32_DIVS: {
                 int v2 = popI32();
                 int v1 = popI32();
+                if(v1 == 0x80000000 && v2 == -1)
+                    throw new RuntimeException("math over flow: divide i32.min_value by -1");
                 pushI32(v1 / v2);
                 break;
             }
@@ -570,6 +549,8 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             case I64_DIVS: {
                 long v2 = pop();
                 long v1 = pop();
+                if(v1 == 0x8000000000000000L && v2 == -1)
+                    throw new RuntimeException("math overflow: divide i64.min_value by -1");
                 push(v1 / v2);
                 break;
             }
@@ -688,259 +669,80 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 pushBoolean(Long.compareUnsigned(v1, v2) >= 0);
                 break;
             }
-            case F32_ABS:
-                pushF32(Math.abs(popF32()));
-                break;
-            case F32_NEG:
-                pushF32(-popF32());
-                break;
-            case F32_CEIL:
-                pushF32((float) Math.ceil(popF32()));
-                break;
-            case F32_FLOOR:
-                pushF32((float) Math.floor(popF32()));
-                break;
-            case F32_TRUNC: {
-                pushF32(truncFloat(popF32()));
-                break;
-            }
-            case F32_NEAREST: {
-                float f = popF32();
-                pushF32((int) (f + (float) (Math.copySign(0.5, f))));
-                break;
-            }
-            case F32_SQRT: {
-                pushF32((float) Math.sqrt(popF32()));
-                break;
-            }
-            case F32_ADD:
-                pushF32(popF32() + popF32());
-                break;
-            case F32_SUB: {
-                float v2 = popF32();
-                float v1 = popF32();
-                pushF32(v1 - v2);
-                break;
-            }
-            case F32_MUL:
-                pushF32(popF32() * popF32());
-                break;
-            case F32_DIV: {
-                float v2 = popF32();
-                float v1 = popF32();
-                pushF32(v1 / v2);
-                break;
-            }
-            case F32_MIN:
-                pushF32(Math.min(popF32(), popF32()));
-                break;
-            case F32_MAX:
-                pushF32(Math.max(popF32(), popF32()));
-                break;
-            case F32_COPYSIGN:
-                pushF32(Math.copySign(popF32(), popF32()));
-                break;
-            case F32_EQ:
-                pushBoolean(popF32() == popF32());
-                break;
-            case F32_NE:
-                pushBoolean(popF32() != popF32());
-                break;
-            case F32_LT: {
-                float v2 = popF32();
-                float v1 = popF32();
-                pushBoolean(v1 < v2);
-                break;
-            }
-            case F32_GT: {
-                float v2 = popF32();
-                float v1 = popF32();
-                pushBoolean(v1 > v2);
-                break;
-            }
-            case F32_LE: {
-                float v2 = popF32();
-                float v1 = popF32();
-                pushBoolean(v1 <= v2);
-                break;
-            }
-            case F32_GE: {
-                float v2 = popF32();
-                float v1 = popF32();
-                pushBoolean(v1 >= v2);
-                break;
-            }
-            case F64_ABS:
-                pushF64(Math.abs(popF64()));
-                break;
-            case F64_NEG:
-                pushF64(-popF64());
-                break;
-            case F64_CEIL:
-                pushF64(Math.ceil(popF64()));
-                break;
-            case F64_FLOOR:
-                pushF64(Math.floor(popF64()));
-                break;
-            case F64_TRUNC: {
-                double d = popF64();
-                pushF64(truncDouble(d));
-                break;
-            }
-            case F64_NEAREST: {
-                double d = popF64();
-                pushF64((long) (d + Math.copySign(0.5, d)));
-                break;
-            }
-            case F64_SQRT:
-                pushF64(Math.sqrt(popF64()));
-                break;
-            case F64_ADD:
-                pushF64(popF64() + popF64());
-                break;
-            case F64_SUB: {
-                double v2 = popF64();
-                double v1 = popF64();
-                pushF64(v1 - v2);
-                break;
-            }
-            case F64_MUL:
-                pushF64(popF64() * popF64());
-                break;
-            case F64_DIV: {
-                double v2 = popF64();
-                double v1 = popF64();
-                pushF64(v1 / v2);
-                break;
-            }
-            case F64_MIN:
-                pushF64(Math.min(popF64(), popF64()));
-                break;
-            case F64_MAX:
-                pushF64(Math.max(popF64(), popF64()));
-                break;
-            case F64_COPYSIGN:
-                pushF64(Math.copySign(popF64(), popF64()));
-                break;
-            case F64_EQ:
-                pushBoolean(popF64() == popF64());
-                break;
-            case F64_NE:
-                pushBoolean(popF64() != popF64());
-                break;
-            case F64_LT: {
-                double v2 = popF64();
-                double v1 = popF64();
-                pushBoolean(v1 < v2);
-                break;
-            }
-            case F64_GT: {
-                double v2 = popF64();
-                double v1 = popF64();
-                pushBoolean(v1 > v2);
-                break;
-            }
-            case F64_LE: {
-                double v2 = popF64();
-                double v1 = popF64();
-                pushBoolean(v1 <= v2);
-                break;
-            }
-            case F64_GE: {
-                double v2 = popF64();
-                double v1 = popF64();
-                pushBoolean(v1 >= v2);
-                break;
-            }
             case I32_WRAP_I64:
                 // drop leading bits
                 pushI32((int) pop());
                 break;
-            case I32_TRUNC_SF32:
-            case I32_TRUNC_SF64: {
-                double src = ins.getCode().equals(OpCode.I32_TRUNC_SF32) ? popF32() : popF64();
-                double f = truncDouble(src);
-                if (f > Integer.MAX_VALUE || f < Integer.MIN_VALUE)
-                    throw new RuntimeException("trunc" + src + " to i32 failed, math overflow");
-                pushI32((int) f);
-                break;
-            }
-            case I32_TRUNC_UF32:
-            case I32_TRUNC_UF64: {
-                double src = ins.getCode().equals(OpCode.I32_TRUNC_UF32) ? popF32() : popF64();
-                double f = truncDouble(src);
-                if (f < 0 || f > MAXIMUM_UNSIGNED_I32)
-                    throw new RuntimeException("trunc " + src + " to u32 failed, math overflow");
-                push((long) f);
-                break;
-            }
             case I64_EXTEND_SI32:
                 push(popI32());
                 break;
+            case F32_STORE:
+            case F64_STORE:
+            case F32_LOAD:
+            case F64_LOAD:
+            case F32_REINTERPRET_I32:
+            case F64_REINTERPRET_I64:
+            case F32_CONST:
+            case F64_CONST:
+            case F32_ABS:
+            case F32_NEG:
+            case F32_CEIL:
+            case F32_FLOOR:
+            case F32_TRUNC:
+            case F32_NEAREST:
+            case F32_SQRT:
+            case F32_ADD:
+            case F32_SUB:
+            case F32_MUL:
+            case F32_DIV:
+            case F32_MIN:
+            case F32_MAX:
+            case F32_COPYSIGN:
+            case F32_EQ:
+            case F32_NE:
+            case F32_LT:
+            case F32_GT:
+            case F32_LE:
+            case F32_GE:
+            case F64_ABS:
+            case F64_NEG:
+            case F64_CEIL:
+            case F64_FLOOR:
+            case F64_TRUNC:
+            case F64_NEAREST:
+            case F64_SQRT:
+            case F64_ADD:
+            case F64_SUB:
+            case F64_MUL:
+            case F64_DIV:
+            case F64_MIN:
+            case F64_MAX:
+            case F64_COPYSIGN:
+            case F64_EQ:
+            case F64_NE:
+            case F64_LT:
+            case F64_GT:
+            case F64_LE:
+            case F64_GE:
+            case I32_TRUNC_SF32:
+            case I32_TRUNC_SF64:
+            case I32_TRUNC_UF32:
+            case I32_TRUNC_UF64:
             case I64_TRUNC_SF32:
-            case I64_TRUNC_SF64: {
-                double src = ins.getCode().equals(OpCode.I64_TRUNC_SF32) ? popF32() : popF64();
-                double f = truncDouble(src);
-                if (f > Long.MAX_VALUE || f < Long.MIN_VALUE)
-                    throw new RuntimeException("trunc" + src + " to i64 failed, math overflow");
-                push((long) f);
-                break;
-            }
+            case I64_TRUNC_SF64:
             case I64_TRUNC_UF32:
-            case I64_TRUNC_UF64: {
-                double src = ins.getCode().equals(OpCode.I64_TRUNC_UF32) ? popF32() : popF64();
-                double f = truncDouble(src);
-                long l = (long) (f);
-                if (f < 0 || l != f)
-                    throw new RuntimeException("trunc " + src + " to u64 failed, math overflow");
-                push(
-                    l
-                );
-                break;
-            }
+            case I64_TRUNC_UF64:
             case F32_CONVERT_SI32:
-                pushF32(popI32());
-                break;
             case F32_CONVERT_UI32:
-                pushF32(Integer.toUnsignedLong(popI32()));
-                break;
             case F32_CONVERT_SI64:
-                pushF32(pop());
-                break;
-            case F32_CONVERT_UI64: {
-                long value = pop();
-                float fValue = (float) (value & UNSIGNED_MASK);
-                if (value < 0) {
-                    fValue += 0x1.0p63f;
-                }
-                pushF32(fValue);
-                break;
-            }
+            case F32_CONVERT_UI64:
             case F32_DEMOTE_F64:
-                pushF32((float) popF64());
-                break;
-            // force number conversion
             case F64_CONVERT_SI32:
-                pushF64(popI32());
-                break;
             case F64_CONVERT_UI32:
-                pushF64(Integer.toUnsignedLong(popI32()));
-                break;
             case F64_CONVERT_SI64:
-                pushF64(pop());
-                break;
-            case F64_CONVERT_UI64: {
-                long value = pop();
-                double dValue = (double) (value & UNSIGNED_MASK);
-                if (value < 0) {
-                    dValue += 0x1.0p63;
-                }
-                pushF64(dValue);
-            }
-            break;
+            case F64_CONVERT_UI64:
             case F64_PROMOTE_F32:
-                pushF64(popF32());
-                break;
+                throw new UnsupportedOperationException("float number op " + ins.getCode().name + " is not allowed");
             default:
                 throw new RuntimeException("unknown opcode " + ins.getCode());
         }

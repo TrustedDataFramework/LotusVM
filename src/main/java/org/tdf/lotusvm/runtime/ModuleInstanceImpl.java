@@ -152,8 +152,8 @@ public class ModuleInstanceImpl implements ModuleInstance {
         // put data into memory
         if (module.getDataSection() != null) {
             module.getDataSection().getDataSegments().forEach(x -> {
-                int offset = (int) executeExpression(x.getExpression(), ValueType.I32);
-                memory.put(offset, x.getInit());
+                long offset = executeExpression(x.getExpression(), ValueType.I32);
+                memory.put((int) offset, x.getInit());
             });
         }
 
@@ -223,8 +223,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
     private long executeExpression(Instruction[] instructions, ValueType type) {
         stackAllocator.pushExpression(instructions, type);
-        long r = stackAllocator.execute();
-        return r;
+        return stackAllocator.execute();
     }
 
     @Override

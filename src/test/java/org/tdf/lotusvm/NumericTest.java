@@ -139,4 +139,18 @@ public class NumericTest {
     public void testUnary() throws Exception {
         testSpecFile("unary.wasm");
     }
+
+    static final int SIG_MASK =      0x80000000;
+    static final int EXPONENT_MASK = 0x7f800000;
+    static final int TAIL_MASK =     0x007fffff;
+    @Test
+    public void testNearst() {
+        float f = -0.25f;
+        int bits = Float.floatToRawIntBits(f);
+        System.out.println((bits & SIG_MASK) != 0);
+        System.out.println(((bits & EXPONENT_MASK) >>> 23) - 127);
+        System.out.println(Integer.toBinaryString(bits & TAIL_MASK));
+        System.out.println();
+    }
+
 }
