@@ -5,6 +5,7 @@ import org.tdf.lotusvm.runtime.UnsafeMemory;
 import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
 import org.tdf.lotusvm.types.Module;
 
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -20,13 +21,12 @@ public class Bench {
     // ops = 0.58
     // rust wasmer ops = 8.06451
     public static void main(String... args) throws Exception {
-        String file = Bench.class
+        URL file = Bench.class
             .getClassLoader()
-            .getResource("bench/main.wasm")
-            .getFile();
+            .getResource("bench/main.wasm");
         int loop = 10;
 
-        byte[] data = Files.readAllBytes(Paths.get(file));
+        byte[] data = file.openStream().readAllBytes();
         Module m = new Module(data);
 
 
