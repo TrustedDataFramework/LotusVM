@@ -8,6 +8,7 @@ import org.tdf.lotusvm.runtime.LimitedStackAllocator;
 import org.tdf.lotusvm.runtime.StackAllocator;
 
 import java.io.File;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,8 +25,11 @@ public class Util {
 
     @SneakyThrows
     public static byte[] readClassPathFile(String name){
-        String f = Util.class.getClassLoader().getResource(name).getFile();
-        return Files.readAllBytes(Path.of(f));
+        InputStream stream = Util.class.getClassLoader().getResource(name).openStream();
+        byte[] all = new byte[stream.available()];
+        if(stream.read(all) != all.length)
+            throw new RuntimeException("read bytes from stream failed");
+        return all;
     }
 
     public static File[] readClassPathDir(String name){
