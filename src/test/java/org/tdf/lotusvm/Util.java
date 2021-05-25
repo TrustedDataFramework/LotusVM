@@ -4,13 +4,12 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.SneakyThrows;
-import org.tdf.lotusvm.runtime.LimitedStackAllocator;
 import org.tdf.lotusvm.runtime.StackAllocator;
+import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
 
 import java.io.File;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+
 import java.nio.file.Paths;
 
 public class Util {
@@ -20,7 +19,7 @@ public class Util {
 
 
     public static StackAllocator getAllocator() {
-        return new LimitedStackAllocator(32768 * 128, 32768, 32768 * 128);
+        return new UnsafeStackAllocator(32768 * 128, 32768, 32768 * 128);
     }
 
     @SneakyThrows
