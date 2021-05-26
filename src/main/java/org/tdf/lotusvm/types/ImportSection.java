@@ -70,7 +70,7 @@ public class ImportSection extends AbstractSection {
                     throw new RuntimeException("import desc type incorrect");
             }
             return builder().globalType(globalType).limitType(limitType).module(module)
-                .name(name).tableType(tableType).type(type).typeIndex(typeIndex).build();
+                    .name(name).tableType(tableType).type(type).typeIndex(typeIndex).build();
         }
 
         public static List<Import> readImportsFrom(BytesReader reader) {

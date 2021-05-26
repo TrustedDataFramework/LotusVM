@@ -34,7 +34,7 @@ public class Vector {
             return EMPTY_LONGS;
         long[] res = new long[length];
         for (int i = 0; i < res.length; i++) {
-            res[i] = Integer.toUnsignedLong(reader.readVarUint32());
+            res[i] = reader.readVarUint32AsLong();
         }
         return res;
     }

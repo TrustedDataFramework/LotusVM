@@ -3,7 +3,6 @@ package org.tdf.lotusvm.runtime;
 import lombok.Getter;
 import org.tdf.lotusvm.types.CodeSection;
 import org.tdf.lotusvm.types.FunctionType;
-import org.tdf.lotusvm.types.Instruction;
 
 import java.util.List;
 

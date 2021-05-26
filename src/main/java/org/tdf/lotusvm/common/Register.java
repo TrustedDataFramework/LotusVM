@@ -222,7 +222,7 @@ public class Register {
     @Override
     public String toString() {
         return Arrays.stream(Arrays.copyOfRange(data, 0, pc))
-            .mapToObj(x -> "[" + x + "]").collect(Collectors.joining());
+                .mapToObj(x -> "[" + x + "]").collect(Collectors.joining());
     }
 
     // set pc to maximum

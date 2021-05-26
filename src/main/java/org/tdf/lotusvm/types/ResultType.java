@@ -13,13 +13,12 @@ public enum ResultType {
     I64(VALUE_I64),
     F32(VALUE_F32),
     F64(VALUE_F64);
+    public static final ResultType[] VALUES = values();
     public final int code;
 
     ResultType(int code) {
         this.code = code;
     }
-
-    public static final ResultType[] VALUES = values();
 
     static ResultType readFrom(BytesReader reader) {
         int type = reader.read();

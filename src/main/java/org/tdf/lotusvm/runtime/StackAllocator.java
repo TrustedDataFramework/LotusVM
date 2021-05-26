@@ -1,6 +1,5 @@
 package org.tdf.lotusvm.runtime;
 
-import org.tdf.lotusvm.types.Instruction;
 import org.tdf.lotusvm.types.ValueType;
 
 import java.io.Closeable;
@@ -14,8 +13,6 @@ public interface StackAllocator extends Closeable {
 
     boolean isEmpty();
 
-    void setModule(ModuleInstanceImpl module);
-
     long execute();
 
     int current();
@@ -27,7 +24,6 @@ public interface StackAllocator extends Closeable {
 
     // set frame local variable
     void setLocal(int frameId, int index, long value);
-
 
     // push a value into a stack
     void push(int frameId, long value);
@@ -83,6 +79,8 @@ public interface StackAllocator extends Closeable {
 
     // get current module instance
     ModuleInstanceImpl getModule();
+
+    void setModule(ModuleInstanceImpl module);
 
     default void close() {
 

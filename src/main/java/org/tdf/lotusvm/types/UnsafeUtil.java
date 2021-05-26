@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 
 public class UnsafeUtil {
     public static final Unsafe UNSAFE = reflectGetUnsafe();
+
     private static Unsafe reflectGetUnsafe() {
         try {
             Field field = Unsafe.class.getDeclaredField("theUnsafe");

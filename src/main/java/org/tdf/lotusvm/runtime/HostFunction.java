@@ -11,12 +11,6 @@ public abstract class HostFunction implements FunctionInstance {
     ModuleInstanceImpl instance;
     private Set<String> alias;
 
-    public Set<String> getAlias() {
-        if (alias == null)
-            return Collections.emptySet();
-        return alias;
-    }
-
     public HostFunction(String name, FunctionType type) {
         this.name = name;
         this.type = type;
@@ -29,6 +23,11 @@ public abstract class HostFunction implements FunctionInstance {
         this.alias.addAll(Arrays.asList(alias));
     }
 
+    public Set<String> getAlias() {
+        if (alias == null)
+            return Collections.emptySet();
+        return alias;
+    }
 
     protected ModuleInstance getInstance() {
         return instance;

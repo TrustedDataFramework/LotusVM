@@ -9,28 +9,24 @@ import java.nio.ByteOrder;
 import static org.tdf.lotusvm.types.UnsafeUtil.UNSAFE;
 
 public class UnsafeMemory implements Memory, Closeable {
-    private LimitType limit = new LimitType();
-    private final int ARRAY_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
     private static final int MAX_PAGES = 0xFFFF;
-
+    private final int ARRAY_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
+    private LimitType limit = new LimitType();
     private long pointer;
     private long overflow;
+    @Getter
+    private int pages;
 
     public UnsafeMemory() {
         if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN)
             throw new RuntimeException("create unsafe memory failed: native byte order is not little endian!");
     }
 
-    @Getter
-    private int pages;
-
-
-
     @Override
     public void setLimit(LimitType limit) {
         this.pages = limit.getMinimum();
         int rawSize = pages * PAGE_SIZE;
-        if(rawSize < 0)
+        if (rawSize < 0)
             throw new RuntimeException("memory overflow");
         pointer = UNSAFE.allocateMemory(rawSize);
         overflow = pointer + rawSize;
@@ -126,11 +122,11 @@ public class UnsafeMemory implements Memory, Closeable {
         if (limit.isBounded() && getPages() + n > limit.getMaximum()) {
             return -1;
         }
-        if(n + this.pages > MAX_PAGES)
+        if (n + this.pages > MAX_PAGES)
             return -1;
         int prevRawSize = (int) (overflow - pointer);
         int newRawSize = (pages + n) * PAGE_SIZE;
-        if(newRawSize < 0)
+        if (newRawSize < 0)
             throw new RuntimeException("memory overflow");
         long newPointer = UNSAFE.reallocateMemory(pointer, newRawSize);
         UNSAFE.setMemory(newPointer + prevRawSize, newRawSize - prevRawSize, (byte) 0);
