@@ -27,13 +27,13 @@ public class DataSection extends AbstractSection {
     public static class DataSegment {
         private final int memoryIndex;
 
-        private final Instruction[] expression;
+        private final long expression;
 
         private final byte[] init;
 
         public static DataSegment readFrom(BytesReader reader) {
             return new DataSegment(reader.readVarUint32(),
-                Instruction.readExpressionFrom(reader),
+                reader.getInsPool().readExpressionFrom(reader),
                 Vector.readBytesFrom(reader)
             );
         }

@@ -31,12 +31,12 @@ public class ElementSection extends AbstractSection {
         // In the current version of WebAssembly, at most one table is allowed in a module. Consequently, the only
         // valid tableidx is 0.
         private final int tableIndex;
-        private final Instruction[] expression;
+        private final long expression;
         private final int[] functionIndex;
 
         public static Element readFrom(BytesReader reader) {
             return new Element(reader.readVarUint32(),
-                Instruction.readExpressionFrom(reader),
+                reader.getInsPool().readExpressionFrom(reader),
                 Vector.readUint32VectorFrom(reader));
         }
 

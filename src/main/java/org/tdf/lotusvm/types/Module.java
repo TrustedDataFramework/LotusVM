@@ -46,6 +46,8 @@ public class Module {
 
     private DataSection dataSection;
 
+    private InstructionPool insPool;
+
     public Module(byte[] binary) {
         parse(binary);
     }
@@ -58,6 +60,7 @@ public class Module {
         if (version != Constants.VERSION)
             throw new RuntimeException(String.format("wasm: unknown binary version: %d", version));
         readSections(reader);
+        this.insPool = reader.getInsPool();
     }
 
     private void readSections(BytesReader reader) {

@@ -23,7 +23,7 @@ public interface StackAllocator extends Closeable {
     // create a frame, return the frame Id, the function referred by index must be wasm function
     int pushFrame(int functionIndex, long[] params);
 
-    void pushExpression(Instruction[] instructions, ValueType type);
+    void pushExpression(long instructions, ValueType type);
 
     // set frame local variable
     void setLocal(int frameId, int index, long value);
@@ -55,7 +55,7 @@ public interface StackAllocator extends Closeable {
     void setStackSize(int frameId, int size);
 
     // push label of the frame
-    void pushLabel(int frameId, boolean arity, Instruction[] body, boolean loop);
+    void pushLabel(int frameId, boolean arity, long body, boolean loop);
 
     // pop label of the frame
     void popLabel(int frameId);
@@ -70,7 +70,7 @@ public interface StackAllocator extends Closeable {
     int getLabelSize(int frameId);
 
     // get instruction by label index
-    Instruction[] getInstructions(int frameId, int idx);
+    long getInstructions(int frameId, int idx);
 
     // get play count by label index
     int getPc(int frameId, int idx);

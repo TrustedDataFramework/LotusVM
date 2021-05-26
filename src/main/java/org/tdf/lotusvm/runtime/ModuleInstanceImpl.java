@@ -52,6 +52,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     boolean validateFunctionType;
 
     StackAllocator stackAllocator;
+    InstructionPool insPool;
 
     public ModuleInstanceImpl(Builder builder) {
         this.stackAllocator = Objects.requireNonNull(builder.getStackAllocator());
@@ -59,6 +60,8 @@ public class ModuleInstanceImpl implements ModuleInstance {
 
         this.memory = Objects.requireNonNull(builder.getMemory());
         Module module = builder.getModule() == null ? new Module(builder.getBinary()) : builder.getModule();
+        this.insPool = module.getInsPool();
+
         types = module.getTypeSection() == null ? Collections.emptyList() : module.getTypeSection().getFunctionTypes();
         hooks = new ArrayList<>(builder.getHooks()).toArray(new Hook[]{});
         this.validateFunctionType = builder.isValidateFunctionType();
@@ -221,7 +224,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     }
 
 
-    private long executeExpression(Instruction[] instructions, ValueType type) {
+    private long executeExpression(long instructions, ValueType type) {
         stackAllocator.pushExpression(instructions, type);
         return stackAllocator.execute();
     }

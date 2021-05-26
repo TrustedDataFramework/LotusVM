@@ -13,10 +13,10 @@ class WASMFunction implements FunctionInstance {
     private final ModuleInstanceImpl module;
 
     @Getter
-    private final Instruction[] body;
+    private final long body;
     private final List<CodeSection.Local> locals;
 
-    WASMFunction(FunctionType type, ModuleInstanceImpl module, Instruction[] body, List<CodeSection.Local> locals) {
+    WASMFunction(FunctionType type, ModuleInstanceImpl module, long body, List<CodeSection.Local> locals) {
         this.type = type;
         this.module = module;
         this.body = body;

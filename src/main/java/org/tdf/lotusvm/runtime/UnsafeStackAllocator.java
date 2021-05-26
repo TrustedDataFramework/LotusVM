@@ -1,6 +1,7 @@
 package org.tdf.lotusvm.runtime;
 
 import org.tdf.lotusvm.types.Instruction;
+import org.tdf.lotusvm.types.InstructionPool;
 import org.tdf.lotusvm.types.ValueType;
 
 import static org.tdf.lotusvm.types.UnsafeUtil.UNSAFE;
@@ -11,18 +12,18 @@ public class UnsafeStackAllocator extends AbstractStackAllocator{
     private final long frameDataPtr;
     private final long offsetsPtr;
 
-    private final Instruction[][] labels;
+    private final long[] labels;
 
     // frame count
     private int count;
 
     private ValueType resultType;
-    private Instruction[] body;
+    private long body;
 
     public UnsafeStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
         super(maxStackSize, maxFrames, maxLabelSize);
 
-        this.labels = new Instruction[maxLabelSize][];
+        this.labels = new long[maxLabelSize];
 
         this.stackDataPtr = UNSAFE.allocateMemory(maxStackSize << 3);
         UNSAFE.setMemory(stackDataPtr, maxStackSize << 3, (byte) 0);
@@ -37,11 +38,11 @@ public class UnsafeStackAllocator extends AbstractStackAllocator{
         UNSAFE.setMemory(labelDataPtr, maxLabelSize << 3, (byte) 0);
     }
 
-    private void setLabels(int p, Instruction[] instructions) {
+    private void setLabels(int p, long instructions) {
         labels[p] = instructions;
     }
 
-    private Instruction[] getLabels(int p) {
+    private long getLabels(int p) {
         return labels[p];
     }
 
@@ -154,7 +155,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator{
     }
 
     @Override
-    public void pushExpression(Instruction[] instructions, ValueType type) {
+    public void pushExpression(long instructions, ValueType type) {
         if (count == maxFrames) {
             throw new RuntimeException("frame overflow");
         }
@@ -319,7 +320,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator{
 
 
     @Override
-    public void pushLabel(int frameId, boolean arity, Instruction[] body, boolean loop) {
+    public void pushLabel(int frameId, boolean arity, long body, boolean loop) {
         int size = getLabelSize(frameId);
         int base = getLabelBase(frameId);
 
@@ -372,7 +373,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator{
         boolean loop = getLoop(p);
         setLabelPc(p, 0);
         if (!loop) {
-            setLabelPc(p, getLabels(p).length);
+            setLabelPc(p, InstructionPool.getInstructionsSize(getLabels(p)));
         }
         int prevPc = getLabelPc(p);
         pushLabel(
@@ -386,7 +387,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator{
     }
 
     @Override
-    public Instruction[] getInstructions(int frameId, int idx) {
+    public long getInstructions(int frameId, int idx) {
         int size = getLabelSize(frameId);
         if (idx < 0 || idx >= size)
             throw new RuntimeException("label index overflow");
@@ -438,7 +439,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator{
     }
 
     @Override
-    protected Instruction[] getBody() {
+    protected long getBody() {
         return body;
     }
 

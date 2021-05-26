@@ -1,8 +1,8 @@
 package org.tdf.lotusvm.common;
 
 import lombok.Getter;
+import org.tdf.lotusvm.types.InstructionPool;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 @Getter
@@ -10,16 +10,19 @@ public class BytesReader extends InputStream {// io.reader
     private static final long FIRST_BIT = 0x80L;
     private static final long MASK = 0x7fL;
 
+    private InstructionPool insPool;
     private final byte[] buffer;
     private int offset;
     private final int limit;
 
     public BytesReader(byte[] buffer) {
+        this.insPool = new InstructionPool();
         this.buffer = buffer;
         this.limit = buffer.length;
     }
 
     private BytesReader(byte[] buffer, int offset, int limit) {
+        this.insPool = new InstructionPool();
         this.buffer = buffer;
         this.offset = offset;
         this.limit = limit;
@@ -61,8 +64,14 @@ public class BytesReader extends InputStream {// io.reader
 
     public BytesReader readAsReader(int size) {
         BytesReader r = new BytesReader(buffer, offset, offset + size);
+        r.insPool = this.insPool;
         this.offset += size;
         return r;
+    }
+
+    public BytesReader withPool(InstructionPool pool) {
+        this.insPool = pool;
+        return this;
     }
 
     public byte[] readAll() {

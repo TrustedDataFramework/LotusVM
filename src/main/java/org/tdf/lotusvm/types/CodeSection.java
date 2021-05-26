@@ -57,10 +57,10 @@ public class CodeSection extends AbstractSection {
     @Getter
     public static class Function {
         private final List<Local> locals;
-        private final Instruction[] expression;
+        private final long expression;
 
         public static Function readFrom(BytesReader reader) {
-            return new Function(Local.readLocalsFrom(reader), Instruction.readExpressionFrom(reader));
+            return new Function(Local.readLocalsFrom(reader), reader.getInsPool().readExpressionFrom(reader));
         }
     }
 
@@ -73,7 +73,7 @@ public class CodeSection extends AbstractSection {
         public static Code readFrom(BytesReader reader) {
             int size = reader.readVarUint32();
             return new Code(size, Function.readFrom(
-                new BytesReader(reader.read(size))
+                new BytesReader(reader.read(size)).withPool(reader.getInsPool())
             ));
         }
 

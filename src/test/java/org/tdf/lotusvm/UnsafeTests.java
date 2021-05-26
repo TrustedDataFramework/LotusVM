@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.lotusvm.runtime.UnsafeMemory;
+import org.tdf.lotusvm.types.UnsafeUtil;
 import sun.misc.Unsafe;
 
 @RunWith(JUnit4.class)
@@ -11,7 +12,7 @@ public class UnsafeTests {
 
     @Test
     public void test0() {
-        Unsafe u = Unsafe.getUnsafe();
+        Unsafe u = UnsafeUtil.UNSAFE;
         long ptr = u.allocateMemory(8);
         u.putShort(ptr + 4, (short) 1);
         assert u.getShort(ptr | 4) == 1;

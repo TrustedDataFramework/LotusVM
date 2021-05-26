@@ -29,13 +29,21 @@ public class InstructionPool {
 
 
     // push instruction return the position
-    public int push(OpCode op, ResultType type) {
+    public int push(OpCode op, int type) {
         tryExtend(8);
-        long ins = ((op.code & 0xffL) << 8) | (type.ordinal() & 0xffL);
+        long ins = ((op.code & 0xffL) << 8) | (type & 0xffL);
         data[size] = ins;
         int r = this.size;
         this.size += INSTRUCTION_SIZE;
         return r;
+    }
+
+    public int push(OpCode op) {
+        return push(op, 0xFF);
+    }
+
+    public int push(OpCode op, ResultType type) {
+        return push(op, type.ordinal());
     }
 
     // operands is allocated as array
@@ -65,6 +73,18 @@ public class InstructionPool {
     public int getBranchInstruction(int insId, int branch, int index) {
         long l = this.data[insId + 1 + branch];
         return getInstructionInArray(l, index);
+    }
+
+    public long getBranch0(int insId) {
+        return getBranchInstructions(insId, 0);
+    }
+
+    public long getBranch1(int insId) {
+        return getBranchInstructions(insId, 1);
+    }
+
+    public long getBranchInstructions(int insId, int branch) {
+        return this.data[insId + 1 + branch];
     }
 
     public void setBranchBits(int insId, int branch, long instructions) {
@@ -110,6 +130,8 @@ public class InstructionPool {
     public ResultType getResultType(int insId) {
         long begin = data[insId];
         long c = begin & 0xFFL;
+        if(c == 0xFFL)
+            return null;
         return ResultType.VALUES[(int) c];
     }
 
@@ -120,7 +142,7 @@ public class InstructionPool {
             case UNREACHABLE:
             case NOP:
             case RETURN: {
-                return push(c, ResultType.EMPTY);
+                return push(c);
             }
 
             // 0x0c 0x0d 0x10
@@ -128,7 +150,7 @@ public class InstructionPool {
             case BR:
             case BR_IF:
             case CALL: {
-                int r = push(c, ResultType.EMPTY);
+                int r = push(c);
                 long op = reader.readVarUint32() & 0xffffffffL;
                 beginOperands();
                 pushOperands(op);
@@ -160,7 +182,7 @@ public class InstructionPool {
                 long[] operands = new long[labels.length + 1];
                 System.arraycopy(labels, 0, operands, 0, labels.length);
                 operands[operands.length - 1] = reader.readVarUint32() & 0xffffffffL;
-                int r = push(c, ResultType.EMPTY);
+                int r = push(c);
                 beginOperands();
                 for (int i = 0; i < operands.length; i++)
                     pushOperands(operands[i]);
@@ -172,7 +194,7 @@ public class InstructionPool {
                 // 0x11  x:typeidx u32  0x00
                 long typeIndex = reader.readVarUint32() & 0xffffffffL;
                 if (reader.read() != 0) throw new RuntimeException("invalid operand of call indirect");
-                int r = push(c, ResultType.EMPTY);
+                int r = push(c);
                 beginOperands();
                 pushOperands(typeIndex);
                 setOperandsBits(r, endOperands());
@@ -188,7 +210,7 @@ public class InstructionPool {
     //0x1A
     //0x1B
     private int readParametricInstruction(BytesReader reader) {
-        return push(OpCode.fromCode(reader.read()), ResultType.EMPTY);
+        return push(OpCode.fromCode(reader.read()));
     }
 
     //0x20  x:localidx
@@ -198,7 +220,7 @@ public class InstructionPool {
     //0x24  x:globalidx
     private int readVariableInstruction(BytesReader reader) {
         OpCode c = OpCode.fromCode(reader.read());
-        int r = push(c, ResultType.EMPTY);
+        int r = push(c);
         beginOperands();
         pushOperands(reader.readVarUint32() & 0xffffffffL);
         setOperandsBits(r, endOperands());
@@ -212,9 +234,9 @@ public class InstructionPool {
             if (reader.read() != 0) {
                 throw new RuntimeException("invalid terminator of opcode " + c);
             }
-            return push(c, ResultType.EMPTY);
+            return push(c);
         }
-        int r = push(c, ResultType.EMPTY);
+        int r = push(c);
         beginOperands();
         pushOperands(reader.readVarUint32() & 0xffffffffL);
         pushOperands(reader.readVarUint32() & 0xffffffffL);
@@ -243,9 +265,9 @@ public class InstructionPool {
                 break;
             }
             default:
-                return push(c, ResultType.EMPTY);
+                return push(c);
         }
-        int r = push(c, ResultType.EMPTY);
+        int r = push(c);
         beginOperands();
         pushOperands(op);
         setOperandsBits(r, endOperands());

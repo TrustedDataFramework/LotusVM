@@ -3,7 +3,7 @@ package org.tdf.lotusvm.runtime;
 
 import org.tdf.lotusvm.common.Constants;
 import org.tdf.lotusvm.common.OpCode;
-import org.tdf.lotusvm.types.Instruction;
+import org.tdf.lotusvm.types.InstructionPool;
 import org.tdf.lotusvm.types.ResultType;
 import org.tdf.lotusvm.types.ValueType;
 
@@ -68,7 +68,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         setLocal(current(), idx, value);
     }
 
-    void pushLabel(boolean arity, Instruction[] body, boolean loop) {
+    void pushLabel(boolean arity, long body, boolean loop) {
         pushLabel(current(), arity, body, loop);
     }
 
@@ -88,7 +88,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         popLabel(current());
     }
 
-    protected abstract Instruction[] getBody();
+    protected abstract long getBody();
     protected abstract ValueType getResultType();
 
 
@@ -120,18 +120,21 @@ public abstract class AbstractStackAllocator implements StackAllocator {
     }
 
     public long execute() throws RuntimeException {
+        InstructionPool pool = module.insPool;
         pushLabel(getResultType() != null, getBody(), false);
         while (!labelIsEmpty()) {
             int idx = getLabelSize(current()) - 1;
             int pc = getPc(current(), idx);
-            Instruction[] body = getInstructions(current(), idx);
-            if (pc >= body.length) {
+            long body = getInstructions(current(), idx);
+            int length = InstructionPool.getInstructionsSize(body);
+            if (pc >= length) {
                 popLabel();
                 continue;
             }
-            Instruction ins = body[pc];
+            int ins = pool.getInstructionInArray(body, pc);
 
-            if (ins.getCode().equals(OpCode.RETURN)) {
+            OpCode c = pool.getOpCode(ins);
+            if (c.equals(OpCode.RETURN)) {
                 return returns();
             }
             setPc(current(), idx, pc + 1);
@@ -144,18 +147,21 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         // clear stack and local variables
     }
 
-    private int getMemoryOffset(Instruction ins) {
-        long l = Integer.toUnsignedLong(popI32()) + Integer.toUnsignedLong(ins.getOperandInt(1));
+    private int getMemoryOffset(int ins) {
+        int offset = (int) module.insPool.getOperand(ins, 1);
+        long l = Integer.toUnsignedLong(popI32()) + Integer.toUnsignedLong(offset);
         if(Long.compareUnsigned(l, 0xFFFFFFFFL) > 0)
             throw new RuntimeException("memory access overflow");
         return (int)l;
     }
 
-    void invoke(Instruction ins) throws RuntimeException {
+    void invoke(int ins) throws RuntimeException {
+        OpCode code = module.insPool.getOpCode(ins);
+        InstructionPool pool = module.insPool;
         for (int i = 0; i < getModule().hooks.length; i++) {
-            getModule().hooks[i].onInstruction(ins, getModule());
+            getModule().hooks[i].onInstruction(code, getModule());
         }
-        switch (ins.getCode()) {
+        switch (code) {
             // these operations are essentially no-ops.
             case NOP:
             case I32_REINTERPRET_F32:
@@ -166,25 +172,25 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 throw new RuntimeException("exec: reached unreachable");
                 // parametric instructions
             case BLOCK:
-                pushLabel(ins.getBlockType() != ResultType.EMPTY, ins.getBranch0(), false);
+                pushLabel(pool.getResultType(ins)!= ResultType.EMPTY, pool.getBranch0(ins), false);
                 break;
             case LOOP:
-                pushLabel(false, ins.getBranch0(), true);
+                pushLabel(false, pool.getBranch0(ins), true);
                 break;
             case IF: {
                 long c = pop();
                 if (c != 0) {
-                    pushLabel(ins.getBlockType() != ResultType.EMPTY, ins.getBranch0(), false);
+                    pushLabel(pool.getResultType(ins) != ResultType.EMPTY, pool.getBranch0(ins), false);
                     break;
                 }
-                if (ins.getBranch1() != null) {
-                    pushLabel(ins.getBlockType() != ResultType.EMPTY, ins.getBranch1(), false);
+                if (pool.getBranchSize(ins, 1) > 0) {
+                    pushLabel(pool.getResultType(ins) != ResultType.EMPTY, pool.getBranch1(ins), false);
                 }
                 break;
             }
             case BR: {
                 // the l is non-negative here
-                int l = ins.getOperandInt(0);
+                int l = (int) pool.getOperand(ins, 0);
                 branch(l);
                 break;
             }
@@ -194,18 +200,19 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                     break;
                 }
                 // the l is non-negative here
-                int l = ins.getOperandInt(0);
+                int l = (int) pool.getOperand(ins, 0);
                 branch(l);
                 break;
             }
             case BR_TABLE: {
+                int operandSize = pool.getOperandsSize(ins);
                 // n is non-negative
-                int n = ins.getOperandInt(ins.getOperandLen() - 1);
+                int n = (int) pool.getOperand(ins, operandSize - 1);
                 // cannot determine sign of i
                 int i = popI32();
                 // length of l* is operands.cap() - 1
-                if (Integer.compareUnsigned(i, ins.getOperandLen() - 1) < 0) {
-                    n = ins.getOperandInt(i);
+                if (Integer.compareUnsigned(i, operandSize - 1) < 0) {
+                    n = (int) pool.getOperand(ins, i);
                 }
                 branch(n);
                 break;
@@ -217,7 +224,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
 //            case RETURN:
 //                break;
             case CALL: {
-                FunctionInstance function = getModule().functions.get(ins.getOperandInt(0));
+                FunctionInstance function = getModule().functions.get((int) pool.getOperand(ins, 0));
                 long res;
                 if (function.isHost()) {
                     for (int i = 0; i < getModule().hooks.length; i++) {
@@ -227,7 +234,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                         popLongs(function.parametersLength())
                     );
                 } else {
-                    pushFrame(ins.getOperandInt(0), null);
+                    pushFrame((int) pool.getOperand(ins, 0), null);
                     res = execute();
                 }
 
@@ -260,7 +267,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                     pushFrame((int) (elementIndex | TABLE_MASK), null);
                     r = execute();
                 }
-                if (getModule().validateFunctionType && !function.getType().equals(getModule().types.get(ins.getOperandInt(0)))) {
+                if (getModule().validateFunctionType && !function.getType().equals(getModule().types.get((int) pool.getOperand(ins, 0)))) {
                     throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
                 }
                 if (function.getArity() > 0) {
@@ -281,26 +288,26 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             }
             // variable instructions
             case GET_LOCAL:
-                push(current(), getLocal(ins.getOperandInt(0)));
+                push(current(), getLocal((int) pool.getOperand(ins, 0)));
                 break;
             case SET_LOCAL:
-                setLocal(ins.getOperandInt(0), pop());
+                setLocal((int) pool.getOperand(ins, 0), pop());
                 break;
             case TEE_LOCAL: {
                 long val = pop();
                 push(current(), val);
                 push(current(), val);
-                setLocal(ins.getOperandInt(0), pop());
+                setLocal((int) pool.getOperand(ins, 0), pop());
                 break;
             }
             case GET_GLOBAL:
-                push(getModule().globals[ins.getOperandInt(0)]);
+                push(getModule().globals[(int) pool.getOperand(ins, 0)]);
                 break;
             case SET_GLOBAL:
                 if (!getModule().globalTypes.get(
-                    ins.getOperandInt(0)
+                (int) pool.getOperand(ins, 0)
                 ).isMutable()) throw new RuntimeException("modify a immutable global");
-                getModule().globals[ins.getOperandInt(0)] = pop();
+                getModule().globals[(int) pool.getOperand(ins, 0)] = pop();
                 break;
             // memory instructions
             case I32_LOAD:
@@ -377,7 +384,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             }
             case I32_CONST:
             case I64_CONST:
-                push(ins.getOperandLong(0));
+                push(pool.getOperand(ins, 0));
                 break;
             case I32_CLZ:
                 pushI32(Integer.numberOfLeadingZeros(popI32()));
@@ -742,9 +749,9 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             case F64_CONVERT_SI64:
             case F64_CONVERT_UI64:
             case F64_PROMOTE_F32:
-                throw new UnsupportedOperationException("float number op " + ins.getCode().name + " is not allowed");
+                throw new UnsupportedOperationException("float number op " + code.name + " is not allowed");
             default:
-                throw new RuntimeException("unknown opcode " + ins.getCode());
+                throw new RuntimeException("unknown opcode " + code);
         }
     }
 
