@@ -426,7 +426,7 @@ public final class InstructionPool {
             }
         }
 
-        
+
         long[] operands = new long[getOperandsSize(insId)];
         for (int i = 0; i < operands.length; i++) {
             operands[i] = getOperand(insId, i);
