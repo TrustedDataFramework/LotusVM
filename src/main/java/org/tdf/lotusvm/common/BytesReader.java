@@ -2,6 +2,7 @@ package org.tdf.lotusvm.common;
 
 import lombok.Getter;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 @Getter
@@ -40,6 +41,11 @@ public class BytesReader extends InputStream {// io.reader
 
     public int read() {
         return buffer[offset++] & 0xff;
+    }
+
+    @Override
+    public int available()  {
+        return limit - offset;
     }
 
     public int remaining() {
@@ -159,5 +165,11 @@ public class BytesReader extends InputStream {// io.reader
             (((long) read()) & 0xffL) << 48 |
             (((long) read()) & 0xffL) << 56
             ;
+    }
+
+    public byte[] slice(int offset, int limit) {
+        byte[] r = new byte[limit - offset];
+        System.arraycopy(buffer, offset, r, 0, limit - offset);
+        return r;
     }
 }

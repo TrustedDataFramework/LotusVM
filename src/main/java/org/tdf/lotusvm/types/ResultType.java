@@ -6,6 +6,8 @@ import org.tdf.lotusvm.common.BytesReader;
 import static org.tdf.lotusvm.common.Constants.*;
 
 public enum ResultType {
+
+
     EMPTY(RESULT_EMPTY),
     I32(VALUE_I32),
     I64(VALUE_I64),
@@ -16,6 +18,8 @@ public enum ResultType {
     ResultType(int code) {
         this.code = code;
     }
+
+    public static final ResultType[] VALUES = values();
 
     static ResultType readFrom(BytesReader reader) {
         int type = reader.read();

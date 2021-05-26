@@ -6,8 +6,6 @@ import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
 import org.tdf.lotusvm.types.Module;
 
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class Bench {
     private static final String WBI_MALLOC = "__malloc";

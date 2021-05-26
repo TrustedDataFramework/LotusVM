@@ -2,16 +2,15 @@ package org.tdf.lotusvm.runtime;
 
 import lombok.Getter;
 import org.tdf.lotusvm.types.LimitType;
-import sun.misc.Unsafe;
 
 import java.io.Closeable;
-import java.lang.reflect.Field;
 import java.nio.ByteOrder;
+
+import static org.tdf.lotusvm.types.UnsafeUtil.UNSAFE;
 
 public class UnsafeMemory implements Memory, Closeable {
     private LimitType limit = new LimitType();
-    private final Unsafe unsafe = reflectGetUnsafe();
-    private final int ARRAY_OFFSET = unsafe.arrayBaseOffset(byte[].class);
+    private final int ARRAY_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
     private static final int MAX_PAGES = 0xFFFF;
 
     private long pointer;
@@ -25,15 +24,7 @@ public class UnsafeMemory implements Memory, Closeable {
     @Getter
     private int pages;
 
-    public static Unsafe reflectGetUnsafe() {
-        try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            return (Unsafe) field.get(null);
-        } catch (Exception e) {
-            throw new RuntimeException("access unsafe failed");
-        }
-    }
+
 
     @Override
     public void setLimit(LimitType limit) {
@@ -41,9 +32,9 @@ public class UnsafeMemory implements Memory, Closeable {
         int rawSize = pages * PAGE_SIZE;
         if(rawSize < 0)
             throw new RuntimeException("memory overflow");
-        pointer = unsafe.allocateMemory(rawSize);
+        pointer = UNSAFE.allocateMemory(rawSize);
         overflow = pointer + rawSize;
-        unsafe.setMemory(pointer, rawSize, (byte) 0);
+        UNSAFE.setMemory(pointer, rawSize, (byte) 0);
         this.limit = limit;
 
     }
@@ -53,7 +44,7 @@ public class UnsafeMemory implements Memory, Closeable {
         long o = Integer.toUnsignedLong(offset);
         if (pointer + o + data.length > overflow)
             throw new RuntimeException("memory access overflow");
-        unsafe.copyMemory(data, ARRAY_OFFSET, null, pointer + offset, data.length);
+        UNSAFE.copyMemory(data, ARRAY_OFFSET, null, pointer + offset, data.length);
     }
 
     @Override
@@ -62,7 +53,7 @@ public class UnsafeMemory implements Memory, Closeable {
         if (pointer + o + length > overflow)
             throw new RuntimeException("memory access overflow");
         byte[] r = new byte[length];
-        unsafe.copyMemory(null, pointer + offset, r, ARRAY_OFFSET, length);
+        UNSAFE.copyMemory(null, pointer + offset, r, ARRAY_OFFSET, length);
         return r;
     }
 
@@ -71,7 +62,7 @@ public class UnsafeMemory implements Memory, Closeable {
         long o = Integer.toUnsignedLong(offset);
         if (pointer + o + 4 > overflow)
             throw new RuntimeException("memory access overflow");
-        return unsafe.getInt(pointer + offset);
+        return UNSAFE.getInt(pointer + offset);
     }
 
     @Override
@@ -79,7 +70,7 @@ public class UnsafeMemory implements Memory, Closeable {
         long o = Integer.toUnsignedLong(offset);
         if (pointer + o + 8 > overflow)
             throw new RuntimeException("memory access overflow");
-        return unsafe.getLong(pointer + offset);
+        return UNSAFE.getLong(pointer + offset);
     }
 
     @Override
@@ -87,7 +78,7 @@ public class UnsafeMemory implements Memory, Closeable {
         long o = Integer.toUnsignedLong(offset);
         if (pointer + o >= overflow)
             throw new RuntimeException("memory access overflow");
-        return unsafe.getByte(pointer + offset);
+        return UNSAFE.getByte(pointer + offset);
     }
 
     @Override
@@ -95,7 +86,7 @@ public class UnsafeMemory implements Memory, Closeable {
         long o = Integer.toUnsignedLong(offset);
         if (pointer + o + 2 > overflow)
             throw new RuntimeException("memory access overflow");
-        return unsafe.getShort(pointer + offset);
+        return UNSAFE.getShort(pointer + offset);
     }
 
     @Override
@@ -103,7 +94,7 @@ public class UnsafeMemory implements Memory, Closeable {
         long o = Integer.toUnsignedLong(offset);
         if (pointer + o + 4 > overflow)
             throw new RuntimeException("memory access overflow");
-        unsafe.putInt(pointer + offset, val);
+        UNSAFE.putInt(pointer + offset, val);
     }
 
     @Override
@@ -111,7 +102,7 @@ public class UnsafeMemory implements Memory, Closeable {
         long o = Integer.toUnsignedLong(offset);
         if (pointer + o + 8 > overflow)
             throw new RuntimeException("memory access overflow");
-        unsafe.putLong(pointer + offset, n);
+        UNSAFE.putLong(pointer + offset, n);
     }
 
     @Override
@@ -119,7 +110,7 @@ public class UnsafeMemory implements Memory, Closeable {
         long o = Integer.toUnsignedLong(offset);
         if (pointer + o + 2 > overflow)
             throw new RuntimeException("memory access overflow");
-        unsafe.putShort(pointer + offset, num);
+        UNSAFE.putShort(pointer + offset, num);
     }
 
     @Override
@@ -127,7 +118,7 @@ public class UnsafeMemory implements Memory, Closeable {
         long o = Integer.toUnsignedLong(offset);
         if (pointer + o >= overflow)
             throw new RuntimeException("memory access overflow");
-        unsafe.putByte(pointer + offset, n);
+        UNSAFE.putByte(pointer + offset, n);
     }
 
     @Override
@@ -141,8 +132,8 @@ public class UnsafeMemory implements Memory, Closeable {
         int newRawSize = (pages + n) * PAGE_SIZE;
         if(newRawSize < 0)
             throw new RuntimeException("memory overflow");
-        long newPointer = unsafe.reallocateMemory(pointer, newRawSize);
-        unsafe.setMemory(newPointer + prevRawSize, newRawSize - prevRawSize, (byte) 0);
+        long newPointer = UNSAFE.reallocateMemory(pointer, newRawSize);
+        UNSAFE.setMemory(newPointer + prevRawSize, newRawSize - prevRawSize, (byte) 0);
         int prev = this.pages;
         this.pages += n;
         this.pointer = newPointer;
@@ -155,7 +146,7 @@ public class UnsafeMemory implements Memory, Closeable {
     public void close() {
         if (pointer == 0)
             return;
-        unsafe.freeMemory(pointer);
+        UNSAFE.freeMemory(pointer);
         pointer = 0;
     }
 }

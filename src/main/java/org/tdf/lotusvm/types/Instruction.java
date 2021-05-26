@@ -1,22 +1,38 @@
 package org.tdf.lotusvm.types;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.tdf.lotusvm.common.BytesReader;
 import org.tdf.lotusvm.common.OpCode;
 import org.tdf.lotusvm.common.Vector;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 
 import static org.tdf.lotusvm.common.OpCode.*;
 
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+
+// [null(32byte), ins0, ins1, operand]
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class Instruction {
+    public boolean equals(Instruction another) {
+        if( code != another.code )
+            return false;
+        if((blockType == null ? ResultType.EMPTY : blockType) != another.getBlockType())
+            return false;
+        Instruction[] branch0 = this.branch0 == null ? new Instruction[0] : this.branch0;
+        Instruction[] branch1 = this.branch1 == null ? new Instruction[0] : this.branch1;
+        if(!Arrays.equals(branch0, another.branch0))
+            return false;
+        if(!Arrays.equals(branch1, another.branch1))
+            return false;
+        long[] operands = this.operands == null ? new long[0] : this.operands;
+        return Arrays.equals(operands, another.operands);
+    }
+
     public static final Instruction[] EMPTY_INSTRUCTIONS = new Instruction[0];
 
     private OpCode code;
@@ -171,9 +187,18 @@ public class Instruction {
         }
     }
 
+    static int max = 0;
+
+    @SneakyThrows
     public static Instruction[] readExpressionFrom(BytesReader reader) {
+        int cur = reader.getOffset();
         Instruction[] instructions = readInstructionsUntil(reader, END.code);
         reader.read();
+
+        if(instructions.length > 190) {
+            byte[] o = reader.slice(cur, reader.getLimit());
+            Files.write(Paths.get("ins.data"), o);
+        }
         return instructions;
     }
 

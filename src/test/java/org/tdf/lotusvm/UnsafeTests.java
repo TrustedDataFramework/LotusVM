@@ -11,7 +11,7 @@ public class UnsafeTests {
 
     @Test
     public void test0() {
-        Unsafe u = UnsafeMemory.reflectGetUnsafe();
+        Unsafe u = Unsafe.getUnsafe();
         long ptr = u.allocateMemory(8);
         u.putShort(ptr + 4, (short) 1);
         assert u.getShort(ptr | 4) == 1;
