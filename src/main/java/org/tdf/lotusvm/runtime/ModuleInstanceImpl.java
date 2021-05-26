@@ -55,6 +55,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     InstructionPool insPool;
 
     public ModuleInstanceImpl(Builder builder) {
+
         this.stackAllocator = Objects.requireNonNull(builder.getStackAllocator());
         this.stackAllocator.setModule(this);
 

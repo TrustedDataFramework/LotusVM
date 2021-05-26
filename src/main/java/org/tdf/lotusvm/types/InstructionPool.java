@@ -56,6 +56,10 @@ public final class InstructionPool {
         return (int) (id & INSTRUCTIONS_OFFSET_MASK);
     }
 
+    public int size() {
+        return size;
+    }
+
 
     // push instruction return the position
     public int push(OpCode op, int type) {
