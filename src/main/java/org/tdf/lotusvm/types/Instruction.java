@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.tdf.lotusvm.common.OpCode.*;
 
@@ -186,16 +187,52 @@ public class Instruction {
         return instructions;
     }
 
+    public static boolean arrayEquals(Instruction[] a, Instruction[] a2) {
+        if (a==a2)
+            return true;
+        if (a==null || a2==null)
+            return false;
+
+        int length = a.length;
+        if (a2.length != length)
+            return false;
+
+        for (int i=0; i<length; i++) {
+            if (!(a[i].equals(a2[i])))
+                return false;
+        }
+
+        return true;
+    }
+
     public boolean equals(Instruction another) {
-        if (code != another.code)
+        if (code != another.code) {
+            System.out.println("code " + code.name + " " + another.code.name);
             return false;
-        if (blockType != another.getBlockType())
+        }
+        if (blockType != another.getBlockType()) {
+            System.out.println("block " + blockType + " " + another.blockType);
             return false;
-        if (!Arrays.equals(branch0, another.branch0))
+        }
+
+        if (!arrayEquals(branch0, another.branch0)) {
+            System.out.println("branch0 size " + branch0.length + " " + another.branch0.length);
+
+            System.out.println("branch0 " + Arrays.toString(branch0) + " " + Arrays.toString(another.branch0));
             return false;
-        if (!Arrays.equals(branch1, another.branch1))
+        }
+
+        if (!arrayEquals(branch1, another.branch1)) {
+            System.out.println("branch1 " + Arrays.toString(branch1) + " " + Arrays.toString(another.branch1));
+            System.out.println("branch1 size " + branch1.length + " " + another.branch1.length);
             return false;
-        return Arrays.equals(operands, another.operands);
+        }
+        boolean ops = Arrays.equals(operands, another.operands);
+        if(!ops) {
+            System.out.println("ops");
+            return false;
+        }
+        return true;
     }
 
     public int getOperandInt(int idx) {
