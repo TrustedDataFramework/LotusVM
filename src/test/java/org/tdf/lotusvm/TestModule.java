@@ -72,7 +72,7 @@ public class TestModule {
         Memory m = new UnsafeMemory();
         UnsafeStackAllocator u = new UnsafeStackAllocator(32768 * 128, 32768, 32768 * 128);
         this.stackAllocator.clear();
-        ModuleInstance instance;
+        ModuleInstance instance = null;
             try {
                 instance = ModuleInstance.Builder
                     .builder()
@@ -85,7 +85,7 @@ public class TestModule {
             } catch (Exception e) {
                 System.out.println("test file ignored = " + filename + " reason = " + e.getMessage());
                 return;
-            }
+            };
 
         Set<String> all = new HashSet<>(functions == null ? Collections.emptyList() : functions);
 
@@ -158,6 +158,8 @@ public class TestModule {
             }
 //            System.out.println("test passed for file = " + cfg.file + " function = " + function.function);
         }
+        if(instance != null)
+            instance.close();
         m.close();
     }
 

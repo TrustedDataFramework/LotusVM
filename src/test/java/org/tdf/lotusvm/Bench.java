@@ -25,8 +25,6 @@ public class Bench {
         int loop = 10;
 
         byte[] data = file.openStream().readAllBytes();
-        Module m = new Module(data);
-
 
         long start = System.currentTimeMillis();
         UnsafeStackAllocator u = new UnsafeStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
@@ -36,7 +34,7 @@ public class Bench {
             Memory mem = new UnsafeMemory();
             ModuleInstance ins = ModuleInstance
                 .builder()
-                .module(m)
+                .binary(data)
                 .memory(mem)
                 .stackAllocator(
                     u
@@ -44,6 +42,7 @@ public class Bench {
 
             ins.execute("bench");
             mem.close();
+            ins.close();
         }
         u.close();
 

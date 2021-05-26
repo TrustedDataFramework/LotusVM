@@ -3,6 +3,9 @@ package org.tdf.lotusvm.types;
 import org.tdf.lotusvm.common.BytesReader;
 import org.tdf.lotusvm.common.OpCode;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 import static org.tdf.lotusvm.common.OpCode.*;
 
 // allocation instruction(32byte) in long[]
@@ -10,7 +13,7 @@ import static org.tdf.lotusvm.common.OpCode.*;
 // + branch0 8byte(size << 32 | offset)
 // + branch1 8byte(size << 32 | offset)
 // + operands (size <<32 | offset)
-public final class InstructionPool {
+public final class InstructionPool implements Closeable {
     // instruction = 32byte = 8 * 8(size of long)
     private static final int INSTRUCTION_SIZE = 8;
     private static final long OPERAND_SIZE_MASK = 0x7FFFFFFF00000000L;
@@ -32,22 +35,25 @@ public final class InstructionPool {
     private static final int BRANCH_OFFSET = 1;
     private static final int OPERANDS_OFFSET = 3;
 
-    private static final long NULL_BRANCH = 0xFFFFFFFFFFFFFFFFL;
-    private long[] data;
-    private int size;
+    private static final long NULL = 0xFFFFFFFFFFFFFFFFL;
+
+    private final LongBuffer data;
+
     private int operandSize = 0;
     private int operandOffset = 0;
+
     public InstructionPool() {
-        this.size = 1;
-        this.data = new long[INSTRUCTION_SIZE * 8];
+        this.data = new UnsafeLongBuffer(INSTRUCTION_SIZE * 8);
+        // push null pointer at offset 0;
+        this.data.push(0L);
     }
 
-    private static boolean isNullInstructions(long instructions) {
+    private static boolean isNull(long instructions) {
         return instructions < 0;
     }
 
     public static int getInstructionsSize(long id) {
-        if (isNullInstructions(id))
+        if (isNull(id))
             return 0;
         return (int) ((id & INSTRUCTIONS_SIZE_MASK) >> INSTRUCTIONS_SIZE_SHIFTS);
     }
@@ -57,20 +63,19 @@ public final class InstructionPool {
     }
 
     public int size() {
-        return size;
+        return data.size();
     }
 
 
     // push instruction return the position
     public int push(OpCode op, int type) {
-        tryExtend(INSTRUCTION_SIZE);
         long ins = ((op.code & 0xffL) << OPCODE_SHIFTS) | (type & RESULT_TYPE_MASK);
-        data[size] = ins;
-        data[size + 1] = NULL_BRANCH;
-        data[size + 2] = NULL_BRANCH;
-        int r = this.size;
-        this.size += INSTRUCTION_SIZE;
-        return r;
+        int size = data.size();
+        data.push(ins);
+        data.push(NULL);
+        data.push(NULL);
+        data.push(NULL); // operands
+        return size;
     }
 
     public int push(OpCode op) {
@@ -84,12 +89,11 @@ public final class InstructionPool {
     // operands is allocated as array
     public void beginOperands() {
         this.operandSize = 0;
-        this.operandOffset = size;
+        this.operandOffset = data.size();
     }
 
     public void pushOperands(long operand) {
-        tryExtend(1);
-        data[size++] = operand;
+        data.push(operand);
         this.operandSize++;
     }
 
@@ -101,19 +105,19 @@ public final class InstructionPool {
     }
 
     public int getBranchSize(int insId, int branch) {
-        long l = this.data[insId + BRANCH_OFFSET + branch];
-        if (isNullInstructions(l))
+        long l = this.data.get(insId + BRANCH_OFFSET + branch);
+        if (isNull(l))
             throw new RuntimeException("branch is null");
         return getInstructionsSize(l);
     }
 
     public boolean isNullBranch(int insId, int branch) {
-        long l = this.data[insId + BRANCH_OFFSET + branch];
-        return isNullInstructions(l);
+        long l = this.data.get(insId + BRANCH_OFFSET + branch);
+        return isNull(l);
     }
 
     public int getBranchInstruction(int insId, int branch, int index) {
-        long l = this.data[insId + BRANCH_OFFSET + branch];
+        long l = this.data.get(insId + BRANCH_OFFSET + branch);
         return getInstructionInArray(l, index);
     }
 
@@ -126,22 +130,25 @@ public final class InstructionPool {
     }
 
     public long getBranchInstructions(int insId, int branch) {
-        return this.data[insId + BRANCH_OFFSET + branch];
+        return this.data.get(insId + BRANCH_OFFSET + branch);
     }
 
     public void setBranchBits(int insId, int branch, long instructions) {
-        this.data[insId + 1 + branch] = instructions;
+        this.data.set(insId + 1 + branch, instructions);
     }
 
     public void setOperandsBits(int insId, long operands) {
-        this.data[insId + OPERANDS_OFFSET] = operands;
+        this.data.set(insId + OPERANDS_OFFSET, operands);
     }
 
     public long getOperandsBits(int insId) {
-        return this.data[insId + OPERANDS_OFFSET];
+        return this.data.get(insId + OPERANDS_OFFSET);
     }
 
     public int getOperandsSize(int insId) {
+        long bits = getOperandsBits(insId);
+        if(bits < 0)
+            throw new RuntimeException("null operands");
         return (int) ((getOperandsBits(insId) & OPERAND_SIZE_MASK) >> OPERAND_SIZE_SHIFTS);
     }
 
@@ -152,7 +159,7 @@ public final class InstructionPool {
     public long getOperand(int insId, int index) {
         if (index >= getOperandsSize(insId))
             throw new RuntimeException("operand access overflow");
-        return data[getOperandsOffset(insId) + index];
+        return data.get(getOperandsOffset(insId) + index);
     }
 
     public int getStackBase(int insId) {
@@ -167,22 +174,15 @@ public final class InstructionPool {
         return (int) (getOperand(insId, index) & 0xFFFFFFFFL);
     }
 
-    private void tryExtend(int size) {
-        while (this.data.length <= this.size + size) {
-            long[] tmp = new long[this.data.length * 2];
-            System.arraycopy(this.data, 0, tmp, 0, this.data.length);
-            this.data = tmp;
-        }
-    }
 
     public OpCode getOpCode(int insId) {
-        long begin = data[insId];
+        long begin = data.get(insId);
         long code = (begin & OPCODE_MASK) >> OPCODE_SHIFTS;
         return OpCode.fromCode((int) code);
     }
 
     public ResultType getResultType(int insId) {
-        long begin = data[insId];
+        long begin = data.get(insId);
         long c = begin & RESULT_TYPE_MASK;
         if (c == RESULT_TYPE_MASK)
             return null;
@@ -353,33 +353,30 @@ public final class InstructionPool {
 
     // push linked list node
     public int allocateLinkedList(int value) {
-        tryExtend(1);
-        int r = this.size;
-        this.data[size++] = Integer.toUnsignedLong(value);
+        int r = this.size();
+        this.data.push(Integer.toUnsignedLong(value));
         return r;
     }
 
     public int pushIntoLinkedList(int prev, int value) {
-        tryExtend(1);
-        int sz = this.size;
-        this.data[size++] = Integer.toUnsignedLong(value);
-        this.data[prev] |= (Integer.toUnsignedLong(sz)) << LINKED_LIST_NEXT_SHIFTS;
+        int sz = this.size();
+        this.data.push(Integer.toUnsignedLong(value));
+        this.data.set(prev, this.data.get(prev) | ((Integer.toUnsignedLong(sz)) << LINKED_LIST_NEXT_SHIFTS));
         return sz;
     }
 
     private long spanLinkedList(int head) {
         int cnt = 0;
-        long cur = this.data[head];
-        int start = this.size;
+        long cur = this.data.get(head);
+        int start = this.size();
         while (true) {
             int next = (int) ((cur & LINKED_LIST_NEXT_MASK) >> LINKED_LIST_NEXT_SHIFTS);
             int val = (int) (cur & LINKED_LIST_VALUE_MASK);
-            tryExtend(1);
-            this.data[size++] = Integer.toUnsignedLong(val);
+            this.data.push(Integer.toUnsignedLong(val));
             cnt++;
             if (next == 0)
                 break;
-            cur = this.data[next];
+            cur = this.data.get(next);
         }
         return (Integer.toUnsignedLong(cnt) << INSTRUCTIONS_SIZE_SHIFTS) | (Integer.toUnsignedLong(start));
     }
@@ -431,9 +428,15 @@ public final class InstructionPool {
         }
 
 
-        long[] operands = new long[getOperandsSize(insId)];
-        for (int i = 0; i < operands.length; i++) {
-            operands[i] = getOperand(insId, i);
+        long[] operands = null;
+
+        long bits = getOperandsBits(insId);
+
+        if(!isNull(bits)) {
+            operands = new long[getOperandsSize(insId)];
+            for (int i = 0; i < operands.length; i++) {
+                operands[i] = getOperand(insId, i);
+            }
         }
 
         return new Instruction(o, type, branch0, branch1, operands);
@@ -444,6 +447,11 @@ public final class InstructionPool {
         int size = getInstructionsSize(id);
         if (index >= size)
             throw new RuntimeException("index overflow");
-        return (int) this.data[offset + index];
+        return (int) this.data.get(offset + index);
+    }
+
+    @Override
+    public void close() {
+        this.data.close();
     }
 }

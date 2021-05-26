@@ -5,6 +5,8 @@ import lombok.Getter;
 import org.tdf.lotusvm.common.BytesReader;
 import org.tdf.lotusvm.common.Constants;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +16,7 @@ import java.util.List;
  * function section from their bodies in the code section.
  */
 @Getter
-public class Module {
+public class Module implements Closeable {
     private final List<CustomSection> customSections = new ArrayList<>();
     // the magic number of wasm
     private int magic;
@@ -110,4 +112,8 @@ public class Module {
         }
     }
 
+    @Override
+    public void close()  {
+        this.insPool.close();
+    }
 }

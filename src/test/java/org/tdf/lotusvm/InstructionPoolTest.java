@@ -21,7 +21,8 @@ public class InstructionPoolTest {
         Instruction[] instructions = Instruction.readExpressionFrom(new BytesReader(o));
 
         InstructionPool p = new InstructionPool();
-        BytesReader rd = new BytesReader(o);
+        BytesReader rd = new BytesReader(o).withPool(p);
+
         long instructions2 = p.readExpressionFrom(rd);
 
         Instruction[] ins3 = new Instruction[InstructionPool.getInstructionsSize(instructions2)];
@@ -32,6 +33,7 @@ public class InstructionPoolTest {
 
         for(int i = 0; i < ins3.length; i++) {
             if(!ins3[i].equals(instructions[i])) {
+                throw new RuntimeException("assert failed");
             }
         }
     }

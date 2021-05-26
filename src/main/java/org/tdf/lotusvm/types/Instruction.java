@@ -189,15 +189,12 @@ public class Instruction {
     public boolean equals(Instruction another) {
         if (code != another.code)
             return false;
-        if ((blockType == null ? ResultType.EMPTY : blockType) != another.getBlockType())
+        if (blockType != another.getBlockType())
             return false;
-        Instruction[] branch0 = this.branch0 == null ? new Instruction[0] : this.branch0;
-        Instruction[] branch1 = this.branch1 == null ? new Instruction[0] : this.branch1;
         if (!Arrays.equals(branch0, another.branch0))
             return false;
         if (!Arrays.equals(branch1, another.branch1))
             return false;
-        long[] operands = this.operands == null ? new long[0] : this.operands;
         return Arrays.equals(operands, another.operands);
     }
 
@@ -211,5 +208,16 @@ public class Instruction {
 
     public int getOperandLen() {
         return operands.length;
+    }
+
+    @Override
+    public String toString() {
+        return "Instruction{" +
+                "code=" + code.name +
+                ", blockType=" + blockType +
+                ", branch0=" + Arrays.toString(branch0) +
+                ", branch1=" + Arrays.toString(branch1) +
+                ", operands=" + Arrays.toString(operands) +
+                '}';
     }
 }

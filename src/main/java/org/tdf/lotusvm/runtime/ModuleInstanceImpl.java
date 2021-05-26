@@ -191,6 +191,11 @@ public class ModuleInstanceImpl implements ModuleInstance {
     }
 
     @Override
+    public void close() {
+        this.insPool.close();
+    }
+
+    @Override
     public long[] getGlobals() {
         return globals;
     }

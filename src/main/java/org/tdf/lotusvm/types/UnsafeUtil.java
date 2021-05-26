@@ -16,4 +16,10 @@ public class UnsafeUtil {
             throw new RuntimeException("access unsafe failed");
         }
     }
+
+    public static long fastMul8(int i) {
+        if ((i & 0xe0000000) != 0)
+            throw new RuntimeException("multiply overflow");
+        return Integer.toUnsignedLong(i) << 3;
+    }
 }
