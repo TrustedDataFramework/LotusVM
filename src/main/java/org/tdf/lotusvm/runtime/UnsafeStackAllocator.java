@@ -354,9 +354,10 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     @Override
     public void popLabel(int frameId) {
-        if (getLabelSize(frameId) == 0)
+        int labelSize = getLabelSize(frameId);
+        if (labelSize == 0)
             throw new RuntimeException("label underflow");
-        decreaseLabelSize(frameId);
+        setLabelSize(frameId, labelSize - 1);
     }
 
     @Override
@@ -369,7 +370,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             frameId,
             getStackPc(base + size - 1)
         );
-        decreaseLabelSize(frameId);
+        setLabelSize(frameId, size - 1);
     }
 
     @Override
