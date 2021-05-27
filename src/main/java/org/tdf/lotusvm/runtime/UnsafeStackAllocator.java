@@ -198,9 +198,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int newStackBase = 0;
         int newLabelBase = 0;
 
-        System.out.println(stackSize);
 
         if(c != 0) {
+            System.out.println(stackSize);
             newStackBase = this.stackBase + this.localSize + this.stackSize;
             newLabelBase = this.labelBase + this.labelSize;
         }
