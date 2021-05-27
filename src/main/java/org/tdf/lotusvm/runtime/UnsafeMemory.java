@@ -22,17 +22,20 @@ public class UnsafeMemory implements Memory, Closeable {
             throw new RuntimeException("create unsafe memory failed: native byte order is not little endian!");
     }
 
+    public void setRawSize(int rawSize) {
+        pointer = UNSAFE.allocateMemory(rawSize);
+        overflow = pointer + rawSize;
+        UNSAFE.setMemory(pointer, rawSize, (byte) 0);
+    }
+
     @Override
     public void setLimit(LimitType limit) {
         this.pages = limit.getMinimum();
         int rawSize = pages * PAGE_SIZE;
         if (rawSize < 0)
             throw new RuntimeException("memory overflow");
-        pointer = UNSAFE.allocateMemory(rawSize);
-        overflow = pointer + rawSize;
-        UNSAFE.setMemory(pointer, rawSize, (byte) 0);
+        setRawSize(rawSize);
         this.limit = limit;
-
     }
 
     @Override
