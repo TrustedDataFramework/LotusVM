@@ -8,8 +8,8 @@ public class ArrayLongBuffer implements LongBuffer{
         return size;
     }
 
-    public ArrayLongBuffer(int initialSize) {
-        this.data = new long[Math.max(initialSize, 8)];
+    public ArrayLongBuffer(int initialCap) {
+        this.data = new long[Math.max(initialCap, 8)];
     }
 
     public long get(int index) {
@@ -31,4 +31,13 @@ public class ArrayLongBuffer implements LongBuffer{
         this.size++;
     }
 
+    @Override
+    public void setSize(int size) {
+        this.size = size;
+        if (this.data.length < this.size) {
+            long[] tmp = new long[this.size];
+            System.arraycopy(this.data, 0, tmp, 0, this.data.length);
+            this.data = tmp;
+        }
+    }
 }

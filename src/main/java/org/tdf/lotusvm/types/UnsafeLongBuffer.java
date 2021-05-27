@@ -10,8 +10,8 @@ public class UnsafeLongBuffer implements LongBuffer{
         return size;
     }
 
-    public UnsafeLongBuffer(int initialSize) {
-        int cap = Math.max(initialSize, 8);
+    public UnsafeLongBuffer(int initialCap) {
+        int cap = Math.max(initialCap, 8);
         long bytes = UnsafeUtil.fastMul8(cap);
         this.pointer = UnsafeUtil.UNSAFE.allocateMemory(
                 bytes
