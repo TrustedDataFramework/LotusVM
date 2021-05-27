@@ -208,6 +208,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int c = this.count;
 
         clearFrameData(c);
+
+        System.out.println(getStackBase(c));
         clearOffsets(c);
 
         // new stack base and new label base
@@ -287,7 +289,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int stackSize = getStackSize(frameId);
         setStackData(base + stackSize, value);
         increaseStackSize(frameId);
-        System.out.println("size = " + (stackSize + 1) + "after push");
     }
 
     @Override
@@ -298,7 +299,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             throw new RuntimeException("stack underflow");
         long v = getStackData(base + size - 1);
         decreaseStackSize(frameId);
-        System.out.println("size = " + (size - 1) + "after pop");
         return v;
     }
 
