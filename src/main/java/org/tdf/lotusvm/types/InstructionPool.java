@@ -4,7 +4,6 @@ import org.tdf.lotusvm.common.BytesReader;
 import org.tdf.lotusvm.common.OpCode;
 
 import java.io.Closeable;
-import java.io.IOException;
 
 import static org.tdf.lotusvm.common.OpCode.*;
 
@@ -16,9 +15,9 @@ import static org.tdf.lotusvm.common.OpCode.*;
 public final class InstructionPool implements Closeable {
     // instruction = 32byte = 8 * 8(size of long)
     private static final int INSTRUCTION_SIZE = 8;
-    private static final long OPERAND_SIZE_MASK = 0x7FFFFFFF00000000L;
-    private static final int OPERAND_SIZE_SHIFTS = 32;
-    private static final long OPERAND_OFFSET_MASK = 0x7FFFFFFFL;
+    private static final long OPERANDS_SIZE_MASK = 0x7FFFFFFF00000000L;
+    private static final int OPERANDS_SIZE_SHIFTS = 32;
+    private static final long OPERANDS_OFFSET_MASK = 0x7FFFFFFFL;
 
     private static final long LINKED_LIST_NEXT_MASK = 0x7FFFFFFF00000000L;
     private static final int LINKED_LIST_NEXT_SHIFTS = 32;
@@ -69,7 +68,7 @@ public final class InstructionPool implements Closeable {
 
     // push instruction return the position
     public int push(OpCode op, int type) {
-        long ins = ((op.code & 0xffL)) | ((type & RESULT_TYPE_MASK) << RESULT_TYPE_SHIFTS);
+        long ins = ((op.code & 0xffL)) | ((type & 0xFFL) << RESULT_TYPE_SHIFTS);
         int size = data.size();
         data.push(ins);
         data.push(NULL);
@@ -98,7 +97,7 @@ public final class InstructionPool implements Closeable {
     }
 
     public long endOperands() {
-        long ret = (Integer.toUnsignedLong(operandSize) << OPERAND_SIZE_SHIFTS) | (Integer.toUnsignedLong(operandOffset));
+        long ret = (Integer.toUnsignedLong(operandSize) << OPERANDS_SIZE_SHIFTS) | (Integer.toUnsignedLong(operandOffset));
         this.operandSize = 0;
         this.operandOffset = 0;
         return ret;
@@ -149,11 +148,11 @@ public final class InstructionPool implements Closeable {
         long bits = getOperandsBits(insId);
         if(bits < 0)
             throw new RuntimeException("null operands");
-        return (int) ((getOperandsBits(insId) & OPERAND_SIZE_MASK) >> OPERAND_SIZE_SHIFTS);
+        return (int) ((getOperandsBits(insId) & OPERANDS_SIZE_MASK) >> OPERANDS_SIZE_SHIFTS);
     }
 
     private int getOperandsOffset(int insId) {
-        return (int) (getOperandsBits(insId) & OPERAND_OFFSET_MASK);
+        return (int) (getOperandsBits(insId) & OPERANDS_OFFSET_MASK);
     }
 
     public long getOperand(int insId, int index) {
