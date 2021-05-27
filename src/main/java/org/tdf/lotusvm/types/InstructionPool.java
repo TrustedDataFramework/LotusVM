@@ -28,9 +28,9 @@ public final class InstructionPool implements Closeable {
     private static final int INSTRUCTIONS_SIZE_SHIFTS = 32;
     private static final long INSTRUCTIONS_OFFSET_MASK = 0x7FFFFFFFL;
 
-    private static final long OPCODE_MASK = 0xFF00L;
-    private static final int OPCODE_SHIFTS = 8;
-    private static final long RESULT_TYPE_MASK = 0xFFL;
+    private static final long OPCODE_MASK = 0xFFL;
+    private static final int RESULT_TYPE_SHIFTS = 8;
+    private static final long RESULT_TYPE_MASK = 0xFF00L;
 
     private static final int BRANCH_OFFSET = 1;
     private static final int OPERANDS_OFFSET = 3;
@@ -69,7 +69,7 @@ public final class InstructionPool implements Closeable {
 
     // push instruction return the position
     public int push(OpCode op, int type) {
-        long ins = ((op.code & 0xffL) << OPCODE_SHIFTS) | (type & RESULT_TYPE_MASK);
+        long ins = ((op.code & 0xffL)) | ((type & RESULT_TYPE_MASK) << RESULT_TYPE_SHIFTS);
         int size = data.size();
         data.push(ins);
         data.push(NULL);
@@ -177,7 +177,7 @@ public final class InstructionPool implements Closeable {
 
     public OpCode getOpCode(int insId) {
         long begin = data.get(insId);
-        long code = (begin & OPCODE_MASK) >> OPCODE_SHIFTS;
+        long code = (begin & OPCODE_MASK) ;
         return OpCode.fromCode((int) code);
     }
 
@@ -186,7 +186,7 @@ public final class InstructionPool implements Closeable {
         long c = begin & RESULT_TYPE_MASK;
         if (c == RESULT_TYPE_MASK)
             return null;
-        return ResultType.VALUES[(int) c];
+        return ResultType.VALUES[(int) (c >> RESULT_TYPE_SHIFTS)];
     }
 
     private int readControlInstruction(BytesReader reader) {

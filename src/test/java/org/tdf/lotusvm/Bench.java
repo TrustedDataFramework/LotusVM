@@ -3,7 +3,6 @@ package org.tdf.lotusvm;
 import org.tdf.lotusvm.runtime.Memory;
 import org.tdf.lotusvm.runtime.UnsafeMemory;
 import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
-import org.tdf.lotusvm.types.Module;
 
 import java.net.URL;
 
