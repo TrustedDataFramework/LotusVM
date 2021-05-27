@@ -209,8 +209,11 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
         clearFrameData(c);
 
-        System.out.println(getStackBase(c));
         clearOffsets(c);
+
+        if(c != 0){
+            System.out.println(getStackSize(c-1));
+        }
 
         // new stack base and new label base
         int newStackBase = c == 0 ? 0 : (getStackBase(c - 1) + getLocalSize(c - 1) + getStackSize(c - 1));
