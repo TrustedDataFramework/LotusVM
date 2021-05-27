@@ -9,9 +9,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     private static final long ARITY_OFFSET = 6L;
     private static final long LOOP_OFFSET = 7L;
     private static final long LABEL_PC_OFFSET = 2L;
-    private static final long LOCAL_SIZE_OFFSET = 2L;
-    private static final long LABEL_SIZE_OFFSET = 4L;
-    private static final long FUNCTION_INDEX_OFFSET = 6L;
     private static final long LABEL_BASE_OFFSET = 4L;
 
 
@@ -21,7 +18,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     private final long labelDataPtr;
 
     // frame data = stack size (2byte) | local size (2byte) | label size (2byte) | function index (2byte)
-    private final long frameDataPtr;
+    private final LongBuffer frameData;
 
     // offsets ptr = stack base (4byte) in stack data | label base (4byte) in labels
     private final long offsetsPtr;
@@ -35,6 +32,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     private ValueType resultType;
     private long body;
 
+    private long currentFrameData;
+
+
     public UnsafeStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
         super(maxStackSize, maxFrames, maxLabelSize);
 
@@ -44,8 +44,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.stackDataPtr = UNSAFE.allocateMemory((maxStackSize * 8L));
         UNSAFE.setMemory(stackDataPtr, (maxStackSize * 8L), (byte) 0);
 
-        this.frameDataPtr = UNSAFE.allocateMemory((maxFrames * 8L));
-        UNSAFE.setMemory(frameDataPtr, (maxFrames * 8L), (byte) 0);
+        this.frameData = new UnsafeLongBuffer(maxFrames);
+        this.frameData.setSize(maxFrames);
 
         this.offsetsPtr = UNSAFE.allocateMemory((maxFrames * 8L));
         UNSAFE.setMemory(offsetsPtr, (maxFrames * 8L), (byte) 0);
@@ -53,6 +53,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.labelDataPtr = UNSAFE.allocateMemory((maxLabelSize * 8L));
         UNSAFE.setMemory(labelDataPtr, (maxLabelSize * 8L), (byte) 0);
     }
+
+
 
     private void setLabels(int p, long instructions) {
         labels.set(p, instructions);
@@ -98,10 +100,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         return UNSAFE.getShort(labelDataPtr + ((p * 8L))) & MAX_UNSIGNED_SHORT;
     }
 
-    private void clearFrameData(int index) {
-        UNSAFE.putLong(frameDataPtr + (index * 8L), 0);
-    }
-
     private long getStackData(int index) {
         return UNSAFE.getLong(stackDataPtr + (index * 8L));
     }
@@ -110,44 +108,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         UNSAFE.putLong(stackDataPtr + (index * 8L), data);
     }
 
-    public int getLocalSize(int frameId) {
-        return UNSAFE.getShort(frameDataPtr + ((frameId * 8L) | LOCAL_SIZE_OFFSET)) & MAX_UNSIGNED_SHORT;
-    }
 
-    private void setLocalSize(int frameId, int functionIndex) {
-        if (functionIndex > MAX_UNSIGNED_SHORT)
-            throw new RuntimeException("function index overflow");
-        UNSAFE.putShort(frameDataPtr + ((frameId * 8L) | LOCAL_SIZE_OFFSET), (short) functionIndex);
-    }
-
-    public int getStackSize(int frameId) {
-        return UNSAFE.getShort(frameDataPtr + (frameId * 8L)) & MAX_UNSIGNED_SHORT;
-    }
-
-    public void setStackSize(int frameId, int size) {
-        if (size > MAX_UNSIGNED_SHORT)
-            throw new RuntimeException("stack size overflow");
-        UNSAFE.putShort(frameDataPtr + (frameId * 8L), (short) size);
-    }
-
-    public int getLabelSize(int frameId) {
-        return UNSAFE.getShort(
-            frameDataPtr + ((frameId * 8L) | LABEL_SIZE_OFFSET)
-        ) & MAX_UNSIGNED_SHORT;
-    }
-
-    public void setLabelSize(int frameId, int size) {
-        if (size > MAX_UNSIGNED_SHORT)
-            throw new RuntimeException("label size overflow");
-        UNSAFE.putShort(frameDataPtr + ((frameId * 8L) | LABEL_SIZE_OFFSET), (short) size);
-    }
-
-    private int getFunctionIndex(int frameId) {
-        return UNSAFE.getShort(frameDataPtr + ((frameId * 8L) | FUNCTION_INDEX_OFFSET)) & MAX_UNSIGNED_SHORT;
-    }
-
-    private void setFunctionIndex(int frameId, int functionIndex) {
-        UNSAFE.putShort(frameDataPtr + ((frameId * 8L) | FUNCTION_INDEX_OFFSET), (short) functionIndex);
+    public int getLabelSize() {
+        return FrameId.getLabelSize(currentFrameData);
     }
 
     private void clearOffsets(int frameId) {
@@ -178,12 +141,17 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int c = this.count;
 
         // clear
-        clearFrameData(c);
+        long prevFrame = this.currentFrameData;
+
+        if(c != 0){
+            storeCurrentFrame();
+        }
+
         clearOffsets(c);
 
         // new stack base and new label base
-        int newStackBase = c == 0 ? 0 : (getStackBase(c - 1) + getLocalSize(c - 1) + getStackSize(c - 1));
-        int newLabelBase = c == 0 ? 0 : (getLabelBase(c - 1) + getLabelSize(c - 1));
+        int newStackBase = c == 0 ? 0 : (getStackBase(c - 1) + FrameId.getLocalSize(prevFrame) + FrameId.getStackSize(prevFrame));
+        int newLabelBase = c == 0 ? 0 : (getLabelBase(c - 1) + FrameId.getLabelSize(prevFrame));
 
         setStackBase(c, newStackBase);
         setLabelBase(c, newLabelBase);
@@ -195,7 +163,16 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     }
 
     // when args = null,
-    public int pushFrame(int functionIndex, long[] args) {
+
+    private void storeCurrentFrame() {
+        frameData.set(currentFrameIndex(), currentFrameData);
+    }
+
+    public int currentFrameIndex() {
+        return this.count - 1;
+    }
+
+    public void pushFrame(int functionIndex, long[] args) {
         if (count == maxFrames) {
             throw new RuntimeException("frame overflow");
         }
@@ -206,13 +183,18 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             throw new RuntimeException("function index overflow");
 
         int c = this.count;
+        long prevFrame = this.currentFrameData;
 
-        clearFrameData(c);
+        if(c != 0){
+            storeCurrentFrame();
+        }
+
+        this.currentFrameData = FrameId.setFunctionIndex(0, functionIndex);
         clearOffsets(c);
 
         // new stack base and new label base
-        int newStackBase = c == 0 ? 0 : (getStackBase(c - 1) + getLocalSize(c - 1) + getStackSize(c - 1));
-        int newLabelBase = c == 0 ? 0 : (getLabelBase(c - 1) + getLabelSize(c - 1));
+        int newStackBase = c == 0 ? 0 : (getStackBase(c - 1) + FrameId.getLocalSize(prevFrame) + FrameId.getStackSize(prevFrame));
+        int newLabelBase = c == 0 ? 0 : (getLabelBase(c - 1) + FrameId.getLabelSize(prevFrame));
 
         setStackBase(c, newStackBase);
         setLabelBase(c, newLabelBase);
@@ -221,31 +203,26 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
             getModule().functions.get((int) (functionIndex & FUNCTION_INDEX_MASK)));
 
-        // set function index
-        setFunctionIndex(c, functionIndex);
-
         // set local size
         int localSize = func.parametersLength() + func.getLocals();
-        setLocalSize(c, localSize);
+        this.currentFrameData = FrameId.setLocalSize(currentFrameData, localSize);
 
         // set body and value type
         body = func.getBody();
         // set value type
         resultType = func.getType().getResultTypes().isEmpty() ? null : func.getType().getResultTypes().get(0);
 
+        this.count++;
         if (args == null) {
-            int start = popN(c - 1, func.parametersLength());
-
+            int start = getStackData(currentFrameIndex() - 1, func.parametersLength());
             for (int i = 0; i < localSize; i++) {
-                setLocal(c, i, i < func.parametersLength() ? getUnchecked(start + i) : 0);
+                setLocal(i, i < func.parametersLength() ? getUnchecked(start + i) : 0);
             }
         } else {
             for (int i = 0; i < localSize; i++) {
-                setLocal(c, i, i < args.length ? args[i] : 0);
+                setLocal(i, i < args.length ? args[i] : 0);
             }
         }
-        this.count++;
-        return current();
     }
 
     private void resetBody(int functionIndex) {
@@ -257,46 +234,32 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.resultType = func.getType().getResultTypes().isEmpty() ? null : func.getType().getResultTypes().get(0);
     }
 
-    private void decreaseStackSize(int frameId) {
-        setStackSize(frameId, getStackSize(frameId) - 1);
-    }
-
-    private void increaseStackSize(int frameId) {
-        setStackSize(frameId, getStackSize(frameId) + 1);
-    }
-
-    private void increaseLabelSize(int frameId) {
-        setLabelSize(frameId, getLabelSize(frameId) + 1);
-    }
-
-    private void decreaseLabelSize(int frameId) {
-        setLabelSize(frameId, getLabelSize(frameId) - 1);
-    }
 
     @Override
-    public void setLocal(int frameId, int index, long value) {
-        if (index >= getLocalSize(frameId))
+    public void setLocal(int index, long value) {
+        if (index >= FrameId.getLocalSize(currentFrameData))
             throw new RuntimeException("local variable overflow");
-        int base = getStackBase(frameId);
+        int base = getStackBase(currentFrameIndex());
         setStackData(base + index, value);
     }
 
     @Override
-    public void push(int frameId, long value) {
-        int base = getStackBase(frameId) + getLocalSize(frameId);
-        int stackSize = getStackSize(frameId);
+    public void push(long value) {
+        int base = getStackBase(currentFrameIndex()) + FrameId.getLocalSize(currentFrameData);
+        int stackSize = FrameId.getStackSize(currentFrameData);
         setStackData(base + stackSize, value);
-        increaseStackSize(frameId);
+        currentFrameData = FrameId.setStackSize(currentFrameData, stackSize + 1);
     }
 
+
     @Override
-    public long pop(int frameId) {
-        int base = getStackBase(frameId) + getLocalSize(frameId);
-        int size = getStackSize(frameId);
+    public long pop() {
+        int base = getStackBase(currentFrameIndex()) + FrameId.getLocalSize(currentFrameData);
+        int size = FrameId.getStackSize(currentFrameData);
         if (size == 0)
             throw new RuntimeException("stack underflow");
         long v = getStackData(base + size - 1);
-        decreaseStackSize(frameId);
+        currentFrameData = FrameId.setStackSize(currentFrameData, size - 1);
         return v;
     }
 
@@ -306,39 +269,40 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     }
 
     @Override
-    public long getLocal(int frameId, int index) {
-        int base = getStackBase(frameId);
+    public long getLocal(int index) {
+        int base = getStackBase(currentFrameIndex());
         return getStackData(base + index);
     }
 
     @Override
-    public int popN(int frameId, int length) {
+    public int getStackData(int frameIndex, int length) {
         if (length == 0)
             return 0;
-
-        int size = getStackSize(frameId);
+        long frameId = frameData.get(frameIndex);
+        int size = FrameId.getStackSize(frameId);
         if (size < length)
             throw new RuntimeException("stack underflow");
-        int r = getStackBase(frameId) + getLocalSize(frameId) + size - length;
-        setStackSize(frameId, size - length);
-        return r;
+        return getStackBase(frameIndex) + FrameId.getLocalSize(frameId) + size - length;
     }
 
+
     @Override
-    public void drop(int frameId) {
-        if (frameId != current())
-            throw new RuntimeException("stack should be dropped sequentially");
+    public void popFrame() {
         count--;
         // clear
-        if (frameId > 0)
-            resetBody(getFunctionIndex(frameId - 1));
+        if(count == 0)
+            return;
+
+        long prev = this.frameData.get(currentFrameIndex());
+        resetBody(FrameId.getFunctionIndex(prev));
+        this.currentFrameData = prev;
     }
 
 
     @Override
-    public void pushLabel(int frameId, boolean arity, long body, boolean loop) {
-        int size = getLabelSize(frameId);
-        int base = getLabelBase(frameId);
+    public void pushLabel( boolean arity, long body, boolean loop) {
+        int size = FrameId.getLabelSize(currentFrameData);
+        int base = getLabelBase(currentFrameIndex());
 
         int p = base + size;
         setLabels(p, body);
@@ -346,46 +310,43 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         setLoop(p, loop);
         setLabelPc(p, 0);
 
-        int stackSize = getStackSize(frameId);
+        int stackSize = FrameId.getStackSize(currentFrameData);
         setStackPc(p, stackSize);
 
-        increaseLabelSize(frameId);
+        currentFrameData = FrameId.setLabelSize(currentFrameData, size + 1);
     }
 
     @Override
-    public void popLabel(int frameId) {
-        int labelSize = getLabelSize(frameId);
+    public void popLabel() {
+        int labelSize = FrameId.getLabelSize(currentFrameData);
         if (labelSize == 0)
             throw new RuntimeException("label underflow");
-        setLabelSize(frameId, labelSize - 1);
+        currentFrameData = FrameId.setLabelSize(currentFrameData, labelSize - 1);
     }
 
-    @Override
-    public void popAndClearLabel(int frameId) {
-        int size = getLabelSize(frameId);
+
+    public void popAndClearLabel() {
+        int size = FrameId.getLabelSize(currentFrameData);
         if (size == 0)
             throw new RuntimeException("label underflow");
-        int base = getLabelBase(frameId);
-        setStackSize(
-            frameId,
-            getStackPc(base + size - 1)
-        );
-        setLabelSize(frameId, size - 1);
+        int base = getLabelBase(currentFrameIndex());
+        currentFrameData = FrameId.setStackSize(currentFrameData, getStackPc(base + size - 1));
+        currentFrameData = FrameId.setLabelSize(currentFrameData, size - 1);
     }
 
     @Override
-    public void branch(int frameId, int l) {
-        int idx = getLabelSize(frameId) - 1 - l;
-        int p = getLabelBase(frameId) + idx;
+    public void branch(int l) {
+        int idx = FrameId.getLabelSize(currentFrameData) - 1 - l;
+        int p = getLabelBase(currentFrameIndex()) + idx;
 
         boolean arity = getArity(p);
-        long val = arity ? pop(frameId) : 0;
+        long val = arity ? pop() : 0;
         // Repeat l+1 times
         for (int i = 0; i < l + 1; i++) {
-            popAndClearLabel(frameId);
+            popAndClearLabel();
         }
         if (arity) {
-            push(frameId, val);
+            push(val);
         }
         boolean loop = getLoop(p);
         setLabelPc(p, 0);
@@ -394,39 +355,43 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         }
         int prevPc = getLabelPc(p);
         pushLabel(
-            frameId,
             arity,
             getLabels(p),
             loop
         );
-        p = getLabelBase(frameId) + getLabelSize(frameId) - 1;
+        p = getLabelBase(currentFrameIndex()) + FrameId.getLabelSize(currentFrameData) - 1;
         setLabelPc(p, prevPc);
     }
 
     @Override
-    public long getInstructions(int frameId, int idx) {
-        int size = getLabelSize(frameId);
+    boolean labelIsEmpty() {
+        return FrameId.getLabelSize(currentFrameData) == 0;
+    }
+
+
+    public long getInstructions(int idx) {
+        int size = FrameId.getLabelSize(currentFrameData);
         if (idx < 0 || idx >= size)
             throw new RuntimeException("label index overflow");
-        int base = getLabelBase(frameId);
+        int base = getLabelBase(currentFrameIndex());
         return getLabels(base + idx);
     }
 
     @Override
-    public int getPc(int frameId, int idx) {
-        int size = getLabelSize(frameId);
+    public int getPc(int idx) {
+        int size = FrameId.getLabelSize(currentFrameData);
         if (idx < 0 || idx >= size)
             throw new RuntimeException("label index overflow");
-        int p = getLabelBase(frameId) + idx;
+        int p = getLabelBase(currentFrameIndex()) + idx;
         return getLabelPc(p);
     }
 
     @Override
-    public void setPc(int frameId, int idx, int pc) {
-        int size = getLabelSize(frameId);
+    public void setPc(int idx, int pc) {
+        int size = FrameId.getLabelSize(currentFrameData);
         if (idx < 0 || idx >= size)
             throw new RuntimeException("label index overflow");
-        int p = getLabelBase(frameId) + idx;
+        int p = getLabelBase(currentFrameIndex()) + idx;
         setLabelPc(p, pc);
     }
 
@@ -439,7 +404,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     public void close() {
         UNSAFE.freeMemory(stackDataPtr);
         UNSAFE.freeMemory(labelDataPtr);
-        UNSAFE.freeMemory(frameDataPtr);
+        frameData.close();
         UNSAFE.freeMemory(offsetsPtr);
         labels.close();
     }
@@ -449,13 +414,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         return count == 0;
     }
 
-    // current() is always < maxFrameSize
-    @Override
-    public int current() {
-        if (count == 0)
-            throw new RuntimeException("frame underflow");
-        return count - 1;
-    }
 
     @Override
     protected long getBody() {
@@ -465,5 +423,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     @Override
     protected ValueType getResultType() {
         return resultType;
+    }
+
+    public long currentFrame() {
+        return currentFrameData;
     }
 }

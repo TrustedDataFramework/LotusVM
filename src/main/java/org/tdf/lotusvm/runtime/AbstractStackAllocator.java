@@ -45,70 +45,49 @@ public abstract class AbstractStackAllocator implements StackAllocator {
     }
 
     // push a value into a stack
-    void push(long value) {
-        push(current(), value);
-    }
-
-    long pop() {
-        return pop(current());
-    }
-
     int popI32() {
         return (int) pop();
     }
 
     void pushI32(int i) {
-        push(current(), i & 0xffffffffL);
+        push(i & 0xffffffffL);
     }
 
     void pushI8(byte x) {
-        push(current(), ((long) x) & 0xffL);
+        push(((long) x) & 0xffL);
     }
 
     void pushI16(short x) {
-        push(current(), ((long) x) & 0xffffL);
+        push(((long) x) & 0xffffL);
     }
 
     void pushBoolean(boolean b) {
-        push(current(), b ? 1 : 0);
+        push(b ? 1 : 0);
     }
 
-    long getLocal(int idx) {
-        return getLocal(current(), idx);
-    }
 
-    void setLocal(int idx, long value) {
-        setLocal(current(), idx, value);
-    }
+    abstract void pushLabel(boolean arity, long body, boolean loop);
 
-    void pushLabel(boolean arity, long body, boolean loop) {
-        pushLabel(current(), arity, body, loop);
-    }
+    abstract void branch(int l);
 
-    void branch(int l) {
-        branch(current(), l);
-    }
+    abstract boolean labelIsEmpty();
 
-    boolean labelIsEmpty() {
-        return getLabelSize(current()) == 0;
-    }
+    abstract void popFrame();
 
-    void drop() {
-        drop(current());
-    }
-
-    void popLabel() {
-        popLabel(current());
-    }
+    abstract void popLabel();
 
     protected abstract long getBody();
 
     protected abstract ValueType getResultType();
 
+    public abstract long currentFrame();
+
+    public abstract int currentFrameIndex();
+
     long[] popLongs(int n) {
         if (n == 0) return Constants.EMPTY_LONGS;
         long[] res = new long[n];
-        int index = popN(current(), n);
+        int index = getStackData(currentFrameIndex(), n);
         for (int i = 0; i < n; i++) {
             res[i] = getUnchecked(i + index);
         }
@@ -117,7 +96,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
 
     long returns() {
         if (getResultType() == null) {
-            drop();
+            popFrame();
             return 0;
         }
         long res = pop();
@@ -127,7 +106,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 // shadow bits
                 res = res & 0xffffffffL;
         }
-        drop();
+        popFrame();
         return res;
     }
 
@@ -135,9 +114,9 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         InstructionPool pool = module.insPool;
         pushLabel(getResultType() != null, getBody(), false);
         while (!labelIsEmpty()) {
-            int idx = getLabelSize(current()) - 1;
-            int pc = getPc(current(), idx);
-            long body = getInstructions(current(), idx);
+            int idx = getLabelSize() - 1;
+            int pc = getPc(idx);
+            long body = getInstructions(idx);
             int length = InstructionPool.getInstructionsSize(body);
             if (pc >= length) {
                 popLabel();
@@ -149,7 +128,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             if (c.equals(OpCode.RETURN)) {
                 return returns();
             }
-            setPc(current(), idx, pc + 1);
+            setPc(idx, pc + 1);
             invoke(ins);
         }
         for (int i = 0; i < getModule().hooks.length; i++) {
@@ -243,7 +222,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                         getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
                     }
                     res = function.execute(
-                        popLongs(function.parametersLength())
+                            popLongs(function.parametersLength())
                     );
                 } else {
                     pushFrame(pool.getStackBase(ins), null);
@@ -256,7 +235,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 }
                 if (function.getArity() > 0) {
                     push(
-                        res
+                            res
                     );
                 }
                 break;
@@ -273,7 +252,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                         getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
                     }
                     r = function.execute(
-                        popLongs(function.parametersLength())
+                            popLongs(function.parametersLength())
                     );
                 } else {
                     pushFrame((int) (elementIndex | TABLE_MASK), null);
@@ -283,7 +262,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                     throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
                 }
                 if (function.getArity() > 0) {
-                    push(current(), r);
+                    push(r);
                 }
                 break;
             }
@@ -292,23 +271,23 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 long val2 = pop();
                 long val1 = pop();
                 if (c != 0) {
-                    push(current(), val1);
+                    push(val1);
                     break;
                 }
-                push(current(), val2);
+                push(val2);
                 break;
             }
             // variable instructions
             case GET_LOCAL:
-                push(current(), getLocal(pool.getStackBase(ins)));
+                push(getLocal(pool.getStackBase(ins)));
                 break;
             case SET_LOCAL:
                 setLocal(pool.getStackBase(ins), pop());
                 break;
             case TEE_LOCAL: {
                 long val = pop();
-                push(current(), val);
-                push(current(), val);
+                push(val);
+                push(val);
                 setLocal(pool.getStackBase(ins), pop());
                 break;
             }
@@ -324,12 +303,12 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             case I32_LOAD:
             case I64_LOAD32_U:
                 pushI32(
-                    getModule().memory.load32(getMemoryOffset(ins))
+                        getModule().memory.load32(getMemoryOffset(ins))
                 );
                 break;
             case I64_LOAD:
                 push(
-                    getModule().memory.load64(getMemoryOffset(ins))
+                        getModule().memory.load64(getMemoryOffset(ins))
                 );
                 break;
             case I32_LOAD8_S:
