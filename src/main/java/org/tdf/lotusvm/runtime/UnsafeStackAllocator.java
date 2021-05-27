@@ -177,7 +177,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     }
 
     public void pushFrame(int functionIndex, long[] args) {
-        System.out.println("push new frame");
         if (count == maxFrames) {
             throw new RuntimeException("frame overflow");
         }
@@ -199,6 +198,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int newStackBase = 0;
         int newLabelBase = 0;
 
+        System.out.println(stackSize);
+
         if(c != 0) {
             newStackBase = this.stackBase + this.localSize + this.stackSize;
             newLabelBase = this.labelBase + this.labelSize;
@@ -210,7 +211,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.stackBase = newStackBase;
         this.labelBase = newLabelBase;
 
-        System.out.printf("%d %d%n", stackBase, labelBase);
 
         WASMFunction func = (WASMFunction) ((functionIndex & TABLE_MASK) != 0 ?
             getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
