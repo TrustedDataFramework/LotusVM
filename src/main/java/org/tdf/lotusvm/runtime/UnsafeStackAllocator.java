@@ -9,7 +9,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     private static final long ARITY_OFFSET = 6L;
     private static final long LOOP_OFFSET = 7L;
     private static final long LABEL_PC_OFFSET = 2L;
-    private static final long LABEL_BASE_OFFSET = 4L;
 
 
     private final LongBuffer stackData;
@@ -200,7 +199,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
 
         if(c != 0) {
-            System.out.println(stackSize);
             newStackBase = this.stackBase + this.localSize + this.stackSize;
             newLabelBase = this.labelBase + this.labelSize;
         }
@@ -286,12 +284,22 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     public int popN(int frameIndex, int length) {
         if (length == 0)
             return 0;
-        long frameId = frameData.get(frameIndex);
-        int size = FrameId.getStackSize(frameId);
-        if (size < length)
-            throw new RuntimeException("stack underflow");
-        frameData.set(frameIndex, FrameId.setStackSize(frameId, size - length));
-        return stackBase + FrameId.getLocalSize(frameId) + size - length;
+
+        if(frameIndex == currentFrameIndex()) {
+            if (stackSize < length)
+                throw new RuntimeException("stack underflow");
+            int r = this.stackBase + this.localSize + stackSize - length;
+            this.stackSize -= length;
+            return r;
+        } else {
+            long frameId = frameData.get(frameIndex);
+            long offset = offsets.get(frameIndex);
+            int size = FrameId.getStackSize(frameId);
+            if (size < length)
+                throw new RuntimeException("stack underflow");
+            frameData.set(frameIndex, FrameId.setStackSize(frameId, size - length));
+            return  FrameDataOffset.getStackBase(offset) + FrameId.getLocalSize(frameId) + size - length;
+        }
     }
 
 
