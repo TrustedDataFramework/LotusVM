@@ -1,8 +1,6 @@
 package org.tdf.lotusvm.runtime;
 
-import org.tdf.lotusvm.types.InstructionPool;
-import org.tdf.lotusvm.types.UnsafeUtil;
-import org.tdf.lotusvm.types.ValueType;
+import org.tdf.lotusvm.types.*;
 
 import static org.tdf.lotusvm.types.UnsafeUtil.UNSAFE;
 
@@ -12,7 +10,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     private final long frameDataPtr;
     private final long offsetsPtr;
 
-    private final long[] labels;
+    private final LongBuffer labels;
 
     // frame count
     private int count;
@@ -23,7 +21,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     public UnsafeStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
         super(maxStackSize, maxFrames, maxLabelSize);
 
-        this.labels = new long[maxLabelSize];
+        this.labels = new ArrayLongBuffer(maxLabelSize);
+        this.labels
 
         this.stackDataPtr = UNSAFE.allocateMemory(UnsafeUtil.fastMul8(maxStackSize));
         UNSAFE.setMemory(stackDataPtr, UnsafeUtil.fastMul8(maxStackSize), (byte) 0);
