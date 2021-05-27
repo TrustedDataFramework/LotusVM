@@ -50,6 +50,19 @@ public class UnsafeLongBuffer implements LongBuffer{
     }
 
     @Override
+    public void setSize(int size) {
+        this.size = size;
+        if(this.cap < this.size) {
+            long prevBytes = limit - pointer;
+            long afterBytes = this.size * 8L;
+            this.pointer = UnsafeUtil.UNSAFE.reallocateMemory(this.pointer, afterBytes);
+            this.limit = this.pointer + afterBytes;
+            this.cap = this.size;
+            UnsafeUtil.UNSAFE.setMemory(this.pointer + prevBytes, afterBytes - prevBytes, (byte) 0);
+        }
+    }
+
+    @Override
     public void close() {
         if(pointer != 0) {
             UnsafeUtil.UNSAFE.freeMemory(pointer);

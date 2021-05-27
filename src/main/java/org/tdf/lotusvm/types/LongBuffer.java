@@ -7,6 +7,6 @@ public interface LongBuffer extends Closeable {
     void set(int index, long val);
     int size();
     void push(long val);
-
+    void setSize(int size);
     default void close() {}
 }
