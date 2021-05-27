@@ -134,16 +134,20 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int c = this.count;
 
         // clear
-
-
         if(c != 0){
             storeCurrentFrame();
         }
 
-        // new stack base and new label base
-        int newStackBase = c == 0 ? 0 : (this.stackBase + this.localSize + this.stackSize);
-        int newLabelBase = c == 0 ? 0 : (this.labelBase + this.labelSize);
+        int newStackBase = 0;
+        int newLabelBase = 0;
 
+        if(c != 0) {
+            newStackBase = this.stackBase + this.localSize + this.stackSize;
+            newLabelBase = this.labelBase + this.labelSize;
+        }
+
+
+        // new stack base and new label base
         clearFrameData();
 
         this.stackBase = newStackBase;
@@ -173,6 +177,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     }
 
     public void pushFrame(int functionIndex, long[] args) {
+        System.out.println("push new frame");
         if (count == maxFrames) {
             throw new RuntimeException("frame overflow");
         }
@@ -191,14 +196,21 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.functionIndex = functionIndex;
 
         // new stack base and new label base
-        int newStackBase = c == 0 ? 0 : (this.stackBase + this.localSize + this.stackSize);
-        int newLabelBase = c == 0 ? 0 : (this.labelBase + this.labelSize);
+        int newStackBase = 0;
+        int newLabelBase = 0;
+
+        if(c != 0) {
+            newStackBase = this.stackBase + this.localSize + this.stackSize;
+            newLabelBase = this.labelBase + this.labelSize;
+        }
 
         this.labelSize = 0;
         this.stackSize = 0;
 
         this.stackBase = newStackBase;
         this.labelBase = newLabelBase;
+
+        System.out.printf("%d %d%n", stackBase, labelBase);
 
         WASMFunction func = (WASMFunction) ((functionIndex & TABLE_MASK) != 0 ?
             getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
