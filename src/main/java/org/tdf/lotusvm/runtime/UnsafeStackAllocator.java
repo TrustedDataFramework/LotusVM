@@ -21,8 +21,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     public UnsafeStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
         super(maxStackSize, maxFrames, maxLabelSize);
 
-        this.labels = new ArrayLongBuffer(maxLabelSize);
-        this.labels
+        this.labels = new UnsafeLongBuffer(maxLabelSize);
+        this.labels.setSize(maxLabelSize);
 
         this.stackDataPtr = UNSAFE.allocateMemory(UnsafeUtil.fastMul8(maxStackSize));
         UNSAFE.setMemory(stackDataPtr, UnsafeUtil.fastMul8(maxStackSize), (byte) 0);
@@ -38,11 +38,11 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     }
 
     private void setLabels(int p, long instructions) {
-        labels[p] = instructions;
+        labels.set(p, instructions);
     }
 
     private long getLabels(int p) {
-        return labels[p];
+        return labels.get(p);
     }
 
     private void setArity(int p, boolean arity) {
@@ -63,13 +63,13 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     private void setLabelPc(int p, int pc) {
         UNSAFE.putShort(
-                labelDataPtr + (UnsafeUtil.fastMul8(p) | 2), (short) pc
+            labelDataPtr + (UnsafeUtil.fastMul8(p) | 2), (short) pc
         );
     }
 
     private int getLabelPc(int p) {
         return UNSAFE.getShort(
-                labelDataPtr + (UnsafeUtil.fastMul8(p) | 2)
+            labelDataPtr + (UnsafeUtil.fastMul8(p) | 2)
         );
     }
 
@@ -95,7 +95,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     public int getLocalSize(int frameId) {
         return Short.toUnsignedInt(
-                UNSAFE.getShort(frameDataPtr + (UnsafeUtil.fastMul8(frameId) | 2))
+            UNSAFE.getShort(frameDataPtr + (UnsafeUtil.fastMul8(frameId) | 2))
         );
     }
 
@@ -105,7 +105,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     public int getStackSize(int frameId) {
         return Short.toUnsignedInt(
-                UNSAFE.getShort(frameDataPtr + UnsafeUtil.fastMul8(frameId))
+            UNSAFE.getShort(frameDataPtr + UnsafeUtil.fastMul8(frameId))
         );
     }
 
@@ -115,9 +115,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     public int getLabelSize(int frameId) {
         return Short.toUnsignedInt(
-                UNSAFE.getShort(
-                        frameDataPtr + (UnsafeUtil.fastMul8(frameId) | 4)
-                )
+            UNSAFE.getShort(
+                frameDataPtr + (UnsafeUtil.fastMul8(frameId) | 4)
+            )
         );
     }
 
@@ -201,8 +201,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         setLabelBase(c, newLabelBase);
 
         WASMFunction func = (WASMFunction) ((functionIndex & TABLE_MASK) != 0 ?
-                getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
-                getModule().functions.get((int) (functionIndex & FUNCTION_INDEX_MASK)));
+            getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
+            getModule().functions.get((int) (functionIndex & FUNCTION_INDEX_MASK)));
 
         // set function index
         setFunctionIndex(c, functionIndex);
@@ -233,8 +233,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     private void resetBody(int functionIndex) {
         WASMFunction func = (WASMFunction) ((functionIndex & TABLE_MASK) != 0 ?
-                getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
-                getModule().functions.get((int) (functionIndex & FUNCTION_INDEX_MASK)));
+            getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
+            getModule().functions.get((int) (functionIndex & FUNCTION_INDEX_MASK)));
 
         this.body = func.getBody();
         this.resultType = func.getType().getResultTypes().isEmpty() ? null : func.getType().getResultTypes().get(0);
@@ -349,8 +349,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             throw new RuntimeException("label underflow");
         int base = getLabelBase(frameId);
         setStackSize(
-                frameId,
-                getStackPc(base + size - 1)
+            frameId,
+            getStackPc(base + size - 1)
         );
         decreaseLabelSize(frameId);
     }
@@ -376,10 +376,10 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         }
         int prevPc = getLabelPc(p);
         pushLabel(
-                frameId,
-                arity,
-                getLabels(p),
-                loop
+            frameId,
+            arity,
+            getLabels(p),
+            loop
         );
         p = getLabelBase(frameId) + getLabelSize(frameId) - 1;
         setLabelPc(p, prevPc);
@@ -423,6 +423,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         UNSAFE.freeMemory(labelDataPtr);
         UNSAFE.freeMemory(frameDataPtr);
         UNSAFE.freeMemory(offsetsPtr);
+        labels.close();
     }
 
     @Override
