@@ -12,7 +12,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     private static final long LABEL_BASE_OFFSET = 4L;
 
 
-    private final long stackDataPtr;
+    private final LongBuffer stackData;
 
     // label data = stack pc (2byte) | label pc (2byte) | 0x00  | 0x00  | arity (1byte) | loop (1byte)
     private final long labelDataPtr;
@@ -41,8 +41,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.labels = new UnsafeLongBuffer(maxLabelSize);
         this.labels.setSize(maxLabelSize);
 
-        this.stackDataPtr = UNSAFE.allocateMemory((maxStackSize * 8L));
-        UNSAFE.setMemory(stackDataPtr, (maxStackSize * 8L), (byte) 0);
+        this.stackData = new ArrayLongBuffer(maxStackSize);
+        this.stackData.setSize(maxStackSize);
 
         this.frameData = new UnsafeLongBuffer(maxFrames);
         this.frameData.setSize(maxFrames);
@@ -101,11 +101,11 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     }
 
     private long getStackData(int index) {
-        return UNSAFE.getLong(stackDataPtr + (index * 8L));
+        return stackData.get(index);
     }
 
     private void setStackData(int index, long data) {
-        UNSAFE.putLong(stackDataPtr + (index * 8L), data);
+        stackData.set(index, data);
     }
 
 
@@ -402,7 +402,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     @Override
     public void close() {
-        UNSAFE.freeMemory(stackDataPtr);
+        stackData.close();
         UNSAFE.freeMemory(labelDataPtr);
         frameData.close();
         UNSAFE.freeMemory(offsetsPtr);
