@@ -25,7 +25,7 @@ public interface StackAllocator extends Closeable {
     // get from stack by index, unchecked
     long getUnchecked(int index);
 
-    int getStackData(int frameIndex, int n);
+    int popN(int frameIndex, int n);
 
     int getPc(int idx);
 

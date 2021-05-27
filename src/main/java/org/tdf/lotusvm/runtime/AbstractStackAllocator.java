@@ -80,14 +80,13 @@ public abstract class AbstractStackAllocator implements StackAllocator {
 
     protected abstract ValueType getResultType();
 
-    public abstract long currentFrame();
 
     public abstract int currentFrameIndex();
 
     long[] popLongs(int n) {
         if (n == 0) return Constants.EMPTY_LONGS;
         long[] res = new long[n];
-        int index = getStackData(currentFrameIndex(), n);
+        int index = popN(currentFrameIndex(), n);
         for (int i = 0; i < n; i++) {
             res[i] = getUnchecked(i + index);
         }
