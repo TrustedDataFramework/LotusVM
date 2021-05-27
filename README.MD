@@ -3,7 +3,7 @@
 A web assembly 1.0 interpreter implementation in pure java.
 This interpreter intended to provide a smart contract runtime for block chain. 
 
-We use off-heap memory to avoid frequently garbage collection (See UnsafeMemory.java and UnsafeStackAllocator.java).
+We use off-heap memory to avoid frequently garbage collection (See UnsafeMemory.java, UnsafeStackAllocator.java and InstructionPool.java).
 The UnsafeMemory and UnsafeStackAllocator should be closed explicitly.
 
 - How to Use?
