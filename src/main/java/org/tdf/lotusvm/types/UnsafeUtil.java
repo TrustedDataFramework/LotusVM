@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 
 public class UnsafeUtil {
     public static final Unsafe UNSAFE = reflectGetUnsafe();
+    public static final int MAX_UNSIGNED_SHORT = 0xFFFF;
 
     private static Unsafe reflectGetUnsafe() {
         try {
@@ -18,8 +19,6 @@ public class UnsafeUtil {
     }
 
     public static long fastMul8(int i) {
-        if ((i & 0xe0000000) != 0)
-            throw new RuntimeException("multiply overflow");
-        return Integer.toUnsignedLong(i) << 3;
+        return i * 8L;
     }
 }

@@ -162,7 +162,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
     private int getMemoryOffset(int ins) {
         int offset = module.insPool.getMemoryBase(ins);
         long l = Integer.toUnsignedLong(popI32()) + Integer.toUnsignedLong(offset);
-        if (Long.compareUnsigned(l, 0xFFFFFFFFL) > 0)
+        if (Long.compareUnsigned(l, 0x7FFFFFFFL) > 0)
             throw new RuntimeException("memory access overflow");
         return (int) l;
     }

@@ -6,6 +6,7 @@ import org.tdf.lotusvm.common.OpCode;
 import java.io.Closeable;
 
 import static org.tdf.lotusvm.common.OpCode.*;
+import static org.tdf.lotusvm.types.UnsafeUtil.MAX_UNSIGNED_SHORT;
 
 // allocation instruction(32byte) in long[]
 // = 0x00000000(4byte) + 0x0000 + 1byte(opcode) + 1byte(result type) 8byte
@@ -376,6 +377,9 @@ public final class InstructionPool implements Closeable {
             if (next == 0)
                 break;
             cur = this.data.get(next);
+        }
+        if (cnt > MAX_UNSIGNED_SHORT) {
+            throw new RuntimeException("label size overflow");
         }
         return (Integer.toUnsignedLong(cnt) << INSTRUCTIONS_SIZE_SHIFTS) | (Integer.toUnsignedLong(start));
     }

@@ -13,7 +13,9 @@ public class UnsafeMemory implements Memory, Closeable {
     private final int ARRAY_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
     private LimitType limit = new LimitType();
     private long pointer;
-    private long overflow;
+
+    private int rawSize;
+
     @Getter
     private int pages;
 
@@ -24,7 +26,7 @@ public class UnsafeMemory implements Memory, Closeable {
 
     public void setRawSize(int rawSize) {
         pointer = UNSAFE.allocateMemory(rawSize);
-        overflow = pointer + rawSize;
+        this.rawSize = rawSize;
         UNSAFE.setMemory(pointer, rawSize, (byte) 0);
     }
 
@@ -40,16 +42,14 @@ public class UnsafeMemory implements Memory, Closeable {
 
     @Override
     public void put(int offset, byte[] data) {
-        long o = Integer.toUnsignedLong(offset);
-        if (pointer + o + data.length > overflow)
+        if (offset + data.length > rawSize)
             throw new RuntimeException("memory access overflow");
         UNSAFE.copyMemory(data, ARRAY_OFFSET, null, pointer + offset, data.length);
     }
 
     @Override
     public byte[] load(int offset, int length) {
-        long o = Integer.toUnsignedLong(offset);
-        if (pointer + o + length > overflow)
+        if (offset + length > rawSize)
             throw new RuntimeException("memory access overflow");
         byte[] r = new byte[length];
         UNSAFE.copyMemory(null, pointer + offset, r, ARRAY_OFFSET, length);
@@ -58,64 +58,56 @@ public class UnsafeMemory implements Memory, Closeable {
 
     @Override
     public int load32(int offset) {
-        long o = Integer.toUnsignedLong(offset);
-        if (pointer + o + 4 > overflow)
+        if (offset + 4 > rawSize)
             throw new RuntimeException("memory access overflow");
         return UNSAFE.getInt(pointer + offset);
     }
 
     @Override
     public long load64(int offset) {
-        long o = Integer.toUnsignedLong(offset);
-        if (pointer + o + 8 > overflow)
+        if (offset + 8 > rawSize)
             throw new RuntimeException("memory access overflow");
         return UNSAFE.getLong(pointer + offset);
     }
 
     @Override
     public byte load8(int offset) {
-        long o = Integer.toUnsignedLong(offset);
-        if (pointer + o >= overflow)
+        if (offset >= rawSize)
             throw new RuntimeException("memory access overflow");
         return UNSAFE.getByte(pointer + offset);
     }
 
     @Override
     public short load16(int offset) {
-        long o = Integer.toUnsignedLong(offset);
-        if (pointer + o + 2 > overflow)
+        if (offset + 2 > rawSize)
             throw new RuntimeException("memory access overflow");
         return UNSAFE.getShort(pointer + offset);
     }
 
     @Override
     public void storeI32(int offset, int val) {
-        long o = Integer.toUnsignedLong(offset);
-        if (pointer + o + 4 > overflow)
+        if (offset + 4 > rawSize)
             throw new RuntimeException("memory access overflow");
         UNSAFE.putInt(pointer + offset, val);
     }
 
     @Override
     public void storeI64(int offset, long n) {
-        long o = Integer.toUnsignedLong(offset);
-        if (pointer + o + 8 > overflow)
+        if (offset + 8 > rawSize)
             throw new RuntimeException("memory access overflow");
         UNSAFE.putLong(pointer + offset, n);
     }
 
     @Override
     public void storeI16(int offset, short num) {
-        long o = Integer.toUnsignedLong(offset);
-        if (pointer + o + 2 > overflow)
+        if (offset + 2 > rawSize)
             throw new RuntimeException("memory access overflow");
         UNSAFE.putShort(pointer + offset, num);
     }
 
     @Override
     public void storeI8(int offset, byte n) {
-        long o = Integer.toUnsignedLong(offset);
-        if (pointer + o >= overflow)
+        if (offset >= rawSize)
             throw new RuntimeException("memory access overflow");
         UNSAFE.putByte(pointer + offset, n);
     }
@@ -127,7 +119,7 @@ public class UnsafeMemory implements Memory, Closeable {
         }
         if (n + this.pages > MAX_PAGES)
             return -1;
-        int prevRawSize = (int) (overflow - pointer);
+        int prevRawSize = rawSize;
         int newRawSize = (pages + n) * PAGE_SIZE;
         if (newRawSize < 0)
             throw new RuntimeException("memory overflow");
@@ -136,7 +128,7 @@ public class UnsafeMemory implements Memory, Closeable {
         int prev = this.pages;
         this.pages += n;
         this.pointer = newPointer;
-        this.overflow = this.pointer + newRawSize;
+        this.rawSize = newRawSize;
         return prev;
     }
 

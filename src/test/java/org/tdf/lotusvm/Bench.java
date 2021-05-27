@@ -28,11 +28,11 @@ public class Bench {
 
         long start = System.currentTimeMillis();
         UnsafeStackAllocator u = new UnsafeStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
+        Module md = new Module(data);
 
         for (int i = 0; i < loop; i++) {
             u.clear();
             Memory mem = new UnsafeMemory();
-            Module md = new Module(data);
             ModuleInstance ins = ModuleInstance
                 .builder()
                 .module(md)
@@ -43,8 +43,8 @@ public class Bench {
 
             ins.execute("bench");
             mem.close();
-            md.close();
         }
+        md.close();
         u.close();
 
         long end = System.currentTimeMillis();
