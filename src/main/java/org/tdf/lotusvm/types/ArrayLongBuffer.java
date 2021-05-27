@@ -1,15 +1,15 @@
 package org.tdf.lotusvm.types;
 
-public class ArrayLongBuffer implements LongBuffer{
+public class ArrayLongBuffer implements LongBuffer {
     private long[] data;
     private int size;
 
-    public int size() {
-        return size;
-    }
-
     public ArrayLongBuffer(int initialCap) {
         this.data = new long[Math.max(initialCap, 8)];
+    }
+
+    public int size() {
+        return size;
     }
 
     public long get(int index) {

@@ -209,14 +209,14 @@ public enum OpCode {
 
     public boolean isFloatOp(OpCode c) {
         return c.code >= 0xae && c.code < 0xc0 ||
-                c.code >= 0xa8 && c.code < 0xac ||
-                c.code >= 0x8b && c.code < 0xa7 ||
-                c.code >= 0x5b && c.code < 0x67 ||
-                c == F32_CONST ||
-                c == F64_CONST ||
-                c == F32_LOAD ||
-                c == F64_LOAD ||
-                c == F32_STORE ||
-                c == F64_STORE;
+            c.code >= 0xa8 && c.code < 0xac ||
+            c.code >= 0x8b && c.code < 0xa7 ||
+            c.code >= 0x5b && c.code < 0x67 ||
+            c == F32_CONST ||
+            c == F64_CONST ||
+            c == F32_LOAD ||
+            c == F64_LOAD ||
+            c == F32_STORE ||
+            c == F64_STORE;
     }
 }

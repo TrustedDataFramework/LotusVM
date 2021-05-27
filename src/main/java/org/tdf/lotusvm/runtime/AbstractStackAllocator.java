@@ -243,7 +243,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                         getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
                     }
                     res = function.execute(
-                            popLongs(function.parametersLength())
+                        popLongs(function.parametersLength())
                     );
                 } else {
                     pushFrame(pool.getStackBase(ins), null);
@@ -256,7 +256,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 }
                 if (function.getArity() > 0) {
                     push(
-                            res
+                        res
                     );
                 }
                 break;
@@ -273,7 +273,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                         getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
                     }
                     r = function.execute(
-                            popLongs(function.parametersLength())
+                        popLongs(function.parametersLength())
                     );
                 } else {
                     pushFrame((int) (elementIndex | TABLE_MASK), null);
@@ -324,12 +324,12 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             case I32_LOAD:
             case I64_LOAD32_U:
                 pushI32(
-                        getModule().memory.load32(getMemoryOffset(ins))
+                    getModule().memory.load32(getMemoryOffset(ins))
                 );
                 break;
             case I64_LOAD:
                 push(
-                        getModule().memory.load64(getMemoryOffset(ins))
+                    getModule().memory.load64(getMemoryOffset(ins))
                 );
                 break;
             case I32_LOAD8_S:

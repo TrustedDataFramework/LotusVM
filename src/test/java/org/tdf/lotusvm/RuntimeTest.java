@@ -4,6 +4,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.lotusvm.runtime.BaseMemory;
+import org.tdf.lotusvm.runtime.StackAllocator;
+import org.tdf.lotusvm.types.Module;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -23,14 +25,18 @@ public class RuntimeTest {
 
     @Test
     public void testAddWasm() throws Exception {
+        Module md = new Module(Util.readClassPathFile("expression-tests/add.wasm"));
+        StackAllocator allocator = Util.getAllocator();
         ModuleInstance instance =
             ModuleInstance.Builder.builder()
                 .memory(new BaseMemory())
-                .binary(Util.readClassPathFile("expression-tests/add.wasm"))
-                .stackAllocator(Util.getAllocator())
+                .module(md)
+                .stackAllocator(allocator)
                 .build();
         assert instance.execute(0, 1, 1)[0] == 2;
         assert instance.execute(0, 1, -1)[0] == 0;
+        md.close();
+        allocator.close();
     }
 
     @Test

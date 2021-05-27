@@ -35,13 +35,13 @@ public class FloatConsts {
 
     public static int fadd(int bits) {
         return Float.floatToRawIntBits(
-                Float.intBitsToFloat(bits) + 1f
+            Float.intBitsToFloat(bits) + 1f
         );
     }
 
     public static int fsub(int bits) {
         return Float.floatToRawIntBits(
-                Float.intBitsToFloat(bits) - 1f
+            Float.intBitsToFloat(bits) - 1f
         );
     }
 }

@@ -3,6 +3,7 @@ package org.tdf.lotusvm;
 import org.tdf.lotusvm.runtime.Memory;
 import org.tdf.lotusvm.runtime.UnsafeMemory;
 import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
+import org.tdf.lotusvm.types.Module;
 
 import java.net.URL;
 
@@ -31,9 +32,10 @@ public class Bench {
         for (int i = 0; i < loop; i++) {
             u.clear();
             Memory mem = new UnsafeMemory();
+            Module md = new Module(data);
             ModuleInstance ins = ModuleInstance
                 .builder()
-                .binary(data)
+                .module(md)
                 .memory(mem)
                 .stackAllocator(
                     u
@@ -41,7 +43,7 @@ public class Bench {
 
             ins.execute("bench");
             mem.close();
-            ins.close();
+            md.close();
         }
         u.close();
 

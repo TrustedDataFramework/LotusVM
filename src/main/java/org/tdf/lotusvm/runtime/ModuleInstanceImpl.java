@@ -102,15 +102,15 @@ public class ModuleInstanceImpl implements ModuleInstance {
         // init global variables
         if (module.getGlobalSection() != null) {
             globalTypes = module.getGlobalSection()
-                    .getGlobals().stream().map(GlobalSection.Global::getGlobalType)
-                    .collect(Collectors.toList());
+                .getGlobals().stream().map(GlobalSection.Global::getGlobalType)
+                .collect(Collectors.toList());
         }
         if (module.getGlobalSection() != null && builder.getGlobals() == null) {
             globals = new long[module.getGlobalSection().getGlobals().size()];
             for (int i = 0; i < globals.length; i++) {
                 globals[i] = executeExpression(
-                        module.getGlobalSection().getGlobals().get(i).getExpression(),
-                        module.getGlobalSection().getGlobals().get(i).getGlobalType().getValueType()
+                    module.getGlobalSection().getGlobals().get(i).getExpression(),
+                    module.getGlobalSection().getGlobals().get(i).getGlobalType().getValueType()
                 );
             }
         }
@@ -130,7 +130,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
                 CodeSection.Code code = module.getCodeSection().getCodes().get(i);
                 FunctionType type = module.getTypeSection().getFunctionTypes().get(typeIndex);
                 functions.add(
-                        new WASMFunction(type, this, code.getCode().getExpression(), code.getCode().getLocals())
+                    new WASMFunction(type, this, code.getCode().getExpression(), code.getCode().getLocals())
                 );
             }
         }
@@ -141,7 +141,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
                 int offset = (int) executeExpression(x.getExpression(), ValueType.I32);
                 if (offset < 0) throw new RuntimeException("invalid offset, overflow Integer.MAX_VALUE");
                 table.putElements(offset,
-                        Arrays.stream(x.getFunctionIndex()).mapToObj(i -> functions.get(i)).collect(Collectors.toList())
+                    Arrays.stream(x.getFunctionIndex()).mapToObj(i -> functions.get(i)).collect(Collectors.toList())
                 );
             });
         }
@@ -150,7 +150,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
             if (module.getMemorySection().getMemories().size() > 1)
                 throw new RuntimeException("too much memory section");
             memory.setLimit(module.getMemorySection().getMemories()
-                    .get(0));
+                .get(0));
         }
 
         // put data into memory
@@ -172,8 +172,8 @@ public class ModuleInstanceImpl implements ModuleInstance {
         if (module.getExportSection() != null) {
             exports = new HashMap<>();
             module.getExportSection().getExports().stream()
-                    .filter(x -> x.getType() == ExportSection.ExportType.FUNCTION_INDEX)
-                    .forEach(x -> exports.put(x.getName(), x.getIndex()));
+                .filter(x -> x.getType() == ExportSection.ExportType.FUNCTION_INDEX)
+                .forEach(x -> exports.put(x.getName(), x.getIndex()));
         }
 
 
@@ -188,11 +188,6 @@ public class ModuleInstanceImpl implements ModuleInstance {
     @Override
     public void setHooks(Set<Hook> hooks) {
         this.hooks = new ArrayList<>(hooks).toArray(new Hook[]{});
-    }
-
-    @Override
-    public void close() {
-        this.insPool.close();
     }
 
     @Override

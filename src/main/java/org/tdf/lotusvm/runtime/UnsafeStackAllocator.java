@@ -6,10 +6,17 @@ import static org.tdf.lotusvm.types.UnsafeUtil.UNSAFE;
 
 public class UnsafeStackAllocator extends AbstractStackAllocator {
     private final long stackDataPtr;
+
+    // label data = stack pc (2byte) | label pc (2byte) | 0x00  | 0x00  | arity (1byte) | loop (1byte)
     private final long labelDataPtr;
+
+    // frame data = stack size (2byte) | local size (2byte) | label size (2byte) | function index (2byte)
     private final long frameDataPtr;
+
+    // offsets ptr = stack base (4byte) in stack data | label base (4byte) in labels
     private final long offsetsPtr;
 
+    // = label array id in instruction pool = (label size (4byte) | label offset (4byte))
     private final LongBuffer labels;
 
     // frame count
@@ -37,6 +44,11 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         UNSAFE.setMemory(labelDataPtr, UnsafeUtil.fastMul8(maxLabelSize), (byte) 0);
     }
 
+    private static void check(int index, int cap) {
+        if (index >= cap)
+            throw new RuntimeException("memory access overflow");
+    }
+
     private void setLabels(int p, long instructions) {
         labels.set(p, instructions);
     }
@@ -46,74 +58,90 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     }
 
     private void setArity(int p, boolean arity) {
+        check(p, maxLabelSize);
         UNSAFE.putByte(labelDataPtr + (UnsafeUtil.fastMul8(p) | 6), (byte) (arity ? 1 : 0));
     }
 
     private boolean getArity(int p) {
+        check(p, maxLabelSize);
         return UNSAFE.getByte(labelDataPtr + (UnsafeUtil.fastMul8(p) | 6)) != 0;
     }
 
     private void setLoop(int p, boolean loop) {
+        check(p, maxLabelSize);
         UNSAFE.putByte(labelDataPtr + (UnsafeUtil.fastMul8(p) | 7), (byte) (loop ? 1 : 0));
     }
 
     private boolean getLoop(int p) {
+        check(p, maxLabelSize);
         return UNSAFE.getByte(labelDataPtr + (UnsafeUtil.fastMul8(p) | 7)) != 0;
     }
 
     private void setLabelPc(int p, int pc) {
+        check(p, maxLabelSize);
         UNSAFE.putShort(
             labelDataPtr + (UnsafeUtil.fastMul8(p) | 2), (short) pc
         );
     }
 
     private int getLabelPc(int p) {
+        check(p, maxLabelSize);
         return UNSAFE.getShort(
             labelDataPtr + (UnsafeUtil.fastMul8(p) | 2)
         );
     }
 
     private void setStackPc(int p, int pc) {
+        check(p, maxLabelSize);
         UNSAFE.putShort(labelDataPtr + (UnsafeUtil.fastMul8(p)), (short) pc);
     }
 
     private int getStackPc(int p) {
+        check(p, maxLabelSize);
         return UNSAFE.getShort(labelDataPtr + (UnsafeUtil.fastMul8(p)));
     }
 
     private void clearFrameData(int index) {
+        check(index, maxFrames);
         UNSAFE.putLong(frameDataPtr + UnsafeUtil.fastMul8(index), 0);
     }
 
     private long getStackData(int index) {
+        check(index, maxStackSize);
         return UNSAFE.getLong(stackDataPtr + UnsafeUtil.fastMul8(index));
     }
 
     private void setStackData(int index, long data) {
+        check(index, maxStackSize);
         UNSAFE.putLong(stackDataPtr + UnsafeUtil.fastMul8(index), data);
     }
 
     public int getLocalSize(int frameId) {
+        check(frameId, maxFrames);
         return Short.toUnsignedInt(
             UNSAFE.getShort(frameDataPtr + (UnsafeUtil.fastMul8(frameId) | 2))
         );
     }
 
     private void setLocalSize(int frameId, int functionIndex) {
+        check(frameId, maxFrames);
         UNSAFE.putShort(frameDataPtr + (UnsafeUtil.fastMul8(frameId) | 2), (short) functionIndex);
     }
 
     public int getStackSize(int frameId) {
+        check(frameId, maxFrames);
         return Short.toUnsignedInt(
             UNSAFE.getShort(frameDataPtr + UnsafeUtil.fastMul8(frameId))
         );
     }
 
     public void setStackSize(int frameId, int size) {
+        check(frameId, maxFrames);
         UNSAFE.putShort(frameDataPtr + UnsafeUtil.fastMul8(frameId), (short) size);
     }
 
     public int getLabelSize(int frameId) {
+        check(frameId, maxFrames);
         return Short.toUnsignedInt(
             UNSAFE.getShort(
                 frameDataPtr + (UnsafeUtil.fastMul8(frameId) | 4)
@@ -122,34 +150,42 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     }
 
     public void setLabelSize(int frameId, int size) {
+        check(frameId, maxFrames);
         UNSAFE.putShort(frameDataPtr + (UnsafeUtil.fastMul8(frameId) | 4), (short) size);
     }
 
     private int getFunctionIndex(int frameId) {
+        check(frameId, maxFrames);
         return Short.toUnsignedInt(UNSAFE.getShort(frameDataPtr + (UnsafeUtil.fastMul8(frameId) | 6)));
     }
 
     private void setFunctionIndex(int frameId, int functionIndex) {
+        check(frameId, maxFrames);
         UNSAFE.putShort(frameDataPtr + (UnsafeUtil.fastMul8(frameId) | 6), (short) functionIndex);
     }
 
     private void clearOffsets(int frameId) {
+        check(frameId, maxFrames);
         UNSAFE.putLong(offsetsPtr + UnsafeUtil.fastMul8(frameId), 0);
     }
 
     private void setStackBase(int frameId, int value) {
+        check(frameId, maxFrames);
         UNSAFE.putInt(offsetsPtr + UnsafeUtil.fastMul8(frameId), value);
     }
 
     private void setLabelBase(int frameId, int value) {
+        check(frameId, maxFrames);
         UNSAFE.putInt(offsetsPtr + (UnsafeUtil.fastMul8(frameId) | 4), value);
     }
 
     private int getStackBase(int frameId) {
+        check(frameId, maxFrames);
         return UNSAFE.getInt(offsetsPtr + UnsafeUtil.fastMul8(frameId));
     }
 
     private int getLabelBase(int frameId) {
+        check(frameId, maxFrames);
         return UNSAFE.getInt(offsetsPtr + (UnsafeUtil.fastMul8(frameId) | 4));
     }
 

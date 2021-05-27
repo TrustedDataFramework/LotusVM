@@ -1,8 +1,10 @@
 package org.tdf.lotusvm;
 
+import com.google.common.io.Closer;
 import lombok.SneakyThrows;
 import org.tdf.lotusvm.runtime.*;
 import org.tdf.lotusvm.types.FunctionType;
+import org.tdf.lotusvm.types.Module;
 import org.tdf.lotusvm.types.ValueType;
 
 import java.nio.file.Paths;
@@ -13,8 +15,6 @@ import java.util.stream.Stream;
 public class TestModule {
     private TestConfig[] configs;
     private String directory;
-
-    private StackAllocator stackAllocator = Util.getAllocator();
 
     public TestModule(TestConfig[] configs, String directory) {
         this.configs = configs;
@@ -70,16 +70,17 @@ public class TestModule {
         String filename = Paths.get(directory, cfg.file).toString();
 
         Memory m = new UnsafeMemory();
+        ModuleInstance instance;
         UnsafeStackAllocator u = new UnsafeStackAllocator(32768 * 128, 32768, 32768 * 128);
-        this.stackAllocator.clear();
-        ModuleInstance instance = null;
+        Module md;
             try {
+                md = new Module(Util.readClassPathFile(filename));
                 instance = ModuleInstance.Builder
                     .builder()
                     .memory(m)
                     .hostFunctions(Collections.singleton(new PrintHost()))
                     .validateFunctionType()
-                    .binary(Util.readClassPathFile(filename))
+                    .module(md)
                     .stackAllocator(u)
                     .build();
             } catch (Exception e) {
@@ -158,8 +159,8 @@ public class TestModule {
             }
 //            System.out.println("test passed for file = " + cfg.file + " function = " + function.function);
         }
-        if(instance != null)
-            instance.close();
+        u.close();
+        md.close();
         m.close();
     }
 

@@ -10,12 +10,12 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 import static org.tdf.lotusvm.common.OpCode.*;
 
 
 // [null(32byte), ins0, ins1, operand]
+@Deprecated
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
@@ -188,16 +188,16 @@ public class Instruction {
     }
 
     public static boolean arrayEquals(Instruction[] a, Instruction[] a2) {
-        if (a==a2)
+        if (a == a2)
             return true;
-        if (a==null || a2==null)
+        if (a == null || a2 == null)
             return false;
 
         int length = a.length;
         if (a2.length != length)
             return false;
 
-        for (int i=0; i<length; i++) {
+        for (int i = 0; i < length; i++) {
             if (!(a[i].equals(a2[i])))
                 return false;
         }
@@ -215,20 +215,26 @@ public class Instruction {
             return false;
         }
 
+        if ((branch0 == null || another.branch0 == null) && !arrayEquals(branch0, another.branch0)) {
+            System.out.println("===");
+        }
+
         if (!arrayEquals(branch0, another.branch0)) {
             System.out.println("branch0 size " + branch0.length + " " + another.branch0.length);
 
-            System.out.println("branch0 " + Arrays.toString(branch0) + " " + Arrays.toString(another.branch0));
             return false;
+        }
+
+        if ((branch1 == null || another.branch1 == null) && !arrayEquals(branch1, another.branch1)) {
+            System.out.println("===");
         }
 
         if (!arrayEquals(branch1, another.branch1)) {
             System.out.println("branch1 " + Arrays.toString(branch1) + " " + Arrays.toString(another.branch1));
-            System.out.println("branch1 size " + branch1.length + " " + another.branch1.length);
             return false;
         }
         boolean ops = Arrays.equals(operands, another.operands);
-        if(!ops) {
+        if (!ops) {
             System.out.println("ops");
             return false;
         }
@@ -250,11 +256,11 @@ public class Instruction {
     @Override
     public String toString() {
         return "Instruction{" +
-                "code=" + code.name +
-                ", blockType=" + blockType +
-                ", branch0=" + Arrays.toString(branch0) +
-                ", branch1=" + Arrays.toString(branch1) +
-                ", operands=" + Arrays.toString(operands) +
-                '}';
+            "code=" + code.name +
+            ", blockType=" + blockType +
+            ", branch0=" + Arrays.toString(branch0) +
+            ", branch1=" + Arrays.toString(branch1) +
+            ", operands=" + Arrays.toString(operands) +
+            '}';
     }
 }

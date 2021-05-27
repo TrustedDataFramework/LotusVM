@@ -6,7 +6,6 @@ import org.tdf.lotusvm.common.BytesReader;
 import org.tdf.lotusvm.common.Constants;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -113,7 +112,7 @@ public class Module implements Closeable {
     }
 
     @Override
-    public void close()  {
+    public void close() {
         this.insPool.close();
     }
 }

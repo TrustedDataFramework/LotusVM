@@ -73,7 +73,7 @@ public class CodeSection extends AbstractSection {
         public static Code readFrom(BytesReader reader) {
             int size = reader.readVarUint32();
             return new Code(size, Function.readFrom(
-                    new BytesReader(reader.read(size)).withPool(reader.getInsPool())
+                new BytesReader(reader.read(size)).withPool(reader.getInsPool())
             ));
         }
 

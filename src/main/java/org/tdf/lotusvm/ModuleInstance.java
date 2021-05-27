@@ -5,8 +5,6 @@ import org.tdf.lotusvm.runtime.*;
 import org.tdf.lotusvm.types.GlobalType;
 import org.tdf.lotusvm.types.Module;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -20,13 +18,10 @@ import java.util.Set;
  * 5. per frame labels size < 65536
  * 6. float number, i.e. f32_nearest, f64_round (platform undefined behavior)
  */
-public interface ModuleInstance extends Closeable {
+public interface ModuleInstance {
     static Builder builder() {
         return Builder.builder();
     }
-
-    @Override
-    void close();
 
     long[] getGlobals();
 
@@ -82,12 +77,6 @@ public interface ModuleInstance extends Closeable {
 
         public Builder hooks(Set<Hook> hooks) {
             this.hooks = hooks;
-            return this;
-        }
-
-        public Builder binary(byte[] binary) {
-            this.binary = binary;
-            this.module = null;
             return this;
         }
 

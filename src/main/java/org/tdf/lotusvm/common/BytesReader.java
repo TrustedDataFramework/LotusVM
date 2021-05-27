@@ -142,14 +142,14 @@ public class BytesReader extends InputStream {// io.reader
             long b = read() & 0xffffffffL;
             //  b < 1<<6 && uint64(b) < uint64(1<<(n-1))
             if (b < 1 << 6 &&
-                    Long.compareUnsigned(b, 1L << (n - 1)) < 0) {
+                Long.compareUnsigned(b, 1L << (n - 1)) < 0) {
                 res += (1L << shift) * b;
                 break;
             }
             // b >= 1<<6 && b < 1<<7 && uint64(b)+1<<(n-1) >= 1<<7
             if (b >= 1 << 6 &&
-                    b < 1 << 7 &&
-                    Long.compareUnsigned(b + (1L << (n - 1)), 1L << 7) >= 0
+                b < 1 << 7 &&
+                Long.compareUnsigned(b + (1L << (n - 1)), 1L << 7) >= 0
             ) {
                 res += (1L << shift) * (b - (1 << 7));
                 break;
@@ -177,14 +177,14 @@ public class BytesReader extends InputStream {// io.reader
 
     public long readUint64() {
         return (((long) read()) & 0xffL) |
-                (((long) read()) & 0xffL) << 8 |
-                (((long) read()) & 0xffL) << 16 |
-                (((long) read()) & 0xffL) << 24 |
-                (((long) read()) & 0xffL) << 32 |
-                (((long) read()) & 0xffL) << 40 |
-                (((long) read()) & 0xffL) << 48 |
-                (((long) read()) & 0xffL) << 56
-                ;
+            (((long) read()) & 0xffL) << 8 |
+            (((long) read()) & 0xffL) << 16 |
+            (((long) read()) & 0xffL) << 24 |
+            (((long) read()) & 0xffL) << 32 |
+            (((long) read()) & 0xffL) << 40 |
+            (((long) read()) & 0xffL) << 48 |
+            (((long) read()) & 0xffL) << 56
+            ;
     }
 
     public byte[] slice(int offset, int limit) {

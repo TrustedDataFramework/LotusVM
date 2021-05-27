@@ -146,7 +146,7 @@ public final class InstructionPool implements Closeable {
 
     public int getOperandsSize(int insId) {
         long bits = getOperandsBits(insId);
-        if(bits < 0)
+        if (bits < 0)
             throw new RuntimeException("null operands");
         return (int) ((getOperandsBits(insId) & OPERANDS_SIZE_MASK) >> OPERANDS_SIZE_SHIFTS);
     }
@@ -176,7 +176,7 @@ public final class InstructionPool implements Closeable {
 
     public OpCode getOpCode(int insId) {
         long begin = data.get(insId);
-        long code = (begin & OPCODE_MASK) ;
+        long code = (begin & OPCODE_MASK);
         return OpCode.fromCode((int) code);
     }
 
@@ -216,7 +216,7 @@ public final class InstructionPool implements Closeable {
             case IF: {
                 ResultType type = ResultType.readFrom(reader);
                 long branch0 = readInstructionsUntil(reader, END.code, ELSE.code);
-                long branch1 = 0L;
+                long branch1 = NULL;
                 if (reader.peek() == ELSE.code) {
                     // skip 0x05
                     reader.read();
@@ -410,7 +410,7 @@ public final class InstructionPool implements Closeable {
 
         Instruction[] branch0 = null;
         int branch = 0;
-        if(!isNullBranch(insId, branch)) {
+        if (!isNullBranch(insId, branch)) {
             branch0 = new Instruction[getBranchSize(insId, branch)];
             for (int i = 0; i < getBranchSize(insId, branch); i++) {
                 branch0[i] = toInstruction(getBranchInstruction(insId, branch, i));
@@ -419,7 +419,7 @@ public final class InstructionPool implements Closeable {
 
         branch = 1;
         Instruction[] branch1 = null;
-        if(!isNullBranch(insId, branch)) {
+        if (!isNullBranch(insId, branch)) {
             branch1 = new Instruction[getBranchSize(insId, branch)];
             for (int i = 0; i < getBranchSize(insId, branch); i++) {
                 branch1[i] = toInstruction(getBranchInstruction(insId, branch, i));
@@ -431,7 +431,7 @@ public final class InstructionPool implements Closeable {
 
         long bits = getOperandsBits(insId);
 
-        if(!isNull(bits)) {
+        if (!isNull(bits)) {
             operands = new long[getOperandsSize(insId)];
             for (int i = 0; i < operands.length; i++) {
                 operands[i] = getOperand(insId, i);
