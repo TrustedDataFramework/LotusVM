@@ -3,7 +3,6 @@ package org.tdf.lotusvm;
 import org.tdf.lotusvm.runtime.Memory;
 import org.tdf.lotusvm.runtime.UnsafeMemory;
 import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
-import org.tdf.lotusvm.types.ModuleImpl;
 
 import java.net.URL;
 
@@ -28,7 +27,7 @@ public class Bench {
 
         long start = System.currentTimeMillis();
         UnsafeStackAllocator u = new UnsafeStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
-        ModuleImpl md = new ModuleImpl(data);
+        Module md = Module.create(data);
 
         for (int i = 0; i < loop; i++) {
             u.clear();
