@@ -3,6 +3,8 @@ package org.tdf.lotusvm.runtime;
 // memory allocation for frame id
 // label size (2byte) | local size (2byte) | stack size (2byte) | frame index (2byte)
 final class FrameId {
+    private FrameId() {}
+
     static final long LABEL_SIZE_MASK = 0xffff000000000000L;
     static final int LABEL_SIZE_SHIFTS = 48;
 
@@ -12,8 +14,8 @@ final class FrameId {
     static final long STACK_SIZE_MASK = 0x00000000ffff0000L;
     static final int STACK_SIZE_SHIFTS = 16;
 
-    static final long FRAME_INDEX_MASK = 0x000000000000ffffL;
-    static final int FRAME_INDEX_SHIFTS = 0;
+    static final long FUNCTION_INDEX_MASK = 0x000000000000ffffL;
+    static final int FUNCTION_INDEX_SHIFTS = 0;
 
     static final long MAX_UNSIGNED_SHORT = 0xffffL;
 
@@ -29,8 +31,8 @@ final class FrameId {
         return (int) ((frameId & STACK_SIZE_MASK) >>> STACK_SIZE_SHIFTS);
     }
 
-    static int getFrameIndex(long frameId) {
-        return (int) ((frameId & FRAME_INDEX_MASK) >>> FRAME_INDEX_SHIFTS);
+    static int getFunctionIndex(long frameId) {
+        return (int) ((frameId & FUNCTION_INDEX_MASK) >>> FUNCTION_INDEX_SHIFTS);
     }
 
     static long setLabelSize(long frameId, int labelSize) {
@@ -45,7 +47,7 @@ final class FrameId {
         return (frameId & (~STACK_SIZE_MASK)) | ((stackSize & MAX_UNSIGNED_SHORT) << STACK_SIZE_SHIFTS);
     }
 
-    static long setFrameIndex(long frameId, int frameIndex) {
-        return (frameId & (~FRAME_INDEX_MASK)) | ((frameIndex & MAX_UNSIGNED_SHORT) << FRAME_INDEX_SHIFTS);
+    static long setFunctionIndex(long frameId, int frameIndex) {
+        return (frameId & (~FUNCTION_INDEX_MASK)) | ((frameIndex & MAX_UNSIGNED_SHORT) << FUNCTION_INDEX_SHIFTS);
     }
 }
