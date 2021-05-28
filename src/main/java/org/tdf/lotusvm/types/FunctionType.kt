@@ -27,7 +27,7 @@ class FunctionType(val parameterTypes: List<ValueType>, val resultTypes: List<Va
         return Objects.hash(parameterTypes, resultTypes)
     }
 
-    companion object: ObjectReader<FunctionType> {
+    companion object : ObjectReader<FunctionType> {
         private const val PREFIX = 0x60
         override fun readFrom(reader: BytesReader): FunctionType {
             if (reader.read() != PREFIX) {

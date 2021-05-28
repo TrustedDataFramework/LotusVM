@@ -13,7 +13,7 @@ import org.tdf.lotusvm.common.ObjectReader
 enum class ValueType(val code: Int) {
     I32(Constants.VALUE_I32), I64(Constants.VALUE_I64), F32(Constants.VALUE_F32), F64(Constants.VALUE_F64);
 
-    companion object: ObjectReader<ValueType> {
+    companion object : ObjectReader<ValueType> {
         override fun readFrom(reader: BytesReader): ValueType {
             return when (val type = reader.read()) {
                 Constants.VALUE_I32 -> I32

@@ -11,6 +11,7 @@ enum class ResultType(val code: Int) {
     companion object {
         @JvmField
         val VALUES = values()
+
         @JvmStatic
         fun readFrom(reader: BytesReader): ResultType {
             val type = reader.read()

@@ -224,7 +224,7 @@ public class BytesReader extends InputStream {// io.reader
     public int[] readUint32Vec() {
         int length = readVarUint32();
         int[] res = new int[length];
-        for(int i = 0; i < res.length; i++) {
+        for (int i = 0; i < res.length; i++) {
             res[i] = readVarUint32();
         }
         return res;
@@ -234,7 +234,7 @@ public class BytesReader extends InputStream {// io.reader
         int length = readVarUint32();
         List<T> r = new ArrayList<>(length);
 
-        for(int i = 0; i < length; i++) {
+        for (int i = 0; i < length; i++) {
             r.add(reader.readFrom(this));
         }
         return r;

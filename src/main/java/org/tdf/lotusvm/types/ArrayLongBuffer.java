@@ -21,13 +21,13 @@ public class ArrayLongBuffer implements LongBuffer {
     }
 
 
-    public void push(long v) {
+    public void push(long value) {
         if (this.data.length == this.size) {
             long[] tmp = new long[this.data.length * 2];
             System.arraycopy(this.data, 0, tmp, 0, this.data.length);
             this.data = tmp;
         }
-        set(this.size, v);
+        set(this.size, value);
         this.size++;
     }
 
@@ -39,5 +39,10 @@ public class ArrayLongBuffer implements LongBuffer {
             System.arraycopy(this.data, 0, tmp, 0, this.data.length);
             this.data = tmp;
         }
+    }
+
+    @Override
+    public void close() {
+
     }
 }

@@ -7,6 +7,7 @@ final class FrameDataOffset {
     static final int STACK_BASE_SHIFTS = 0;
     static final long LABEL_BASE_MASK = 0x7fffffff00000000L;
     static final int LABEL_BASE_SHIFTS = 32;
+
     private FrameDataOffset() {
     }
 

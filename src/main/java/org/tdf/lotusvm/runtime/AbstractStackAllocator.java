@@ -1,6 +1,7 @@
 package org.tdf.lotusvm.runtime;
 
 
+import org.jetbrains.annotations.NotNull;
 import org.tdf.lotusvm.common.Constants;
 import org.tdf.lotusvm.common.OpCode;
 import org.tdf.lotusvm.types.InstructionId;
@@ -20,27 +21,6 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         this.maxFrames = maxFrames;
         this.maxLabelSize = maxLabelSize;
         this.maxStackSize = maxStackSize;
-    }
-
-    // math trunc
-    protected static double truncDouble(double d) {
-        if (d > 0) {
-            return Math.floor(d);
-        } else {
-            return Math.ceil(d);
-        }
-    }
-
-    protected static float truncFloat(float f) {
-        return (float) truncDouble(f);
-    }
-
-    public ModuleInstanceImpl getModule() {
-        return module;
-    }
-
-    public void setModule(ModuleInstanceImpl module) {
-        this.module = module;
     }
 
     // push a value into a stack
@@ -64,7 +44,6 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         push(b ? 1 : 0);
     }
 
-
     abstract void pushLabel(boolean arity, long body, boolean loop);
 
     abstract void branch(int l);
@@ -78,7 +57,6 @@ public abstract class AbstractStackAllocator implements StackAllocator {
     protected abstract long getBody();
 
     protected abstract ValueType getResultType();
-
 
     public abstract int currentFrameIndex();
 
@@ -110,6 +88,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
 
     public long execute() throws RuntimeException {
         InstructionPool pool = module.getInsPool();
+
         pushLabel(getResultType() != null, getBody(), false);
         while (!labelIsEmpty()) {
             int pc = getPc();
@@ -128,9 +107,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             setPc(pc + 1);
             invoke(ins);
         }
-        for (int i = 0; i < getModule().getHookArray().length; i++) {
-            getModule().getHookArray()[i].onFrameExit();
-        }
+        module.touchFrameExit();
         return returns();
         // clear stack and local variables
     }
@@ -147,6 +124,8 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         OpCode code = InstructionId.getOpCode(ins);
         module.touchIns(code);
         InstructionPool pool = module.getInsPool();
+        Memory mem = module.getMemory();
+
         switch (code) {
             // these operations are essentially no-ops.
             case NOP:
@@ -207,16 +186,13 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 // Pop the value val from the stack.
                 pop();
                 break;
-//            case RETURN:
-//                break;
             case CALL: {
                 int f = InstructionId.getLeft32(ins);
-                FunctionInstance function = getModule().getFunctions().get(f);
+                FunctionInstance function = module.getFunc(f);
                 long res;
                 if (function.isHost()) {
-                    for (int i = 0; i < getModule().getHookArray().length; i++) {
-                        getModule().getHookArray()[i].onHostFunction((HostFunction) function, getModule());
-                    }
+                    module.touchHostFunc((HostFunction) function);
+
                     res = function.execute(
                         popLongs(function.getParametersLength())
                     );
@@ -226,7 +202,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 }
 
                 int resLength = function.getArity();
-                if (getModule().getValidateFunctionType() && resLength != function.getArity()) {
+                if (module.getValidateFunctionType() && resLength != function.getArity()) {
                     throw new RuntimeException("the result of function " + function + " is not equals to its arity");
                 }
                 if (function.getArity() > 0) {
@@ -238,13 +214,12 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             }
             case CALL_INDIRECT: {
                 int elementIndex = popI32();
-                if (elementIndex < 0 || elementIndex >= getModule().getTableSize()) {
-                    throw new RuntimeException("undefined element index");
-                }
-                FunctionInstance function = getModule().getFuncInTable(elementIndex);
+                FunctionInstance function = module.getFuncInTable(elementIndex);
+
                 long r;
                 if (function.isHost()) {
                     module.touchHostFunc((HostFunction) function);
+
                     r = function.execute(
                         popLongs(function.getParametersLength())
                     );
@@ -252,8 +227,8 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                     pushFrame((int) (elementIndex | TABLE_MASK), null);
                     r = execute();
                 }
-                if (getModule().getValidateFunctionType()
-                    && !function.getType().equals(getModule().getTypes().get(InstructionId.getLeft32(ins)))) {
+                if (module.getValidateFunctionType()
+                    && !function.getType().equals(module.getTypes().get(InstructionId.getLeft32(ins)))) {
                     throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
                 }
                 if (function.getArity() > 0) {
@@ -287,82 +262,80 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 break;
             }
             case GET_GLOBAL:
-                push(getModule().getGlobals()[InstructionId.getLeft32(ins)]);
+                push(module.getGlobal(InstructionId.getLeft32(ins)));
                 break;
             case SET_GLOBAL:
-                if (!getModule().getGlobalTypes().get(InstructionId.getLeft32(ins)).isMutable())
-                    throw new RuntimeException("modify a immutable global");
-                getModule().getGlobals()[InstructionId.getLeft32(ins)] = pop();
+                module.setGlobal(InstructionId.getLeft32(ins), pop());
                 break;
             // memory instructions
             case I32_LOAD:
             case I64_LOAD32_U:
                 pushI32(
-                    getModule().memory.load32(getMemoryOffset(ins))
+                    mem.load32(getMemoryOffset(ins))
                 );
                 break;
             case I64_LOAD:
                 push(
-                    getModule().memory.load64(getMemoryOffset(ins))
+                    mem.load64(getMemoryOffset(ins))
                 );
                 break;
             case I32_LOAD8_S:
-                pushI32(getModule().memory.load8(getMemoryOffset(ins)));
+                pushI32(mem.load8(getMemoryOffset(ins)));
                 break;
             case I64_LOAD8_S: {
-                push(getModule().memory.load8(getMemoryOffset(ins)));
+                push(mem.load8(getMemoryOffset(ins)));
                 break;
             }
             case I32_LOAD8_U:
             case I64_LOAD8_U:
-                pushI8(getModule().memory.load8(getMemoryOffset(ins)));
+                pushI8(mem.load8(getMemoryOffset(ins)));
                 break;
             case I32_LOAD16_S: {
-                pushI32(getModule().memory.load16(getMemoryOffset(ins)));
+                pushI32(mem.load16(getMemoryOffset(ins)));
                 break;
             }
             case I64_LOAD16_S:
-                push(getModule().memory.load16(getMemoryOffset(ins)));
+                push(mem.load16(getMemoryOffset(ins)));
                 break;
             case I32_LOAD16_U:
             case I64_LOAD16_U:
-                pushI16(getModule().memory.load16(getMemoryOffset(ins)));
+                pushI16(mem.load16(getMemoryOffset(ins)));
                 break;
             case I64_LOAD32_S:
-                push(getModule().memory.load32(getMemoryOffset(ins)));
+                push(mem.load32(getMemoryOffset(ins)));
                 break;
             case I32_STORE8:
             case I64_STORE8: {
                 byte c = (byte) pop();
-                getModule().memory.storeI8(getMemoryOffset(ins), c);
+                mem.storeI8(getMemoryOffset(ins), c);
                 break;
             }
             case I32_STORE16:
             case I64_STORE16: {
                 short c = (short) pop();
-                getModule().memory.storeI16(getMemoryOffset(ins), c);
+                mem.storeI16(getMemoryOffset(ins), c);
                 break;
             }
             case I32_STORE:
             case I64_STORE32: {
                 int c = popI32();
-                getModule().memory.storeI32(getMemoryOffset(ins), c);
+                mem.storeI32(getMemoryOffset(ins), c);
                 break;
             }
             case I64_STORE: {
                 long c = pop();
-                getModule().memory.storeI64(getMemoryOffset(ins), c);
+                mem.storeI64(getMemoryOffset(ins), c);
                 break;
             }
             case CURRENT_MEMORY:
-                pushI32(getModule().memory.getPages());
+                pushI32(mem.getPages());
                 break;
             case GROW_MEMORY: {
                 int n = popI32();
-                int before = getModule().memory.getPages() * Memory.PAGE_SIZE;
-                int after = (getModule().memory.getPages() + n) * Memory.PAGE_SIZE;
+                int before = mem.getPages() * Memory.PAGE_SIZE;
+                int after = (mem.getPages() + n) * Memory.PAGE_SIZE;
                 module.touchMemGrow(before, after);
-                pushI32(getModule().memory.grow(n));
+                pushI32(mem.grow(n));
                 break;
             }
             case I32_CONST:
@@ -738,5 +711,15 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             default:
                 throw new RuntimeException("unknown opcode " + code);
         }
+    }
+
+    @NotNull
+    @Override
+    public ModuleInstanceImpl getModule() {
+        return module;
+    }
+
+    public void setModule(ModuleInstanceImpl module) {
+        this.module = module;
     }
 }

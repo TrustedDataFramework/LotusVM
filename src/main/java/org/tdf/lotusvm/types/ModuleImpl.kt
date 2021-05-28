@@ -1,53 +1,54 @@
 package org.tdf.lotusvm.types
 
+import org.tdf.lotusvm.Module
 import org.tdf.lotusvm.common.BytesReader
 import org.tdf.lotusvm.common.Constants
-import java.io.Closeable
+
 
 /**
  * The binary encoding of modules is organized into sections. Most sections correspond to one component of a
  * module record, except that function definitions are split into two sections, separating their type declarations in the
  * function section from their bodies in the code section.
  */
-class Module(binary: ByteArray) : Closeable {
-    private val customSections: MutableList<CustomSection> = ArrayList()
+internal class ModuleImpl(binary: ByteArray) : Module {
+    override val customSections: MutableList<CustomSection> = ArrayList()
 
     // the magic number of wasm
-    var magic = 0
+    override var magic = 0
         private set
 
     // version of wasm binary
-    var version = 0
+    override var version = 0
         private set
-    var typeSection: TypeSection? = null
+    override var typeSection: TypeSection? = null
         private set
-    var importSection: ImportSection? = null
+    override var importSection: ImportSection? = null
         private set
-    var functionSection: FunctionSection? = null
+    override var functionSection: FunctionSection? = null
         private set
 
     // In the current version of WebAssembly, at most one table may be defined or imported in a single module,
     // and all constructs implicitly reference this table 0. This restriction may be lifted in future versions.
-    var tableSection: TableSection? = null
+    override var tableSection: TableSection? = null
         private set
 
     // In the current version of WebAssembly, at most one memory may be defined or imported in a single
     // module, and all constructs implicitly reference this memory 0. This restriction may be lifted in future versions.
-    var memorySection: MemorySection? = null
+    override var memorySection: MemorySection? = null
         private set
-    var globalSection: GlobalSection? = null
+    override var globalSection: GlobalSection? = null
         private set
-    var exportSection: ExportSection? = null
+    override var exportSection: ExportSection? = null
         private set
-    var startSection: StartSection? = null
+    override var startSection: StartSection? = null
         private set
-    var elementSection: ElementSection? = null
+    override var elementSection: ElementSection? = null
         private set
-    var codeSection: CodeSection? = null
+    override var codeSection: CodeSection? = null
         private set
-    var dataSection: DataSection? = null
+    override var dataSection: DataSection? = null
         private set
-    var insPool: InstructionPool? = null
+    override var insPool: InstructionPool? = null
         private set
 
     private fun parse(binary: ByteArray) {

@@ -17,7 +17,7 @@ class GlobalSection(id: SectionID, size: Long, payload: BytesReader, offset: Int
 }
 
 data class Global(val globalType: GlobalType, val expression: Long) {
-    companion object: ObjectReader<Global> {
+    companion object : ObjectReader<Global> {
         override fun readFrom(reader: BytesReader): Global {
             val globalType = GlobalType.readFrom(reader)
             val expression = reader.insPool.readExpressionFrom(reader)

@@ -2,7 +2,6 @@ package org.tdf.lotusvm
 
 import org.tdf.lotusvm.runtime.*
 import org.tdf.lotusvm.types.GlobalType
-import org.tdf.lotusvm.types.Module
 
 /**
  * Not support:
@@ -25,71 +24,71 @@ interface ModuleInstance {
     fun execute(funcName: String, vararg parameters: Long): LongArray
 
 
-    class Builder private constructor() {
-        var validateFunctionType = false
-            private set
-        var hostFunctions: Set<HostFunction> = emptySet()
-            private set
-        var hooks: Set<Hook> = emptySet()
-            private set
-        var globals: LongArray? = null
-            private set
-        var memory: Memory? = null
-            private set
-        var module: Module? = null
-        var stackAllocator: StackAllocator? = null
-
-        fun module(module: Module): Builder {
-            this.module = module
-            return this
+    companion object {
+        @JvmStatic
+        fun builder(): Builder {
+            return Builder.builder()
         }
+    }
+}
 
-        fun stackAllocator(allocator: StackAllocator): Builder {
-            stackAllocator = allocator
-            return this
-        }
+class Builder private constructor() {
+    var validateFunctionType = false
+        private set
+    var hostFunctions: Set<HostFunction> = emptySet()
+        private set
+    var hooks: Set<Hook> = emptySet()
+        private set
+    var globals: LongArray? = null
+        private set
+    var memory: Memory? = null
+        private set
+    var module: Module? = null
+    var stackAllocator: StackAllocator? = null
 
-        fun hostFunctions(hostFunctions: Set<HostFunction>): Builder {
-            this.hostFunctions = hostFunctions
-            return this
-        }
+    fun module(module: Module): Builder {
+        this.module = module
+        return this
+    }
 
-        fun hooks(hooks: Set<Hook>): Builder {
-            this.hooks = hooks
-            return this
-        }
+    fun stackAllocator(allocator: StackAllocator): Builder {
+        stackAllocator = allocator
+        return this
+    }
 
-        fun globals(globals: LongArray): Builder {
-            this.globals = globals
-            return this
-        }
+    fun hostFunctions(hostFunctions: Set<HostFunction>): Builder {
+        this.hostFunctions = hostFunctions
+        return this
+    }
 
-        fun memory(memory: Memory): Builder {
-            this.memory = memory
-            return this
-        }
+    fun hooks(hooks: Set<Hook>): Builder {
+        this.hooks = hooks
+        return this
+    }
 
-        fun validateFunctionType(): Builder {
-            validateFunctionType = true
-            return this
-        }
+    fun globals(globals: LongArray): Builder {
+        this.globals = globals
+        return this
+    }
 
-        fun build(): ModuleInstance {
-            return ModuleInstanceImpl(this)
-        }
+    fun memory(memory: Memory): Builder {
+        this.memory = memory
+        return this
+    }
 
-        companion object {
-            @JvmStatic
-            fun builder(): Builder {
-                return Builder()
-            }
-        }
+    fun validateFunctionType(): Builder {
+        validateFunctionType = true
+        return this
+    }
+
+    fun build(): ModuleInstance {
+        return ModuleInstanceImpl(this)
     }
 
     companion object {
         @JvmStatic
         fun builder(): Builder {
-            return Builder.builder()
+            return Builder()
         }
     }
 }

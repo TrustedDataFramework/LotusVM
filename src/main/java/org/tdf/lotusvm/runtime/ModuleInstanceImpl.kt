@@ -1,5 +1,6 @@
 package org.tdf.lotusvm.runtime
 
+import org.tdf.lotusvm.Builder
 import org.tdf.lotusvm.ModuleInstance
 import org.tdf.lotusvm.common.Constants
 import org.tdf.lotusvm.common.OpCode
@@ -13,7 +14,7 @@ import java.util.stream.Collectors
  * It is created by instantiating a module, and collects runtime representations of all entities that are imported,
  * deﬁned, or exported by the module.
  */
-class ModuleInstanceImpl(builder: ModuleInstance.Builder) : ModuleInstance {
+class ModuleInstanceImpl(builder: Builder) : ModuleInstance {
 
     override var globalTypes: List<GlobalType> = emptyList()
 
@@ -61,6 +62,15 @@ class ModuleInstanceImpl(builder: ModuleInstance.Builder) : ModuleInstance {
             field = value
         }
 
+    fun getGlobal(idx: Int): Long {
+        return globals[idx]
+    }
+
+    fun setGlobal(idx: Int, value: Long) {
+        if (!globalTypes[idx].isMutable)
+            throw RuntimeException("modify a immutable global")
+        globals[idx] = value
+    }
 
     override fun execute(functionIndex: Int, vararg parameters: Long): LongArray {
         stackAllocator.pushFrame(functionIndex, Objects.requireNonNull(parameters))
@@ -83,6 +93,8 @@ class ModuleInstanceImpl(builder: ModuleInstance.Builder) : ModuleInstance {
     }
 
     fun getFuncInTable(idx: Int): FunctionInstance {
+        if (idx < 0 || idx >= tableSize)
+            throw RuntimeException("access function in table overflow")
         return table?.functions?.get(idx)!!
     }
 
@@ -100,7 +112,7 @@ class ModuleInstanceImpl(builder: ModuleInstance.Builder) : ModuleInstance {
         val module = builder.module!!
         insPool = module.insPool!!
 
-        types =  module.typeSection?.functionTypes ?: emptyList()
+        types = module.typeSection?.functionTypes ?: emptyList()
         hookArray = builder.hooks.toTypedArray()
 
         validateFunctionType = builder.validateFunctionType
@@ -215,31 +227,31 @@ class ModuleInstanceImpl(builder: ModuleInstance.Builder) : ModuleInstance {
     }
 
     fun touchIns(ins: OpCode) {
-        for(i in 0 until hookArray.size) {
+        for (i in 0 until hookArray.size) {
             hookArray[i].onInstruction(ins, this)
         }
     }
 
     fun touchNewFrame() {
-        for(i in 0 until hookArray.size) {
+        for (i in 0 until hookArray.size) {
             hookArray[i].onNewFrame()
         }
     }
 
     fun touchFrameExit() {
-        for(i in 0 until hookArray.size) {
+        for (i in 0 until hookArray.size) {
             hookArray[i].onFrameExit()
         }
     }
 
     fun touchHostFunc(host: HostFunction) {
-        for(i in 0 until hookArray.size) {
+        for (i in 0 until hookArray.size) {
             hookArray[i].onHostFunction(host, this)
         }
     }
 
     fun touchMemGrow(beforeGrow: Int, afterGrow: Int) {
-        for(i in 0 until hookArray.size) {
+        for (i in 0 until hookArray.size) {
             hookArray[i].onMemoryGrow(beforeGrow, afterGrow)
         }
     }

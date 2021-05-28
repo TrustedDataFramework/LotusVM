@@ -23,9 +23,9 @@ class ImportSection(id: SectionID, size: Long, contents: BytesReader, offset: In
         val tableType: TableType?,
         val limitType: LimitType?,
         val globalType: GlobalType?
-    ){
+    ) {
 
-        companion object: ObjectReader<Import>{
+        companion object : ObjectReader<Import> {
             override fun readFrom(reader: BytesReader): Import {
                 val module = reader.readCharVec()
                 val name = reader.readCharVec()

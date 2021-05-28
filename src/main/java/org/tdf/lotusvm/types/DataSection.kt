@@ -12,8 +12,8 @@ class DataSection(id: SectionID, size: Long, payload: BytesReader, offset: Int, 
         dataSegments = reader.readObjectVec(DataSegment.Companion)
     }
 
-    data class DataSegment (val memoryIndex: Int, val expression: Long, val init: ByteArray) {
-        companion object: ObjectReader<DataSegment> {
+    data class DataSegment(val memoryIndex: Int, val expression: Long, val init: ByteArray) {
+        companion object : ObjectReader<DataSegment> {
             override fun readFrom(reader: BytesReader): DataSegment {
                 return DataSegment(
                     reader.readVarUint32(),

@@ -25,9 +25,9 @@ internal class WASMFunction(
         get() = false
 
     override val parametersLength: Int
-    get() {
-        return type.parameterTypes.size
-    }
+        get() {
+            return type.parameterTypes.size
+        }
 
     override val arity: Int
         get() = type.resultTypes.size
