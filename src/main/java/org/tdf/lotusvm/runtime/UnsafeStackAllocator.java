@@ -13,7 +13,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     private static final long LOOP_OFFSET = 7L;
     private static final long LABEL_PC_OFFSET = 2L;
 
-
     private final LongBuffer stackData;
 
     // label data = stack pc (2byte) | label pc (2byte) | 0x00  | 0x00  | arity (1byte) | loop (1byte)
