@@ -386,25 +386,19 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     }
 
 
-    public long getInstructions(int idx) {
-        if (idx < 0 || idx >= labelSize)
-            throw new RuntimeException("label index overflow");
-        return getLabels(labelBase + idx);
+    public long getInstructions() {
+        return getLabels(labelBase + labelSize - 1);
     }
 
     @Override
-    public int getPc(int idx) {
-        if (idx < 0 || idx >= labelSize)
-            throw new RuntimeException("label index overflow");
-        int p = labelBase + idx;
+    public int getPc() {
+        int p = labelBase + labelSize - 1;
         return getLabelPc(p);
     }
 
     @Override
-    public void setPc(int idx, int pc) {
-        if (idx < 0 || idx >= labelSize)
-            throw new RuntimeException("label index overflow");
-        int p = labelBase + idx;
+    public void setPc(int pc) {
+        int p = labelBase + labelSize - 1;
         setLabelPc(p, pc);
     }
 

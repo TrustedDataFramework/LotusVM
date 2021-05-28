@@ -113,9 +113,8 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         InstructionPool pool = module.insPool;
         pushLabel(getResultType() != null, getBody(), false);
         while (!labelIsEmpty()) {
-            int idx = getLabelSize() - 1;
-            int pc = getPc(idx);
-            long body = getInstructions(idx);
+            int pc = getPc();
+            long body = getInstructions();
             int length = InstructionPool.getInstructionsSize(body);
             if (pc >= length) {
                 popLabel();
@@ -127,7 +126,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             if (c.equals(OpCode.RETURN)) {
                 return returns();
             }
-            setPc(idx, pc + 1);
+            setPc(pc + 1);
             invoke(ins);
         }
         for (int i = 0; i < getModule().hooks.length; i++) {

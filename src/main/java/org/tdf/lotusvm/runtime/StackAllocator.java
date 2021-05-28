@@ -27,11 +27,11 @@ public interface StackAllocator extends Closeable {
 
     int popN(int frameIndex, int n);
 
-    int getPc(int idx);
+    int getPc();
 
-    void setPc(int idx, int pc);
+    void setPc(int pc);
 
-    long getInstructions(int idx);
+    long getInstructions();
 
     long pop();
 
