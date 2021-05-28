@@ -7,7 +7,7 @@ plugins {
 apply from: 'config/config.gradle'
 
 group 'org.tdf'
-version = '2.1.6'
+version = '2.1.7'
 
 sourceCompatibility = 11
 

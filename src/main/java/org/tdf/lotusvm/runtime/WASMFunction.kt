@@ -24,7 +24,7 @@ internal class WASMFunction(
     override val isHost: Boolean
         get() = false
 
-    override val parametersLength: Int
+    override val paramSize: Int
         get() {
             return type.parameterTypes.size
         }

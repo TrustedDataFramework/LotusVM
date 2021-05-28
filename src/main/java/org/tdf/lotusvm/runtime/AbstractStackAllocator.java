@@ -194,7 +194,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                     module.touchHostFunc((HostFunction) function);
 
                     res = function.execute(
-                        popLongs(function.getParametersLength())
+                        popLongs(function.getParamSize())
                     );
                 } else {
                     pushFrame(f, null);
@@ -221,7 +221,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                     module.touchHostFunc((HostFunction) function);
 
                     r = function.execute(
-                        popLongs(function.getParametersLength())
+                        popLongs(function.getParamSize())
                     );
                 } else {
                     pushFrame((int) (elementIndex | TABLE_MASK), null);

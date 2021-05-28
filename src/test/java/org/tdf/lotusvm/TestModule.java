@@ -37,8 +37,8 @@ public class TestModule {
         }
 
         @Override
-        public long execute(long[] parameters) {
-            System.out.println(parameters[0]);
+        public long execute(long[] args) {
+            System.out.println(args[0]);
             return 0;
         }
     }

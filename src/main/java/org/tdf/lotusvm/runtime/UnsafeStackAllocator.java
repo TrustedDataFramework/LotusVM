@@ -213,7 +213,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         WASMFunction func = getFuncByBits(functionIndex);
 
         // set local size
-        this.localSize = func.getParametersLength() + func.getLocals();
+        this.localSize = func.getParamSize() + func.getLocals();
 
         // set body and value type
         body = func.getBody();
@@ -222,9 +222,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
         this.count++;
         if (args == null) {
-            int start = popN(currentFrameIndex() - 1, func.getParametersLength());
+            int start = popN(currentFrameIndex() - 1, func.getParamSize());
             for (int i = 0; i < localSize; i++) {
-                setLocal(i, i < func.getParametersLength() ? getUnchecked(start + i) : 0);
+                setLocal(i, i < func.getParamSize() ? getUnchecked(start + i) : 0);
             }
         } else {
             for (int i = 0; i < localSize; i++) {

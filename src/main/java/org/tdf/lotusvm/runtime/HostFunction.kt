@@ -1,30 +1,29 @@
 package org.tdf.lotusvm.runtime
 
+import org.tdf.lotusvm.ModuleInstance
 import org.tdf.lotusvm.types.FunctionType
 import java.util.*
 
-abstract class HostFunction : FunctionInstance {
-    override val type: FunctionType
-    val name: String
+abstract class HostFunction(
+    val name: String,
+    override val type: FunctionType,
+    vararg alias: String
+) : FunctionInstance {
 
-    @JvmField
-    var instance: ModuleInstanceImpl? = null
+    lateinit var instance: ModuleInstance
 
     val alias: MutableSet<String> = mutableSetOf()
 
-
-    constructor(name: String, type: FunctionType, vararg alias: String) {
-        this.name = name
-        this.type = type
+    init {
         this.alias.addAll(listOf(*alias))
     }
 
-    override val parametersLength: Int
+    override val paramSize: Int
         get() = type.parameterTypes.size
     override val arity: Int
         get() = type.resultTypes.size
 
-    abstract override fun execute(parameters: LongArray): Long
+    abstract override fun execute(args: LongArray): Long
     override val isHost: Boolean
         get() = true
 
@@ -40,10 +39,10 @@ abstract class HostFunction : FunctionInstance {
     }
 
     protected fun putMemory(offset: Int, data: ByteArray?) {
-        instance!!.memory.put(offset, data!!)
+        instance.memory.put(offset, data!!)
     }
 
     protected fun loadMemory(offset: Int, length: Int): ByteArray {
-        return instance!!.memory.load(offset, length)
+        return instance.memory.load(offset, length)
     }
 }
