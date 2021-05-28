@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.tdf.lotusvm.common.BytesReader;
-import org.tdf.lotusvm.common.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +43,8 @@ public class ImportSection extends AbstractSection {
         private GlobalType globalType;
 
         public static Import readFrom(BytesReader reader) {
-            String module = Vector.readStringFrom(reader);
-            String name = Vector.readStringFrom(reader);
+            String module = reader.readCharVec();
+            String name = reader.readCharVec();
             if (reader.peek() < 0 || reader.peek() >= ImportType.values().length)
                 throw new RuntimeException("import desc type incorrect");
             ImportType type = ImportType.values()[reader.read()];
@@ -64,7 +63,7 @@ public class ImportSection extends AbstractSection {
                     limitType = LimitType.readFrom(reader);
                     break;
                 case GLOBAL_TYPE:
-                    globalType = GlobalType.readFrom(reader);
+                    globalType = GlobalType.Companion.readFrom(reader);
                     break;
                 default:
                     throw new RuntimeException("import desc type incorrect");

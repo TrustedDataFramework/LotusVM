@@ -220,7 +220,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                         getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
                     }
                     res = function.execute(
-                        popLongs(function.parametersLength())
+                        popLongs(function.getParametersLength())
                     );
                 } else {
                     pushFrame(f, null);
@@ -250,7 +250,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                         getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
                     }
                     r = function.execute(
-                        popLongs(function.parametersLength())
+                        popLongs(function.getParametersLength())
                     );
                 } else {
                     pushFrame((int) (elementIndex | TABLE_MASK), null);

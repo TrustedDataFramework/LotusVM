@@ -216,7 +216,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             getModule().functions.get((int) (functionIndex & FUNCTION_INDEX_MASK)));
 
         // set local size
-        this.localSize = func.parametersLength() + func.getLocals();
+        this.localSize = func.getParametersLength() + func.getLocals();
 
         // set body and value type
         body = func.getBody();
@@ -225,9 +225,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
         this.count++;
         if (args == null) {
-            int start = popN(currentFrameIndex() - 1, func.parametersLength());
+            int start = popN(currentFrameIndex() - 1, func.getParametersLength());
             for (int i = 0; i < localSize; i++) {
-                setLocal(i, i < func.parametersLength() ? getUnchecked(start + i) : 0);
+                setLocal(i, i < func.getParametersLength() ? getUnchecked(start + i) : 0);
             }
         } else {
             for (int i = 0; i < localSize; i++) {

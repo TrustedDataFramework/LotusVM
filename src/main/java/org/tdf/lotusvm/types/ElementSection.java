@@ -3,7 +3,6 @@ package org.tdf.lotusvm.types;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.tdf.lotusvm.common.BytesReader;
-import org.tdf.lotusvm.common.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +36,7 @@ public class ElementSection extends AbstractSection {
         public static Element readFrom(BytesReader reader) {
             return new Element(reader.readVarUint32(),
                 reader.getInsPool().readExpressionFrom(reader),
-                Vector.readUint32VectorFrom(reader));
+                reader.readUint32Vec());
         }
 
         public static List<Element> readElementsFrom(BytesReader reader) {

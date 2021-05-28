@@ -2,7 +2,6 @@ package org.tdf.lotusvm.types;
 
 import lombok.Getter;
 import org.tdf.lotusvm.common.BytesReader;
-import org.tdf.lotusvm.common.Vector;
 
 /**
  * The function section has the id 3.
@@ -19,6 +18,6 @@ public class FunctionSection extends AbstractSection {
 
     @Override
     void readPayload() {
-        typeIndices = Vector.readUint32VectorFrom(getReader());
+        typeIndices = getReader().readUint32Vec();
     }
 }

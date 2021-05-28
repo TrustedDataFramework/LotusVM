@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.tdf.lotusvm.common.BytesReader;
-import org.tdf.lotusvm.common.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +33,7 @@ public class DataSection extends AbstractSection {
         public static DataSegment readFrom(BytesReader reader) {
             return new DataSegment(reader.readVarUint32(),
                 reader.getInsPool().readExpressionFrom(reader),
-                Vector.readBytesFrom(reader)
+                reader.readByteVec()
             );
         }
 

@@ -100,4 +100,9 @@ public class BaseMemory implements Memory {
         this.data = tmp;
         return prev;
     }
+
+    @Override
+    public void close() {
+
+    }
 }

@@ -60,12 +60,12 @@ public class ModuleInstanceImpl implements ModuleInstance {
         this.stackAllocator.setModule(this);
 
         this.memory = Objects.requireNonNull(builder.getMemory());
-        Module module = builder.getModule() == null ? new Module(builder.getBinary()) : builder.getModule();
+        Module module = builder.getModule();
         this.insPool = module.getInsPool();
 
         types = module.getTypeSection() == null ? Collections.emptyList() : module.getTypeSection().getFunctionTypes();
         hooks = new ArrayList<>(builder.getHooks()).toArray(new Hook[]{});
-        this.validateFunctionType = builder.isValidateFunctionType();
+        this.validateFunctionType = builder.getValidateFunctionType();
 
         Map<String, HostFunction> functionsMap = new HashMap<>();
 
@@ -102,7 +102,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
         // init global variables
         if (module.getGlobalSection() != null) {
             globalTypes = module.getGlobalSection()
-                .getGlobals().stream().map(GlobalSection.Global::getGlobalType)
+                .getGlobals().stream().map(Global::getGlobalType)
                 .collect(Collectors.toList());
         }
         if (module.getGlobalSection() != null && builder.getGlobals() == null) {
@@ -127,10 +127,10 @@ public class ModuleInstanceImpl implements ModuleInstance {
         if (module.getFunctionSection() != null) {
             for (int i = 0; i < module.getFunctionSection().getTypeIndices().length; i++) {
                 int typeIndex = module.getFunctionSection().getTypeIndices()[i];
-                CodeSection.Code code = module.getCodeSection().getCodes().get(i);
+                Code code = module.getCodeSection().getCodes().get(i);
                 FunctionType type = module.getTypeSection().getFunctionTypes().get(typeIndex);
                 functions.add(
-                    new WASMFunction(type, this, code.getCode().getExpression(), code.getCode().getLocals())
+                    new WASMFunction(type, code.getCode().getExpression(), code.getCode().getLocals())
                 );
             }
         }
@@ -172,7 +172,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
         if (module.getExportSection() != null) {
             exports = new HashMap<>();
             module.getExportSection().getExports().stream()
-                .filter(x -> x.getType() == ExportSection.ExportType.FUNCTION_INDEX)
+                .filter(x -> x.getType() == ExportType.FUNCTION_INDEX)
                 .forEach(x -> exports.put(x.getName(), x.getIndex()));
         }
 
@@ -186,7 +186,7 @@ public class ModuleInstanceImpl implements ModuleInstance {
     }
 
     @Override
-    public void setHooks(Set<Hook> hooks) {
+    public void setHooks(Set<? extends Hook> hooks) {
         this.hooks = new ArrayList<>(hooks).toArray(new Hook[]{});
     }
 

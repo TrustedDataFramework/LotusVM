@@ -1,11 +1,12 @@
 package org.tdf.lotusvm.common;
 
-import lombok.Getter;
 import org.tdf.lotusvm.types.InstructionPool;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
-@Getter
 public class BytesReader extends InputStream {// io.reader
     private static final long FIRST_BIT = 0x80L;
     private static final long MASK = 0x7fL;
@@ -190,6 +191,52 @@ public class BytesReader extends InputStream {// io.reader
     public byte[] slice(int offset, int limit) {
         byte[] r = new byte[limit - offset];
         System.arraycopy(buffer, offset, r, 0, limit - offset);
+        return r;
+    }
+
+    public byte[] getBuffer() {
+        return this.buffer;
+    }
+
+    public int getLimit() {
+        return this.limit;
+    }
+
+    public InstructionPool getInsPool() {
+        return this.insPool;
+    }
+
+    public int getOffset() {
+        return this.offset;
+    }
+
+    // vector operations
+
+    public byte[] readByteVec() {
+        int length = readVarUint32();
+        return read(length);
+    }
+
+    public String readCharVec() {
+        return new String(readByteVec(), StandardCharsets.UTF_8);
+    }
+
+    public int[] readUint32Vec() {
+        int length = readVarUint32();
+        int[] res = new int[length];
+        for(int i = 0; i < res.length; i++) {
+            res[i] = readVarUint32();
+        }
+        return res;
+    }
+
+    public <T> List<T> readObjectVec(ObjectReader<T> reader) {
+        int length = readVarUint32();
+        List<T> r = new ArrayList<>(length);
+
+        for(int i = 0; i < length; i++) {
+            r.add(reader.readFrom(this));
+        }
         return r;
     }
 }
