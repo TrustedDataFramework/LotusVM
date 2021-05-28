@@ -48,11 +48,12 @@ internal class ModuleImpl(binary: ByteArray) : Module {
         private set
     override var dataSection: DataSection? = null
         private set
-    override var insPool: InstructionPool? = null
+    override var insPool: InstructionPool = InstructionPool()
         private set
 
     private fun parse(binary: ByteArray) {
         val reader = BytesReader(binary)
+        reader.insPool = insPool
         magic = reader.readUint32()
         if (magic != Constants.MAGIC_NUMBER) throw RuntimeException("wasm: Invalid magic number")
         version = reader.readUint32()
@@ -63,7 +64,6 @@ internal class ModuleImpl(binary: ByteArray) : Module {
             )
         )
         readSections(reader)
-        insPool = reader.insPool
     }
 
     private fun readSections(reader: BytesReader) {
@@ -94,10 +94,15 @@ internal class ModuleImpl(binary: ByteArray) : Module {
     }
 
     override fun close() {
-        insPool!!.close()
+        insPool.close()
     }
 
     init {
-        parse(binary)
+        try {
+            parse(binary)
+        }catch (e: Exception) {
+            insPool.close()
+            throw e
+        }
     }
 }

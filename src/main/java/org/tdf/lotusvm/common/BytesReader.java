@@ -12,17 +12,15 @@ public class BytesReader extends InputStream {// io.reader
     private static final long MASK = 0x7fL;
     private final byte[] buffer;
     private final int limit;
-    private InstructionPool insPool;
+    public InstructionPool insPool;
     private int offset;
 
     public BytesReader(byte[] buffer) {
-        this.insPool = new InstructionPool();
         this.buffer = buffer;
         this.limit = buffer.length;
     }
 
     private BytesReader(byte[] buffer, int offset, int limit) {
-        this.insPool = new InstructionPool();
         this.buffer = buffer;
         this.offset = offset;
         this.limit = limit;
