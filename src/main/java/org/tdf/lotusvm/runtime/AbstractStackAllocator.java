@@ -1,13 +1,13 @@
 package org.tdf.lotusvm.runtime;
 
 
+import org.jetbrains.annotations.NotNull;
 import org.tdf.lotusvm.common.Constants;
 import org.tdf.lotusvm.common.OpCode;
+import org.tdf.lotusvm.types.InstructionId;
 import org.tdf.lotusvm.types.InstructionPool;
 import org.tdf.lotusvm.types.ResultType;
 import org.tdf.lotusvm.types.ValueType;
-
-import java.util.Objects;
 
 public abstract class AbstractStackAllocator implements StackAllocator {
     protected final int maxFrames;
@@ -23,92 +23,47 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         this.maxStackSize = maxStackSize;
     }
 
-    // math trunc
-    protected static double truncDouble(double d) {
-        if (d > 0) {
-            return Math.floor(d);
-        } else {
-            return Math.ceil(d);
-        }
-    }
-
-    protected static float truncFloat(float f) {
-        return (float) truncDouble(f);
-    }
-
-    public ModuleInstanceImpl getModule() {
-        return module;
-    }
-
-    public void setModule(ModuleInstanceImpl module) {
-        this.module = module;
-    }
-
     // push a value into a stack
-    void push(long value) {
-        push(current(), value);
-    }
-
-    long pop() {
-        return pop(current());
-    }
-
     int popI32() {
         return (int) pop();
     }
 
     void pushI32(int i) {
-        push(current(), i & 0xffffffffL);
+        push(i & 0xffffffffL);
     }
 
     void pushI8(byte x) {
-        push(current(), ((long) x) & 0xffL);
+        push(((long) x) & 0xffL);
     }
 
     void pushI16(short x) {
-        push(current(), ((long) x) & 0xffffL);
+        push(((long) x) & 0xffffL);
     }
 
     void pushBoolean(boolean b) {
-        push(current(), b ? 1 : 0);
+        push(b ? 1 : 0);
     }
 
-    long getLocal(int idx) {
-        return getLocal(current(), idx);
-    }
+    abstract void pushLabel(boolean arity, long body, boolean loop);
 
-    void setLocal(int idx, long value) {
-        setLocal(current(), idx, value);
-    }
+    abstract void branch(int l);
 
-    void pushLabel(boolean arity, long body, boolean loop) {
-        pushLabel(current(), arity, body, loop);
-    }
+    abstract boolean labelIsEmpty();
 
-    void branch(int l) {
-        branch(current(), l);
-    }
+    abstract void popFrame();
 
-    boolean labelIsEmpty() {
-        return getLabelSize(current()) == 0;
-    }
-
-    void drop() {
-        drop(current());
-    }
-
-    void popLabel() {
-        popLabel(current());
-    }
+    abstract void popLabel();
 
     protected abstract long getBody();
 
     protected abstract ValueType getResultType();
 
+    public abstract int currentFrameIndex();
+
     long[] popLongs(int n) {
         if (n == 0) return Constants.EMPTY_LONGS;
         long[] res = new long[n];
-        int index = popN(current(), n);
+        int index = popN(currentFrameIndex(), n);
         for (int i = 0; i < n; i++) {
             res[i] = getUnchecked(i + index);
         }
@@ -117,7 +72,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
 
     long returns() {
         if (getResultType() == null) {
-            drop();
+            popFrame();
             return 0;
         }
         long res = pop();
@@ -127,52 +82,50 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 // shadow bits
                 res = res & 0xffffffffL;
         }
-        drop();
+        popFrame();
         return res;
     }
 
     public long execute() throws RuntimeException {
-        InstructionPool pool = module.insPool;
+        InstructionPool pool = module.getInsPool();
+
         pushLabel(getResultType() != null, getBody(), false);
         while (!labelIsEmpty()) {
-            int idx = getLabelSize(current()) - 1;
-            int pc = getPc(current(), idx);
-            long body = getInstructions(current(), idx);
+            int pc = getPc();
+            long body = getInstructions();
             int length = InstructionPool.getInstructionsSize(body);
             if (pc >= length) {
                 popLabel();
                 continue;
             }
-            int ins = pool.getInstructionInArray(body, pc);
+            long ins = pool.getInstructionInArray(body, pc);
 
-            OpCode c = pool.getOpCode(ins);
+            OpCode c = InstructionId.getOpCode(ins);
             if (c.equals(OpCode.RETURN)) {
                 return returns();
             }
-            setPc(current(), idx, pc + 1);
+            setPc(pc + 1);
             invoke(ins);
         }
-        for (int i = 0; i < getModule().hooks.length; i++) {
-            getModule().hooks[i].onFrameExit();
-        }
+        module.touchFrameExit();
         return returns();
         // clear stack and local variables
     }
 
-    private int getMemoryOffset(int ins) {
-        int offset = module.insPool.getMemoryBase(ins);
+    private int getMemoryOffset(long ins) {
+        int offset = module.getInsPool().getMemoryBase(ins);
         long l = Integer.toUnsignedLong(popI32()) + Integer.toUnsignedLong(offset);
         if (Long.compareUnsigned(l, 0x7FFFFFFFL) > 0)
             throw new RuntimeException("memory access overflow");
         return (int) l;
     }
 
-    void invoke(int ins) throws RuntimeException {
-        OpCode code = module.insPool.getOpCode(ins);
-        InstructionPool pool = module.insPool;
-        for (int i = 0; i < getModule().hooks.length; i++) {
-            getModule().hooks[i].onInstruction(code, getModule());
-        }
+    void invoke(long ins) throws RuntimeException {
+        OpCode code = InstructionId.getOpCode(ins);
+        module.touchIns(code);
+        InstructionPool pool = module.getInsPool();
+        Memory mem = module.getMemory();
+
         switch (code) {
             // these operations are essentially no-ops.
             case NOP:
@@ -184,7 +137,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 throw new RuntimeException("exec: reached unreachable");
                 // parametric instructions
             case BLOCK:
-                pushLabel(Objects.requireNonNull(pool.getResultType(ins)) != ResultType.EMPTY, pool.getBranch0(ins), false);
+                pushLabel(InstructionId.getResultType(ins) != ResultType.EMPTY, pool.getBranch0(ins), false);
                 break;
             case LOOP:
                 pushLabel(false, pool.getBranch0(ins), true);
@@ -192,17 +145,17 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             case IF: {
                 long c = pop();
                 if (c != 0) {
-                    pushLabel(Objects.requireNonNull(pool.getResultType(ins)) != ResultType.EMPTY, pool.getBranch0(ins), false);
+                    pushLabel(InstructionId.getResultType(ins) != ResultType.EMPTY, pool.getBranch0(ins), false);
                     break;
                 }
                 if (!pool.isNullBranch(ins, 1)) {
-                    pushLabel(Objects.requireNonNull(pool.getResultType(ins)) != ResultType.EMPTY, pool.getBranch1(ins), false);
+                    pushLabel(InstructionId.getResultType(ins) != ResultType.EMPTY, pool.getBranch1(ins), false);
                 }
                 break;
             }
             case BR: {
                 // the l is non-negative here
-                int l = pool.getStackBase(ins);
+                int l = InstructionId.getLeft32(ins);
                 branch(l);
                 break;
             }
@@ -212,12 +165,12 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                     break;
                 }
                 // the l is non-negative here
-                int l = pool.getStackBase(ins);
+                int l = InstructionId.getLeft32(ins);
                 branch(l);
                 break;
             }
             case BR_TABLE: {
-                int operandSize = pool.getOperandsSize(ins);
+                int operandSize = InstructionId.getOperandSize(ins);
                 // n is non-negative
                 int n = pool.getOperandAsInt(ins, operandSize - 1);
                 // cannot determine sign of i
@@ -233,25 +186,23 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 // Pop the value val from the stack.
                 pop();
                 break;
-//            case RETURN:
-//                break;
             case CALL: {
-                FunctionInstance function = getModule().functions.get(pool.getStackBase(ins));
+                int f = InstructionId.getLeft32(ins);
+                FunctionInstance function = module.getFunc(f);
                 long res;
                 if (function.isHost()) {
-                    for (int i = 0; i < getModule().hooks.length; i++) {
-                        getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
-                    }
+                    module.touchHostFunc((HostFunction) function);
+
                     res = function.execute(
-                        popLongs(function.parametersLength())
+                        popLongs(function.getParamSize())
                     );
                 } else {
-                    pushFrame(pool.getStackBase(ins), null);
+                    pushFrame(f, null);
                     res = execute();
                 }
 
                 int resLength = function.getArity();
-                if (getModule().validateFunctionType && resLength != function.getArity()) {
+                if (module.getValidateFunctionType() && resLength != function.getArity()) {
                     throw new RuntimeException("the result of function " + function + " is not equals to its arity");
                 }
                 if (function.getArity() > 0) {
@@ -263,27 +214,25 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             }
             case CALL_INDIRECT: {
                 int elementIndex = popI32();
-                if (elementIndex < 0 || elementIndex >= getModule().table.getFunctions().length) {
-                    throw new RuntimeException("undefined element index");
-                }
-                FunctionInstance function = getModule().table.getFunctions()[elementIndex];
+                FunctionInstance function = module.getFuncInTable(elementIndex);
+
                 long r;
                 if (function.isHost()) {
-                    for (int i = 0; i < getModule().hooks.length; i++) {
-                        getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
-                    }
+                    module.touchHostFunc((HostFunction) function);
+
                     r = function.execute(
-                        popLongs(function.parametersLength())
+                        popLongs(function.getParamSize())
                     );
                 } else {
                     pushFrame((int) (elementIndex | TABLE_MASK), null);
                     r = execute();
                 }
-                if (getModule().validateFunctionType && !function.getType().equals(getModule().types.get(pool.getOperandAsInt(ins, 0)))) {
+                if (module.getValidateFunctionType()
+                    && !function.getType().equals(module.getTypes().get(InstructionId.getLeft32(ins)))) {
                     throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
                 }
                 if (function.getArity() > 0) {
-                    push(current(), r);
+                    push(r);
                 }
                 break;
             }
@@ -292,108 +241,106 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 long val2 = pop();
                 long val1 = pop();
                 if (c != 0) {
-                    push(current(), val1);
+                    push(val1);
                     break;
                 }
-                push(current(), val2);
+                push(val2);
                 break;
             }
             // variable instructions
             case GET_LOCAL:
-                push(current(), getLocal(pool.getStackBase(ins)));
+                push(getLocal(InstructionId.getLeft32(ins)));
                 break;
             case SET_LOCAL:
-                setLocal(pool.getStackBase(ins), pop());
+                setLocal(InstructionId.getLeft32(ins), pop());
                 break;
             case TEE_LOCAL: {
                 long val = pop();
-                push(current(), val);
-                push(current(), val);
-                setLocal(pool.getStackBase(ins), pop());
+                push(val);
+                push(val);
+                setLocal(InstructionId.getLeft32(ins), pop());
                 break;
             }
             case GET_GLOBAL:
-                push(getModule().globals[pool.getStackBase(ins)]);
+                push(module.getGlobal(InstructionId.getLeft32(ins)));
                 break;
             case SET_GLOBAL:
-                if (!getModule().globalTypes.get(pool.getStackBase(ins)).isMutable())
-                    throw new RuntimeException("modify a immutable global");
-                getModule().globals[pool.getStackBase(ins)] = pop();
+                module.setGlobal(InstructionId.getLeft32(ins), pop());
                 break;
             // memory instructions
             case I32_LOAD:
             case I64_LOAD32_U:
                 pushI32(
-                    getModule().memory.load32(getMemoryOffset(ins))
+                    mem.load32(getMemoryOffset(ins))
                 );
                 break;
             case I64_LOAD:
                 push(
-                    getModule().memory.load64(getMemoryOffset(ins))
+                    mem.load64(getMemoryOffset(ins))
                 );
                 break;
             case I32_LOAD8_S:
-                pushI32(getModule().memory.load8(getMemoryOffset(ins)));
+                pushI32(mem.load8(getMemoryOffset(ins)));
                 break;
             case I64_LOAD8_S: {
-                push(getModule().memory.load8(getMemoryOffset(ins)));
+                push(mem.load8(getMemoryOffset(ins)));
                 break;
             }
             case I32_LOAD8_U:
             case I64_LOAD8_U:
-                pushI8(getModule().memory.load8(getMemoryOffset(ins)));
+                pushI8(mem.load8(getMemoryOffset(ins)));
                 break;
             case I32_LOAD16_S: {
-                pushI32(getModule().memory.load16(getMemoryOffset(ins)));
+                pushI32(mem.load16(getMemoryOffset(ins)));
                 break;
             }
             case I64_LOAD16_S:
-                push(getModule().memory.load16(getMemoryOffset(ins)));
+                push(mem.load16(getMemoryOffset(ins)));
                 break;
             case I32_LOAD16_U:
             case I64_LOAD16_U:
-                pushI16(getModule().memory.load16(getMemoryOffset(ins)));
+                pushI16(mem.load16(getMemoryOffset(ins)));
                 break;
             case I64_LOAD32_S:
-                push(getModule().memory.load32(getMemoryOffset(ins)));
+                push(mem.load32(getMemoryOffset(ins)));
                 break;
             case I32_STORE8:
             case I64_STORE8: {
                 byte c = (byte) pop();
-                getModule().memory.storeI8(getMemoryOffset(ins), c);
+                mem.storeI8(getMemoryOffset(ins), c);
                 break;
             }
             case I32_STORE16:
             case I64_STORE16: {
                 short c = (short) pop();
-                getModule().memory.storeI16(getMemoryOffset(ins), c);
+                mem.storeI16(getMemoryOffset(ins), c);
                 break;
             }
             case I32_STORE:
             case I64_STORE32: {
                 int c = popI32();
-                getModule().memory.storeI32(getMemoryOffset(ins), c);
+                mem.storeI32(getMemoryOffset(ins), c);
                 break;
             }
             case I64_STORE: {
                 long c = pop();
-                getModule().memory.storeI64(getMemoryOffset(ins), c);
+                mem.storeI64(getMemoryOffset(ins), c);
                 break;
             }
             case CURRENT_MEMORY:
-                pushI32(getModule().memory.getPages());
+                pushI32(mem.getPages());
                 break;
             case GROW_MEMORY: {
                 int n = popI32();
-                int before = getModule().memory.getPages() * Memory.PAGE_SIZE;
-                int after = (getModule().memory.getPages() + n) * Memory.PAGE_SIZE;
-                for (int i = 0; i < getModule().hooks.length; i++) {
-                    getModule().hooks[i].onMemoryGrow(before, after);
-                }
-                pushI32(getModule().memory.grow(n));
+                int before = mem.getPages() * Memory.PAGE_SIZE;
+                int after = (mem.getPages() + n) * Memory.PAGE_SIZE;
+                module.touchMemGrow(before, after);
+                pushI32(mem.grow(n));
                 break;
             }
             case I32_CONST:
+                pushI32(InstructionId.getLeft32(ins));
+                break;
             case I64_CONST:
                 push(pool.getOperand(ins, 0));
                 break;
@@ -764,5 +711,15 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             default:
                 throw new RuntimeException("unknown opcode " + code);
         }
+    }
+
+    @NotNull
+    @Override
+    public ModuleInstanceImpl getModule() {
+        return module;
+    }
+
+    public void setModule(ModuleInstanceImpl module) {
+        this.module = module;
     }
 }

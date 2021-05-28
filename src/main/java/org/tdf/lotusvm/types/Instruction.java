@@ -215,9 +215,6 @@ public class Instruction {
             return false;
         }
 
-        if ((branch0 == null || another.branch0 == null) && !arrayEquals(branch0, another.branch0)) {
-            System.out.println("===");
-        }
 
         if (!arrayEquals(branch0, another.branch0)) {
             System.out.println("branch0 size " + branch0.length + " " + another.branch0.length);
@@ -225,20 +222,13 @@ public class Instruction {
             return false;
         }
 
-        if ((branch1 == null || another.branch1 == null) && !arrayEquals(branch1, another.branch1)) {
-            System.out.println("===");
-        }
 
         if (!arrayEquals(branch1, another.branch1)) {
             System.out.println("branch1 " + Arrays.toString(branch1) + " " + Arrays.toString(another.branch1));
             return false;
         }
         boolean ops = Arrays.equals(operands, another.operands);
-        if (!ops) {
-            System.out.println("ops");
-            return false;
-        }
-        return true;
+        return ops;
     }
 
     public int getOperandInt(int idx) {

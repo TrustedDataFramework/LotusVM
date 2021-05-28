@@ -1,10 +1,8 @@
 package org.tdf.lotusvm;
 
-import com.google.common.io.Closer;
 import lombok.SneakyThrows;
 import org.tdf.lotusvm.runtime.*;
 import org.tdf.lotusvm.types.FunctionType;
-import org.tdf.lotusvm.types.Module;
 import org.tdf.lotusvm.types.ValueType;
 
 import java.nio.file.Paths;
@@ -39,8 +37,8 @@ public class TestModule {
         }
 
         @Override
-        public long execute(long[] parameters) {
-            System.out.println(parameters[0]);
+        public long execute(long[] args) {
+            System.out.println(args[0]);
             return 0;
         }
     }
@@ -74,8 +72,8 @@ public class TestModule {
         UnsafeStackAllocator u = new UnsafeStackAllocator(32768 * 128, 32768, 32768 * 128);
         Module md;
             try {
-                md = new Module(Util.readClassPathFile(filename));
-                instance = ModuleInstance.Builder
+                md = Module.create(Util.readClassPathFile(filename));
+                instance = ModuleInstance
                     .builder()
                     .memory(m)
                     .hostFunctions(Collections.singleton(new PrintHost()))

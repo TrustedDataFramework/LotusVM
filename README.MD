@@ -15,4 +15,7 @@ Not support:
 2. return multi-value
 3. floating number operations, i.e. f32.const, f32_nearest, f64_round (undefined behavior in some platform and error-prone)
 
-TODO: module validation
+TODO: 
+
+1. module validation
+2. dynamically compile .wasm to java byte code

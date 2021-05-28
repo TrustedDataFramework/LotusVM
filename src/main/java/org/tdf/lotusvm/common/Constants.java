@@ -5,6 +5,7 @@ import java.nio.ByteOrder;
 
 public class Constants {
     public static final long[] EMPTY_LONGS = new long[0];
+    public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     public static final int MAGIC_NUMBER = ByteBuffer
         .wrap(new byte[]{0x00, 0x61, 0x73, 0x6d})

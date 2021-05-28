@@ -5,7 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.tdf.lotusvm.common.BytesReader;
-import org.tdf.lotusvm.types.Module;
+import org.tdf.lotusvm.types.ModuleImpl;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,7 +19,7 @@ public class ModuleTest {
         for (File f : Util.readClassPathDir("testdata/spec")) {
             if(f.getName().equals("address.wasm")) continue;
             if (f.isFile() && f.getName().endsWith(".wasm")) {
-                Module module = new Module(ByteStreams.toByteArray(new FileInputStream(f)));
+                ModuleImpl module = new ModuleImpl(ByteStreams.toByteArray(new FileInputStream(f)));
             }
         }
     }
@@ -60,40 +60,40 @@ public class ModuleTest {
 
     @Test
     public void testAddWasm() throws Exception {
-        Module m = new Module(Util.readClassPathFile("expression-tests/add.wasm"));
+        ModuleImpl m = new ModuleImpl(Util.readClassPathFile("expression-tests/add.wasm"));
         assert m.getFunctionSection() != null;
     }
 
     @Test
     public void testExportAdd() throws Exception {
-        Module m = new Module(Util.readClassPathFile("expression-tests/export-add.wasm"));
+        ModuleImpl m = new ModuleImpl(Util.readClassPathFile("expression-tests/export-add.wasm"));
         assert m.getFunctionSection() != null;
         assert m.getExportSection() != null;
     }
 
     @Test
     public void testCall() throws Exception {
-        Module m = new Module(Util.readClassPathFile("expression-tests/call-another.wasm"));
+        ModuleImpl m = new ModuleImpl(Util.readClassPathFile("expression-tests/call-another.wasm"));
         assert m.getFunctionSection() != null;
         assert m.getExportSection() != null;
     }
 
     @Test
     public void testAddress() throws Exception {
-        Module m = new Module(Util.readClassPathFile("testdata/spec/address.wasm"));
+        ModuleImpl m = new ModuleImpl(Util.readClassPathFile("testdata/spec/address.wasm"));
         assert m.getFunctionSection() != null;
         assert m.getExportSection() != null;
     }
 
     @Test
     public void testMemory() throws Exception{
-        Module m = new Module(Util.readClassPathFile("expression-tests/memory.wasm"));
+        ModuleImpl m = new ModuleImpl(Util.readClassPathFile("expression-tests/memory.wasm"));
         assert m.getDataSection() != null;
     }
 
     @Test
     public void testTable() throws Exception{
-        Module m = new Module(Util.readClassPathFile("expression-tests/table.wasm"));
+        ModuleImpl m = new ModuleImpl(Util.readClassPathFile("expression-tests/table.wasm"));
         assert m.getTableSection() != null;
     }
 }

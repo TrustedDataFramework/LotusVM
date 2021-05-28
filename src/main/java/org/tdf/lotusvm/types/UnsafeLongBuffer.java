@@ -38,7 +38,7 @@ public class UnsafeLongBuffer implements LongBuffer {
         UnsafeUtil.UNSAFE.putLong(ptr, val);
     }
 
-    public void push(long v) {
+    public void push(long value) {
         if (this.size == cap) {
             long prevBytes = limit - pointer;
             long afterBytes = prevBytes * 2;
@@ -47,7 +47,7 @@ public class UnsafeLongBuffer implements LongBuffer {
             this.cap *= 2;
             UnsafeUtil.UNSAFE.setMemory(this.pointer + prevBytes, afterBytes - prevBytes, (byte) 0);
         }
-        setInternal(this.size, v);
+        setInternal(this.size, value);
         this.size++;
     }
 
