@@ -193,10 +193,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
         this.functionIndex = functionIndex;
 
-        if(c != 0){
-            System.out.println(getStackSize(c-1));
-        }
-
         // new stack base and new label base
         int newStackBase = 0;
         int newLabelBase = 0;
