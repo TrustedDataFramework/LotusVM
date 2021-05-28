@@ -4,6 +4,11 @@ import org.tdf.lotusvm.types.LimitType
 import java.io.Closeable
 
 interface Memory : Closeable {
+    companion object {
+        const val PAGE_SIZE = 64 * (1 shl 10) // 64 KB
+        const val MAX_PAGES = 0xFFFF
+    }
+
     fun setLimit(limit: LimitType)
     fun put(offset: Int, data: ByteArray)
     fun load(offset: Int, length: Int): ByteArray
@@ -19,8 +24,4 @@ interface Memory : Closeable {
     val pages: Int
 
     override fun close() {}
-
-    companion object {
-        const val PAGE_SIZE = 64 * (1 shl 10) // 64 KB
-    }
 }

@@ -90,7 +90,7 @@ public class BaseMemory implements Memory {
     // However, failure can occur in other cases as well.
     // In practice, the choice depends on the resources available to the embedder.
     public int grow(int n) {
-        if (limit.isBounded() && getPages() + n > limit.getMaximum()) {
+        if (limit.getBounded() && getPages() + n > limit.getMaximum()) {
             return -1;
         }
         int prev = this.pages;

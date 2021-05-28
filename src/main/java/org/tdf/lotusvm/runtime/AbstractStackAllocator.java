@@ -109,7 +109,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
     }
 
     public long execute() throws RuntimeException {
-        InstructionPool pool = module.insPool;
+        InstructionPool pool = module.getInsPool();
         pushLabel(getResultType() != null, getBody(), false);
         while (!labelIsEmpty()) {
             int pc = getPc();
@@ -128,15 +128,15 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             setPc(pc + 1);
             invoke(ins);
         }
-        for (int i = 0; i < getModule().hooks.length; i++) {
-            getModule().hooks[i].onFrameExit();
+        for (int i = 0; i < getModule().getHookArray().length; i++) {
+            getModule().getHookArray()[i].onFrameExit();
         }
         return returns();
         // clear stack and local variables
     }
 
     private int getMemoryOffset(long ins) {
-        int offset = module.insPool.getMemoryBase(ins);
+        int offset = module.getInsPool().getMemoryBase(ins);
         long l = Integer.toUnsignedLong(popI32()) + Integer.toUnsignedLong(offset);
         if (Long.compareUnsigned(l, 0x7FFFFFFFL) > 0)
             throw new RuntimeException("memory access overflow");
@@ -145,10 +145,8 @@ public abstract class AbstractStackAllocator implements StackAllocator {
 
     void invoke(long ins) throws RuntimeException {
         OpCode code = InstructionId.getOpCode(ins);
-        InstructionPool pool = module.insPool;
-        for (int i = 0; i < getModule().hooks.length; i++) {
-            getModule().hooks[i].onInstruction(code, getModule());
-        }
+        module.touchIns(code);
+        InstructionPool pool = module.getInsPool();
         switch (code) {
             // these operations are essentially no-ops.
             case NOP:
@@ -213,11 +211,11 @@ public abstract class AbstractStackAllocator implements StackAllocator {
 //                break;
             case CALL: {
                 int f = InstructionId.getLeft32(ins);
-                FunctionInstance function = getModule().functions.get(f);
+                FunctionInstance function = getModule().getFunctions().get(f);
                 long res;
                 if (function.isHost()) {
-                    for (int i = 0; i < getModule().hooks.length; i++) {
-                        getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
+                    for (int i = 0; i < getModule().getHookArray().length; i++) {
+                        getModule().getHookArray()[i].onHostFunction((HostFunction) function, getModule());
                     }
                     res = function.execute(
                         popLongs(function.getParametersLength())
@@ -228,7 +226,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 }
 
                 int resLength = function.getArity();
-                if (getModule().validateFunctionType && resLength != function.getArity()) {
+                if (getModule().getValidateFunctionType() && resLength != function.getArity()) {
                     throw new RuntimeException("the result of function " + function + " is not equals to its arity");
                 }
                 if (function.getArity() > 0) {
@@ -240,15 +238,13 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             }
             case CALL_INDIRECT: {
                 int elementIndex = popI32();
-                if (elementIndex < 0 || elementIndex >= getModule().table.getFunctions().length) {
+                if (elementIndex < 0 || elementIndex >= getModule().getTableSize()) {
                     throw new RuntimeException("undefined element index");
                 }
-                FunctionInstance function = getModule().table.getFunctions()[elementIndex];
+                FunctionInstance function = getModule().getFuncInTable(elementIndex);
                 long r;
                 if (function.isHost()) {
-                    for (int i = 0; i < getModule().hooks.length; i++) {
-                        getModule().hooks[i].onHostFunction((HostFunction) function, getModule());
-                    }
+                    module.touchHostFunc((HostFunction) function);
                     r = function.execute(
                         popLongs(function.getParametersLength())
                     );
@@ -256,8 +252,8 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                     pushFrame((int) (elementIndex | TABLE_MASK), null);
                     r = execute();
                 }
-                if (getModule().validateFunctionType
-                    && !function.getType().equals(getModule().types.get(InstructionId.getLeft32(ins)))) {
+                if (getModule().getValidateFunctionType()
+                    && !function.getType().equals(getModule().getTypes().get(InstructionId.getLeft32(ins)))) {
                     throw new RuntimeException("failed exec: signature mismatch in call_indirect expected");
                 }
                 if (function.getArity() > 0) {
@@ -291,12 +287,12 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 break;
             }
             case GET_GLOBAL:
-                push(getModule().globals[InstructionId.getLeft32(ins)]);
+                push(getModule().getGlobals()[InstructionId.getLeft32(ins)]);
                 break;
             case SET_GLOBAL:
-                if (!getModule().globalTypes.get(InstructionId.getLeft32(ins)).isMutable())
+                if (!getModule().getGlobalTypes().get(InstructionId.getLeft32(ins)).isMutable())
                     throw new RuntimeException("modify a immutable global");
-                getModule().globals[InstructionId.getLeft32(ins)] = pop();
+                getModule().getGlobals()[InstructionId.getLeft32(ins)] = pop();
                 break;
             // memory instructions
             case I32_LOAD:
@@ -365,9 +361,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 int n = popI32();
                 int before = getModule().memory.getPages() * Memory.PAGE_SIZE;
                 int after = (getModule().memory.getPages() + n) * Memory.PAGE_SIZE;
-                for (int i = 0; i < getModule().hooks.length; i++) {
-                    getModule().hooks[i].onMemoryGrow(before, after);
-                }
+                module.touchMemGrow(before, after);
                 pushI32(getModule().memory.grow(n));
                 break;
             }

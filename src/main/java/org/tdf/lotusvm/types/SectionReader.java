@@ -23,7 +23,6 @@ public class SectionReader {
             throw new RuntimeException(e.getMessage());
         }
         section.readPayload();
-        section.clearPayload();
         return section;
     }
 }

@@ -9,7 +9,6 @@ import java.nio.ByteOrder;
 import static org.tdf.lotusvm.types.UnsafeUtil.UNSAFE;
 
 public class UnsafeMemory implements Memory, Closeable {
-    private static final int MAX_PAGES = 0xFFFF;
     private final int ARRAY_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
     private LimitType limit = new LimitType();
     private long pointer;
@@ -114,7 +113,7 @@ public class UnsafeMemory implements Memory, Closeable {
 
     @Override
     public int grow(int n) {
-        if (limit.isBounded() && getPages() + n > limit.getMaximum()) {
+        if (limit.getBounded() && getPages() + n > limit.getMaximum()) {
             return -1;
         }
         if (n + this.pages > MAX_PAGES)

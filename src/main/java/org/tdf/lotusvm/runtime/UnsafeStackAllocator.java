@@ -210,10 +210,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.stackBase = newStackBase;
         this.labelBase = newLabelBase;
 
-
-        WASMFunction func = (WASMFunction) ((functionIndex & TABLE_MASK) != 0 ?
-            getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
-            getModule().functions.get((int) (functionIndex & FUNCTION_INDEX_MASK)));
+        WASMFunction func = getFuncByBits(functionIndex);
 
         // set local size
         this.localSize = func.getParametersLength() + func.getLocals();
@@ -236,11 +233,19 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         }
     }
 
-    private void resetBody(int functionIndex) {
-        WASMFunction func = (WASMFunction) ((functionIndex & TABLE_MASK) != 0 ?
-            getModule().table.getFunctions()[(int) (functionIndex & FUNCTION_INDEX_MASK)] :
-            getModule().functions.get((int) (functionIndex & FUNCTION_INDEX_MASK)));
+    private WASMFunction getFuncByBits(int bits) {
+        boolean inTable = (bits & TABLE_MASK) != 0;
+        int funcIndex = (int) (bits & FUNCTION_INDEX_MASK);
 
+        return (WASMFunction) (
+            inTable ?
+                module.getFuncInTable(funcIndex)
+                : module.getFunc(funcIndex)
+        );
+    }
+
+    private void resetBody(int functionIndex) {
+        WASMFunction func = getFuncByBits(functionIndex);
         this.body = func.getBody();
         this.resultType = func.getType().getResultTypes().isEmpty() ? null : func.getType().getResultTypes().get(0);
     }
