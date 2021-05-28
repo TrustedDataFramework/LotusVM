@@ -3,21 +3,18 @@ package org.tdf.lotusvm.runtime;
 // memory allocation for frame id
 // label size (2byte) | local size (2byte) | stack size (2byte) | frame index (2byte)
 final class FrameId {
-    private FrameId() {}
-
     static final long LABEL_SIZE_MASK = 0xffff000000000000L;
     static final int LABEL_SIZE_SHIFTS = 48;
-
     static final long LOCAL_SIZE_MASK = 0x0000ffff00000000L;
     static final int LOCAL_SIZE_SHIFTS = 32;
-
     static final long STACK_SIZE_MASK = 0x00000000ffff0000L;
     static final int STACK_SIZE_SHIFTS = 16;
-
     static final long FUNCTION_INDEX_MASK = 0x000000000000ffffL;
     static final int FUNCTION_INDEX_SHIFTS = 0;
-
     static final long MAX_UNSIGNED_SHORT = 0xffffL;
+
+    private FrameId() {
+    }
 
     static int getLabelSize(long frameId) {
         return (int) ((frameId & LABEL_SIZE_MASK) >>> LABEL_SIZE_SHIFTS);

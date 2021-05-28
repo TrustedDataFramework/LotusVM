@@ -1,6 +1,9 @@
 package org.tdf.lotusvm.runtime;
 
-import org.tdf.lotusvm.types.*;
+import org.tdf.lotusvm.types.InstructionPool;
+import org.tdf.lotusvm.types.LongBuffer;
+import org.tdf.lotusvm.types.UnsafeLongBuffer;
+import org.tdf.lotusvm.types.ValueType;
 
 import static org.tdf.lotusvm.types.UnsafeUtil.MAX_UNSIGNED_SHORT;
 import static org.tdf.lotusvm.types.UnsafeUtil.UNSAFE;
@@ -57,7 +60,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.labelDataPtr = UNSAFE.allocateMemory((maxLabelSize * 8L));
         UNSAFE.setMemory(labelDataPtr, (maxLabelSize * 8L), (byte) 0);
     }
-
 
 
     private void setLabels(int p, long instructions) {
@@ -133,14 +135,14 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int c = this.count;
 
         // clear
-        if(c != 0){
+        if (c != 0) {
             storeCurrentFrame();
         }
 
         int newStackBase = 0;
         int newLabelBase = 0;
 
-        if(c != 0) {
+        if (c != 0) {
             newStackBase = this.stackBase + this.localSize + this.stackSize;
             newLabelBase = this.labelBase + this.labelSize;
         }
@@ -187,7 +189,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
         int c = this.count;
 
-        if(c != 0){
+        if (c != 0) {
             storeCurrentFrame();
         }
 
@@ -198,7 +200,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int newLabelBase = 0;
 
 
-        if(c != 0) {
+        if (c != 0) {
             newStackBase = this.stackBase + this.localSize + this.stackSize;
             newLabelBase = this.labelBase + this.labelSize;
         }
@@ -285,7 +287,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         if (length == 0)
             return 0;
 
-        if(frameIndex == currentFrameIndex()) {
+        if (frameIndex == currentFrameIndex()) {
             if (stackSize < length)
                 throw new RuntimeException("stack underflow");
             int r = this.stackBase + this.localSize + stackSize - length;
@@ -298,7 +300,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             if (size < length)
                 throw new RuntimeException("stack underflow");
             frameData.set(frameIndex, FrameId.setStackSize(frameId, size - length));
-            return  FrameDataOffset.getStackBase(offset) + FrameId.getLocalSize(frameId) + size - length;
+            return FrameDataOffset.getStackBase(offset) + FrameId.getLocalSize(frameId) + size - length;
         }
     }
 
@@ -307,7 +309,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     public void popFrame() {
         count--;
         // clear
-        if(count == 0)
+        if (count == 0)
             return;
 
         long prev = this.frameData.get(currentFrameIndex());
@@ -325,7 +327,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
 
     @Override
-    public void pushLabel( boolean arity, long body, boolean loop) {
+    public void pushLabel(boolean arity, long body, boolean loop) {
         int p = labelBase + labelSize;
         setLabels(p, body);
         setArity(p, arity);
