@@ -187,7 +187,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             throw new RuntimeException("function index overflow");
 
         int c = this.count;
-
         if (c != 0) {
             storeCurrentFrame();
         }
