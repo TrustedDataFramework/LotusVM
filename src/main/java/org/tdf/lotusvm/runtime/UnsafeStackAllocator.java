@@ -31,7 +31,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     private int count;
 
     private ValueType resultType;
-    private long body;
+    private long functionBody;
 
     private int labelSize;
     private int localSize;
@@ -157,7 +157,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.labelBase = newLabelBase;
 
         this.resultType = type;
-        this.body = instructions;
+        this.functionBody = instructions;
 
         this.count++;
     }
@@ -218,7 +218,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.localSize = func.getParamSize() + func.getLocals();
 
         // set body and value type
-        body = func.getBody();
+        functionBody = func.getBody();
         // set value type
         resultType = func.getType().getResultTypes().isEmpty() ? null : func.getType().getResultTypes().get(0);
 
@@ -248,7 +248,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     private void resetBody(int functionIndex) {
         WASMFunction func = getFuncByBits(functionIndex);
-        this.body = func.getBody();
+        this.functionBody = func.getBody();
         this.resultType = func.getType().getResultTypes().isEmpty() ? null : func.getType().getResultTypes().get(0);
     }
 
@@ -335,12 +335,14 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     @Override
     public void pushLabel(boolean arity, long body, boolean loop) {
         int p = labelBase + labelSize;
-        setLabels(p, body);
         setArity(p, arity);
         setLoop(p, loop);
         setLabelPc(p, 0);
-        if (p > 0)
+        setLabels(p, body);
+        if (p > 0) {
+
             setStackPc(p - 1, stackPc);
+        }
         this.stackPc = stackSize;
         this.labelSize++;
     }
@@ -389,15 +391,15 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         // if loop set label pc of label poped as zero
         // else set label pc of label poped as as full
         int prevPc = 0;
+        long labels = getLabels(p);
 
         if (!loop) {
-            prevPc = InstructionPool.getInstructionsSize(getLabels(p));
+            prevPc = InstructionPool.getInstructionsSize(labels);
         }
 
-        // push a new label
         pushLabel(
                 arity,
-                getLabels(p),
+                labels,
                 loop
         );
 
@@ -449,8 +451,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
 
     @Override
-    protected long getBody() {
-        return body;
+    protected long getFunctionBody() {
+        return functionBody;
     }
 
     @Override

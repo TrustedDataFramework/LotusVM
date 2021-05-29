@@ -54,7 +54,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
 
     abstract void popLabel();
 
-    protected abstract long getBody();
+    protected abstract long getFunctionBody();
 
     protected abstract ValueType getResultType();
 
@@ -89,7 +89,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
     public long execute() throws RuntimeException {
         InstructionPool pool = module.getInsPool();
 
-        pushLabel(getResultType() != null, getBody(), false);
+        pushLabel(getResultType() != null, getFunctionBody(), false);
         while (!labelIsEmpty()) {
             int pc = getPc();
             long body = getInstructions();
