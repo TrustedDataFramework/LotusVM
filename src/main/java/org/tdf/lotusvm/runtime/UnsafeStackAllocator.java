@@ -40,6 +40,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     private int stackBase;
     private int labelBase;
+    private int stackPc;
+
 
     public UnsafeStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
         super(maxStackSize, maxFrames, maxLabelSize);
@@ -59,7 +61,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.labelDataPtr = UNSAFE.allocateMemory((maxLabelSize * 8L));
         UNSAFE.setMemory(labelDataPtr, (maxLabelSize * 8L), (byte) 0);
     }
-
 
     private void setLabels(int p, long instructions) {
         labels.set(p, instructions);
@@ -85,15 +86,16 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         return UNSAFE.getByte(labelDataPtr + ((p * 8L) | LOOP_OFFSET)) != 0;
     }
 
+
     private void setLabelPc(int p, int pc) {
         UNSAFE.putShort(
-            labelDataPtr + ((p * 8L) | LABEL_PC_OFFSET), (short) pc
+                labelDataPtr + ((p * 8L) | LABEL_PC_OFFSET), (short) pc
         );
     }
 
     private int getLabelPc(int p) {
         return UNSAFE.getShort(
-            labelDataPtr + ((p * 8L) | LABEL_PC_OFFSET)
+                labelDataPtr + ((p * 8L) | LABEL_PC_OFFSET)
         ) & MAX_UNSIGNED_SHORT;
     }
 
@@ -101,7 +103,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         UNSAFE.putShort(labelDataPtr + ((p * 8L)), (short) pc);
     }
 
-    private int getStackPc(int p) {
+
+    private int fetchStackPc(int p) {
         return UNSAFE.getShort(labelDataPtr + ((p * 8L))) & MAX_UNSIGNED_SHORT;
     }
 
@@ -237,9 +240,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int funcIndex = (int) (bits & FUNCTION_INDEX_MASK);
 
         return (WASMFunction) (
-            inTable ?
-                module.getFuncInTable(funcIndex)
-                : module.getFunc(funcIndex)
+                inTable ?
+                        module.getFuncInTable(funcIndex)
+                        : module.getFunc(funcIndex)
         );
     }
 
@@ -336,8 +339,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         setArity(p, arity);
         setLoop(p, loop);
         setLabelPc(p, 0);
-
-        setStackPc(p, stackSize);
+        if (p > 0)
+            setStackPc(p - 1, stackPc);
+        this.stackPc = stackSize;
         this.labelSize++;
     }
 
@@ -346,41 +350,58 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         if (labelSize == 0)
             throw new RuntimeException("label underflow");
         labelSize--;
+        stackPc = fetchStackPc(labelBase + labelSize - 1);
     }
 
 
     public void popAndClearLabel() {
         if (labelSize == 0)
             throw new RuntimeException("label underflow");
-        this.stackSize = getStackPc(labelBase + labelSize - 1);
+        this.stackSize = stackPc;
         this.labelSize--;
+        this.stackPc = fetchStackPc(labelBase + labelSize - 1);
     }
+
 
     @Override
     public void branch(int l) {
+        // when l = 0
+        // idx and p refers to top label
         int idx = labelSize - 1 - l;
         int p = labelBase + idx;
 
         boolean arity = getArity(p);
         long val = arity ? pop() : 0;
+
         // Repeat l+1 times
+        // when l = 0, pop label
+        // and set stack size = stack pc of pop label
         for (int i = 0; i < l + 1; i++) {
             popAndClearLabel();
         }
+
         if (arity) {
             push(val);
         }
+
         boolean loop = getLoop(p);
-        setLabelPc(p, 0);
+
+        // if loop set label pc of label poped as zero
+        // else set label pc of label poped as as full
+        int prevPc = 0;
+
         if (!loop) {
-            setLabelPc(p, InstructionPool.getInstructionsSize(getLabels(p)));
+            prevPc = InstructionPool.getInstructionsSize(getLabels(p));
         }
-        int prevPc = getLabelPc(p);
+
+        // push a new label
         pushLabel(
-            arity,
-            getLabels(p),
-            loop
+                arity,
+                getLabels(p),
+                loop
         );
+
+        // set label pc of current label as prev pc
         p = labelBase + labelSize - 1;
         setLabelPc(p, prevPc);
     }
