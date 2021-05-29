@@ -1,9 +1,8 @@
 package org.tdf.lotusvm
 
 import org.tdf.lotusvm.types.*
-import java.io.Closeable
 
-interface Module : Closeable {
+interface Module : AutoCloseable {
     companion object {
         @JvmStatic
         fun create(bin: ByteArray): Module {

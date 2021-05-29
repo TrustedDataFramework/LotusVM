@@ -3,7 +3,6 @@ package org.tdf.lotusvm.types;
 import lombok.*;
 import org.tdf.lotusvm.common.BytesReader;
 import org.tdf.lotusvm.common.OpCode;
-import org.tdf.lotusvm.common.Vector;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -71,7 +70,7 @@ public class Instruction {
                 reader.read();
                 return new Instruction(c, type, branch0, branch1, null);
             case BR_TABLE:
-                long[] labels = Vector.readUint32VectorAsLongFrom(reader);
+                long[] labels = reader.readUint32VectorAsLongFrom();
                 long[] operands = new long[labels.length + 1];
                 System.arraycopy(labels, 0, operands, 0, labels.length);
                 operands[operands.length - 1] = reader.readVarUint32() & 0xffffffffL;
@@ -112,7 +111,8 @@ public class Instruction {
             }
             return new Instruction(c);
         }
-        return new Instruction(c, new long[]{reader.readVarUint32() & 0xffffffffL, reader.readVarUint32() & 0xffffffffL});
+        reader.readVarUint32();
+        return new Instruction(c, new long[]{reader.readVarUint32() & 0xffffffffL});
     }
 
     private static Instruction readNumericInstruction(BytesReader reader) {

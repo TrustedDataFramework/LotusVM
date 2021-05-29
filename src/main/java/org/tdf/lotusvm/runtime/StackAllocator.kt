@@ -1,10 +1,9 @@
 package org.tdf.lotusvm.runtime
 
 import org.tdf.lotusvm.types.ValueType
-import java.io.Closeable
 
 // stack provider to avoid array create
-interface StackAllocator : Closeable {
+interface StackAllocator : AutoCloseable {
     val isEmpty: Boolean
     fun execute(): Long
 

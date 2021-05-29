@@ -1,8 +1,6 @@
 package org.tdf.lotusvm.types
 
-import java.io.Closeable
-
-interface LongBuffer : Closeable {
+interface LongBuffer : AutoCloseable {
     operator fun get(index: Int): Long
     operator fun set(index: Int, `val`: Long)
     fun size(): Int

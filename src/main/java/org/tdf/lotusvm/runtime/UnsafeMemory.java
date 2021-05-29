@@ -8,7 +8,7 @@ import java.nio.ByteOrder;
 
 import static org.tdf.lotusvm.types.UnsafeUtil.UNSAFE;
 
-public class UnsafeMemory implements Memory, Closeable {
+public class UnsafeMemory implements Memory {
     private final int ARRAY_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
     private LimitType limit = new LimitType();
     private long pointer;

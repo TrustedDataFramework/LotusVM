@@ -1,9 +1,8 @@
 package org.tdf.lotusvm.runtime
 
 import org.tdf.lotusvm.types.LimitType
-import java.io.Closeable
 
-interface Memory : Closeable {
+interface Memory : AutoCloseable {
     companion object {
         const val PAGE_SIZE = 64 * (1 shl 10) // 64 KB
         const val MAX_PAGES = 0xFFFF

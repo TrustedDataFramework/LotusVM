@@ -48,8 +48,7 @@ internal class ModuleImpl(binary: ByteArray) : Module {
         private set
     override var dataSection: DataSection? = null
         private set
-    override var insPool: InstructionPool = InstructionPool()
-        private set
+    override val insPool: InstructionPool = InstructionPool()
 
     private fun parse(binary: ByteArray) {
         val reader = BytesReader(binary)

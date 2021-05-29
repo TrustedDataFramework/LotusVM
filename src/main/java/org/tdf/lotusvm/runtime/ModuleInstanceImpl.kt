@@ -21,7 +21,7 @@ class ModuleInstanceImpl(builder: Builder) : ModuleInstance {
     // memories
     // In the current version of WebAssembly, all memory instructions implicitly operate on memory index 0.
     // This restriction may be lifted in future versions.
-    override lateinit var memory: Memory
+    override val memory: Memory = builder.memory!!
 
     // In the current version of WebAssembly, at most one table may be defined or imported in a single module,
     // and all constructs implicitly reference this table 0. This restriction may be lifted in future versions.
@@ -37,15 +37,15 @@ class ModuleInstanceImpl(builder: Builder) : ModuleInstance {
 
     // hooks
 
-    var hookArray: Array<Hook> = emptyArray()
+    private var hookArray: Array<Hook> = builder.hooks.toTypedArray()
 
     // exported functions
-    val exports: MutableMap<String, Int> = mutableMapOf()
+    private val exports: MutableMap<String, Int> = mutableMapOf()
 
-    var types: List<FunctionType>
+    val types: List<FunctionType>
 
-    var validateFunctionType: Boolean
-    var stackAllocator: StackAllocator
+    val validateFunctionType: Boolean = builder.validateFunctionType
+    var stackAllocator: StackAllocator = builder.stackAllocator!!
 
     var insPool: InstructionPool
 
@@ -98,7 +98,7 @@ class ModuleInstanceImpl(builder: Builder) : ModuleInstance {
         return table?.functions?.get(idx)!!
     }
 
-    val tableSize: Int
+    private val tableSize: Int
         get() = table?.functions?.size ?: 0
 
     override fun containsExport(funcName: String): Boolean {
@@ -106,16 +106,13 @@ class ModuleInstanceImpl(builder: Builder) : ModuleInstance {
     }
 
     init {
-        stackAllocator = builder.stackAllocator!!
         stackAllocator.module = this
-        memory = builder.memory!!
+
         val module = builder.module!!
         insPool = module.insPool!!
 
         types = module.typeSection?.functionTypes ?: emptyList()
-        hookArray = builder.hooks.toTypedArray()
 
-        validateFunctionType = builder.validateFunctionType
         val functionsMap: MutableMap<String, HostFunction> = mutableMapOf()
         for (f in builder.hostFunctions) {
             if (functionsMap.containsKey(f.name)) throw RuntimeException("create module instance failed: duplicated host function " + f.name)

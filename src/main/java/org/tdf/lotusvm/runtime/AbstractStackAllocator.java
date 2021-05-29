@@ -113,9 +113,9 @@ public abstract class AbstractStackAllocator implements StackAllocator {
     }
 
     private int getMemoryOffset(long ins) {
-        int offset = module.getInsPool().getMemoryBase(ins);
-        long l = Integer.toUnsignedLong(popI32()) + Integer.toUnsignedLong(offset);
-        if (Long.compareUnsigned(l, 0x7FFFFFFFL) > 0)
+        int r = InstructionId.getLeft32(ins);
+        long l = Integer.toUnsignedLong(popI32()) + Integer.toUnsignedLong(r);
+        if (Long.compareUnsigned(l, Integer.MAX_VALUE) > 0)
             throw new RuntimeException("memory access overflow");
         return (int) l;
     }
@@ -148,9 +148,10 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                     pushLabel(InstructionId.getResultType(ins) != ResultType.EMPTY, pool.getBranch0(ins), false);
                     break;
                 }
-                if (!pool.isNullBranch(ins, 1)) {
-                    pushLabel(InstructionId.getResultType(ins) != ResultType.EMPTY, pool.getBranch1(ins), false);
-                }
+                long branch1 = pool.getBranch1(ins);
+                if(pool.isNullBranch(branch1))
+                    break;
+                pushLabel(InstructionId.getResultType(ins) != ResultType.EMPTY, branch1, false);
                 break;
             }
             case BR: {

@@ -13,10 +13,10 @@ import org.tdf.lotusvm.types.GlobalType
  * 6. float number, i.e. f32_nearest, f64_round (platform undefined behavior)
  */
 interface ModuleInstance {
-    var globals: LongArray
+    val globals: LongArray
     val globalTypes: List<GlobalType>
     val memory: Memory
-    var hooks: Set<Hook>
+    val hooks: Set<Hook>
 
     fun containsExport(funcName: String): Boolean
     fun execute(functionIndex: Int, vararg parameters: Long): LongArray

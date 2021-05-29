@@ -237,4 +237,15 @@ public class BytesReader extends InputStream {// io.reader
         }
         return r;
     }
+
+    public long[] readUint32VectorAsLongFrom() {
+        int length = readVarUint32();
+        if (length == 0) return Constants.EMPTY_LONGS;
+        long[] res = new long[length];
+
+        for (int i = 0; i < res.length; i++) {
+            res[i] = readVarUint32AsLong();
+        }
+        return res;
+    }
 }

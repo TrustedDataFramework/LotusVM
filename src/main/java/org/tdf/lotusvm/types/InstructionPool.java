@@ -18,8 +18,7 @@ import static org.tdf.lotusvm.types.UnsafeUtil.MAX_UNSIGNED_SHORT;
 // branch offset | operand size (2byte) | result type (1byte) | opcode for instruction with branch and var length operands
 //
 public final class InstructionPool implements Closeable {
-    // instruction = 32byte = 8 * 8(size of long)
-    private static final int INSTRUCTION_SIZE = 8;
+    private static final int MAX_INITIAL_CAP = 128;
 
     private static final long LINKED_LIST_NEXT_MASK = 0x7FFFFFFF00000000L;
     private static final int LINKED_LIST_NEXT_SHIFTS = 32;
@@ -30,15 +29,19 @@ public final class InstructionPool implements Closeable {
     private static final long INSTRUCTIONS_OFFSET_MASK = 0x7FFFFFFFL;
 
 
-    private static final int BRANCH_OFFSET = 1;
-
 
     private static final long NULL = 0xFFFFFFFFFFFFFFFFL;
 
     private final LongBuffer data;
 
     public InstructionPool() {
-        this.data = new UnsafeLongBuffer(INSTRUCTION_SIZE * 8);
+        this(MAX_INITIAL_CAP);
+    }
+
+    public InstructionPool(int initialCap) {
+        this.data = new UnsafeLongBuffer(
+                Math.min(initialCap & Integer.MAX_VALUE, MAX_INITIAL_CAP)
+        );
         // push null pointer at offset 0;
         this.data.push(0L);
     }
@@ -100,9 +103,8 @@ public final class InstructionPool implements Closeable {
         }
     }
 
-    public boolean isNullBranch(long insId, int branch) {
-        int branchOffset = InstructionId.getLeft32(insId) + branch;
-        return data.get(branchOffset) < 0;
+    public boolean isNullBranch(long value) {
+        return value < 0;
     }
 
     public long getBranchInstruction(long insId, int branch, int index) {
@@ -148,13 +150,10 @@ public final class InstructionPool implements Closeable {
         if (c.code >= GET_LOCAL.code && c.code < I32_LOAD.code) {
             return Integer.toUnsignedLong(InstructionId.getLeft32(insId));
         }
-
+        if (c.code >= I32_LOAD.code && c.code < I32_CONST.code) {
+            return Integer.toUnsignedLong(InstructionId.getLeft32(insId));
+        }
         return getOperand(insId, index);
-    }
-
-
-    public int getMemoryBase(long insId) {
-        return getOperandAsInt(insId, 1);
     }
 
     public int getOperandAsInt(long insId, int index) {
@@ -260,10 +259,11 @@ public final class InstructionPool implements Closeable {
             }
             return ins;
         }
-        ins = pushWithBodyOffset(ins);
-        pushValue(reader.readVarUint32AsLong());
-        pushValue(reader.readVarUint32AsLong());
-        return InstructionId.setOperandSize(ins, 2);
+        // align is intend to optimize memory access, currently unused
+        int align = reader.readVarUint32();
+        int m = reader.readVarUint32();
+        ins =  InstructionId.setLeft32(ins, m);
+        return InstructionId.setOperandSize(ins, 1);
     }
 
     private long readNumericInstruction(BytesReader reader) {
