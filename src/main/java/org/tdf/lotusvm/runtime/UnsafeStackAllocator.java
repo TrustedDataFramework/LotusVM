@@ -348,25 +348,25 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         labelSize--;
     }
 
-
-    public void popAndClearLabel() {
-        if (labelSize == 0)
-            throw new RuntimeException("label underflow");
-        this.stackSize = getStackPc(labelBase + labelSize - 1);
-        this.labelSize--;
-    }
-
+    // 1. pop l + 1 labels
+    // 2. restore stack size
+    // 3. push the last pop label and set pc = 0 if loop else label size
     @Override
     public void branch(int l) {
         int idx = labelSize - 1 - l;
-        int p = labelBase + idx;
+        if(idx < 0)
+            throw new RuntimeException("label underflow");
 
+        this.labelSize = idx;
+
+        // p refers to last pop label
+        int p = labelBase + labelSize;
         boolean arity = getArity(p);
         long val = arity ? pop() : 0;
-        // Repeat l+1 times
-        for (int i = 0; i < l + 1; i++) {
-            popAndClearLabel();
-        }
+
+        // restore stack size after pop
+        this.stackSize = getStackPc(p);
+
         if (arity) {
             push(val);
         }
