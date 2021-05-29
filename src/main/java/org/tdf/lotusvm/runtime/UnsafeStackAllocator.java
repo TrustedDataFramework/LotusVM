@@ -87,13 +87,13 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     private void setLabelPc(int p, int pc) {
         UNSAFE.putShort(
-            labelDataPtr + ((p * 8L) | LABEL_PC_OFFSET), (short) pc
+                labelDataPtr + ((p * 8L) | LABEL_PC_OFFSET), (short) pc
         );
     }
 
     private int getLabelPc(int p) {
         return UNSAFE.getShort(
-            labelDataPtr + ((p * 8L) | LABEL_PC_OFFSET)
+                labelDataPtr + ((p * 8L) | LABEL_PC_OFFSET)
         ) & MAX_UNSIGNED_SHORT;
     }
 
@@ -237,9 +237,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int funcIndex = (int) (bits & FUNCTION_INDEX_MASK);
 
         return (WASMFunction) (
-            inTable ?
-                module.getFuncInTable(funcIndex)
-                : module.getFunc(funcIndex)
+                inTable ?
+                        module.getFuncInTable(funcIndex)
+                        : module.getFunc(funcIndex)
         );
     }
 
@@ -354,7 +354,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     @Override
     public void branch(int l) {
         int idx = labelSize - 1 - l;
-        if(idx < 0)
+        if (idx < 0)
             throw new RuntimeException("label underflow");
 
         this.labelSize = idx;
@@ -379,14 +379,13 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             prevPc = InstructionPool.getInstructionsSize(labels);
         }
 
-        pushLabel(
-            arity,
-            labels,
-            loop
-        );
-
+        this.labelSize++;
         p = labelBase + labelSize - 1;
+        setLabels(p, labels);
         setLabelPc(p, prevPc);
+        setArity(p, arity);
+        setLoop(p, loop);
+        setStackPc(p, stackSize);
     }
 
     @Override
