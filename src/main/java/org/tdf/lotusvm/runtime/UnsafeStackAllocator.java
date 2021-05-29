@@ -138,7 +138,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
         // clear
         if (c != 0) {
-            storeCurrentFrame();
+            saveFrame();
         }
 
         int newStackBase = 0;
@@ -164,7 +164,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     // when args = null,
 
-    private void storeCurrentFrame() {
+    private void saveFrame() {
         long frameId = FrameId.setFunctionIndex(0L, functionIndex);
         frameId = FrameId.setStackSize(frameId, stackSize);
         frameId = FrameId.setLabelSize(frameId, labelSize);
@@ -173,6 +173,19 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         offset = FrameDataOffset.setStackBase(offset, stackBase);
         frameData.set(currentFrameIndex(), frameId);
         offsets.set(currentFrameIndex(), offset);
+    }
+
+    private void loadFrame() {
+        long prev = this.frameData.get(currentFrameIndex());
+        this.stackSize = FrameId.getStackSize(prev);
+        this.localSize = FrameId.getLocalSize(prev);
+        this.labelSize = FrameId.getLabelSize(prev);
+        this.functionIndex = FrameId.getFunctionIndex(prev);
+
+        long prevOffset = this.offsets.get(currentFrameIndex());
+        this.stackBase = FrameDataOffset.getStackBase(prevOffset);
+        this.labelBase = FrameDataOffset.getLabelBase(prevOffset);
+        resetBody(functionIndex);
     }
 
     public int currentFrameIndex() {
@@ -191,7 +204,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
         int c = this.count;
         if (c != 0) {
-            storeCurrentFrame();
+            saveFrame();
         }
 
         this.functionIndex = functionIndex;
@@ -317,18 +330,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         // clear
         if (count == 0)
             return;
-
-        long prev = this.frameData.get(currentFrameIndex());
-        this.stackSize = FrameId.getStackSize(prev);
-        this.localSize = FrameId.getLocalSize(prev);
-        this.labelSize = FrameId.getLabelSize(prev);
-        this.functionIndex = FrameId.getFunctionIndex(prev);
-
-        long prevOffset = this.offsets.get(currentFrameIndex());
-        this.stackBase = FrameDataOffset.getStackBase(prevOffset);
-        this.labelBase = FrameDataOffset.getLabelBase(prevOffset);
-
-        resetBody(functionIndex);
+        loadFrame();
     }
 
 
