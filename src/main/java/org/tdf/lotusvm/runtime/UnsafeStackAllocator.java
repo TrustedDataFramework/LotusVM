@@ -371,16 +371,20 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             push(val);
         }
         boolean loop = getLoop(p);
-        setLabelPc(p, 0);
+
+        int prevPc = 0;
+        long labels = getLabels(p);
+
         if (!loop) {
-            setLabelPc(p, InstructionPool.getInstructionsSize(getLabels(p)));
+            prevPc = InstructionPool.getInstructionsSize(labels);
         }
-        int prevPc = getLabelPc(p);
+
         pushLabel(
             arity,
-            getLabels(p),
+            labels,
             loop
         );
+
         p = labelBase + labelSize - 1;
         setLabelPc(p, prevPc);
     }
