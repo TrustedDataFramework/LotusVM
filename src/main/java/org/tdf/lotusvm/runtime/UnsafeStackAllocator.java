@@ -39,18 +39,18 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     private int labelBase;
 
     private long labelBody;
+    private int labelPc;
 
     private void loadLabel() {
         int p = this.labelBase + labelSize - 1;
-        long l = labels.get(this.labelBase + labelSize - 1);
-        System.out.printf("load label p = %d, label = %d\n", p, l);
-        this.labelBody = l;
+        this.labelBody = labels.get(p);
+        this.labelPc = getLabelPc(p);
     }
 
     private void saveLabel() {
         int p = this.labelBase + labelSize - 1;
-        System.out.printf("save label p = %d, label = %d\n", p, labelBody);
         labels.set(p, this.labelBody);
+        setLabelPc(p, this.labelPc);
     }
 
     public UnsafeStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
@@ -355,13 +355,13 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int p = labelBase + labelSize;
         setArity(p, arity);
         setLoop(p, loop);
-        setLabelPc(p, 0);
 
         setStackPc(p, stackSize);
         if(this.labelSize != 0)
             saveLabel();
 
         this.labelBody = body;
+        this.labelPc = 0;
         this.labelSize++;
     }
 
@@ -399,17 +399,16 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         boolean loop = getLoop(p);
 
         int prevPc = 0;
-        long labels = getLabels(p);
+        long labels = l == 0 ? this.labelBody : getLabels(p);
 
         if (!loop) {
             prevPc = InstructionPool.getInstructionsSize(labels);
         }
 
         this.labelSize++;
-        System.out.printf("label body rebase to p = %d, %d\n", p, labels);
         p = labelBase + labelSize - 1;
         this.labelBody = labels;
-        setLabelPc(p, prevPc);
+        this.labelPc = prevPc;
         setArity(p, arity);
         setLoop(p, loop);
         setStackPc(p, stackSize);
@@ -427,14 +426,12 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     @Override
     public int getPc() {
-        int p = labelBase + labelSize - 1;
-        return getLabelPc(p);
+        return labelPc;
     }
 
     @Override
     public void setPc(int pc) {
-        int p = labelBase + labelSize - 1;
-        setLabelPc(p, pc);
+        this.labelPc = pc;
     }
 
     @Override
