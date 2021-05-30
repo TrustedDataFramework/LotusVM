@@ -15,7 +15,7 @@ public class NumericTest {
         module.testSpecFunctions(filename, null, 0, -1);
     }
 
-    public void testSpecFunctions(String filename, Collection<String> functions, int skip, int limit) throws Exception {
+    public void testSpecFunctions(String filename, Collection<? extends String> functions, int skip, int limit) throws Exception {
         TestModule module = Util.getTestModule("testdata");
         module.testSpecFunctions(filename, functions, skip, limit);
     }
@@ -42,7 +42,7 @@ public class NumericTest {
 
     @Test
     public void testBrIFLoop() throws Exception {
-        testSpecFile("brif-loop.wasm");
+        testSpecFunctions("brif-loop.wasm", Collections.singleton("test2"), 0, 1);
     }
 
     @Test

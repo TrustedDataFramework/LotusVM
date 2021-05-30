@@ -1,9 +1,6 @@
 package org.tdf.lotusvm.runtime;
 
-import org.tdf.lotusvm.types.InstructionPool;
-import org.tdf.lotusvm.types.LongBuffer;
-import org.tdf.lotusvm.types.UnsafeLongBuffer;
-import org.tdf.lotusvm.types.ValueType;
+import org.tdf.lotusvm.types.*;
 
 import static org.tdf.lotusvm.types.UnsafeUtil.MAX_UNSIGNED_SHORT;
 import static org.tdf.lotusvm.types.UnsafeUtil.UNSAFE;
@@ -41,10 +38,25 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     private int stackBase;
     private int labelBase;
 
+    private long labelBody;
+
+    private void loadLabel() {
+        int p = this.labelBase + labelSize - 1;
+        long l = labels.get(this.labelBase + labelSize - 1);
+        System.out.printf("load label p = %d, label = %d\n", p, l);
+        this.labelBody = l;
+    }
+
+    private void saveLabel() {
+        int p = this.labelBase + labelSize - 1;
+        System.out.printf("save label p = %d, label = %d\n", p, labelBody);
+        labels.set(p, this.labelBody);
+    }
+
     public UnsafeStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
         super(maxStackSize, maxFrames, maxLabelSize);
 
-        this.labels = new UnsafeLongBuffer(maxLabelSize);
+        this.labels = new ArrayLongBuffer(maxLabelSize);
         this.labels.setSize(maxLabelSize);
 
         this.stackData = new UnsafeLongBuffer(maxStackSize);
@@ -138,6 +150,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             storeCurrentFrame();
         }
 
+        if(labelSize != 0)
+            saveLabel();
+
         int newStackBase = 0;
         int newLabelBase = 0;
 
@@ -189,6 +204,10 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int c = this.count;
         if (c != 0) {
             storeCurrentFrame();
+        }
+
+        if(labelSize != 0) {
+            saveLabel();
         }
 
         this.functionIndex = functionIndex;
@@ -326,18 +345,23 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.labelBase = FrameDataOffset.getLabelBase(prevOffset);
 
         resetBody(functionIndex);
+        if(this.labelSize != 0)
+            loadLabel();
     }
 
 
     @Override
     public void pushLabel(boolean arity, long body, boolean loop) {
         int p = labelBase + labelSize;
-        setLabels(p, body);
         setArity(p, arity);
         setLoop(p, loop);
         setLabelPc(p, 0);
 
         setStackPc(p, stackSize);
+        if(this.labelSize != 0)
+            saveLabel();
+
+        this.labelBody = body;
         this.labelSize++;
     }
 
@@ -346,6 +370,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         if (labelSize == 0)
             throw new RuntimeException("label underflow");
         labelSize--;
+        if(labelSize != 0)
+            loadLabel();
     }
 
     // 1. pop l + 1 labels
@@ -380,8 +406,9 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         }
 
         this.labelSize++;
+        System.out.printf("label body rebase to p = %d, %d\n", p, labels);
         p = labelBase + labelSize - 1;
-        setLabels(p, labels);
+        this.labelBody = labels;
         setLabelPc(p, prevPc);
         setArity(p, arity);
         setLoop(p, loop);
@@ -395,7 +422,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
 
     public long getInstructions() {
-        return getLabels(labelBase + labelSize - 1);
+        return labelBody;
     }
 
     @Override
