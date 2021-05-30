@@ -40,12 +40,16 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     private long labelBody;
     private int labelPc;
+    private boolean arity;
+    private boolean loop;
 
     private void loadLabel() {
         int p = this.labelBase + labelSize - 1;
         this.labelBody = labels.get(p);
         this.labelPc = getLabelPc(p);
         this.stackPc = getStackPc(p);
+        this.arity = getArity(p);
+        this.loop = getLoop(p);
     }
 
     private void saveLabel() {
@@ -53,6 +57,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         labels.set(p, this.labelBody);
         setLabelPc(p, this.labelPc);
         setStackPc(p, this.stackPc);
+        setArity(p, arity);
+        setLoop(p, loop);
     }
 
     public UnsafeStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
@@ -352,13 +358,11 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
     @Override
     public void pushLabel(boolean arity, long body, boolean loop) {
-        int p = labelBase + labelSize;
-        setArity(p, arity);
-        setLoop(p, loop);
-
         if(this.labelSize != 0)
             saveLabel();
 
+        this.arity = arity;
+        this.loop = loop;
         this.stackPc = stackSize;
         this.labelBody = body;
         this.labelPc = 0;
@@ -387,7 +391,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
 
         // p refers to last pop label
         int p = labelBase + labelSize;
-        boolean arity = getArity(p);
+        boolean arity = l == 0 ? this.arity : getArity(p);
         long val = arity ? pop() : 0;
 
         // restore stack size after pop
@@ -396,8 +400,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         if (arity) {
             push(val);
         }
-        boolean loop = getLoop(p);
 
+        boolean loop = l == 0 ? this.loop : getLoop(p);
         int prevPc = 0;
         long labels = l == 0 ? this.labelBody : getLabels(p);
 
@@ -406,11 +410,10 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         }
 
         this.labelSize++;
-        p = labelBase + labelSize - 1;
         this.labelBody = labels;
         this.labelPc = prevPc;
-        setArity(p, arity);
-        setLoop(p, loop);
+        this.arity = arity;
+        this.loop = loop;
         this.stackPc = stackSize;
     }
 
