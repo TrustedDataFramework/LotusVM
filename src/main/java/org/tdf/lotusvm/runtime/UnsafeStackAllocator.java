@@ -5,10 +5,6 @@ import org.tdf.lotusvm.types.*;
 import static org.tdf.lotusvm.types.UnsafeUtil.MAX_UNSIGNED_SHORT;
 
 public class UnsafeStackAllocator extends AbstractStackAllocator {
-    private static final long ARITY_OFFSET = 6L;
-    private static final long LOOP_OFFSET = 7L;
-    private static final long LABEL_PC_OFFSET = 2L;
-
     private final LongBuffer stackData;
 
     // label data = stack pc (2byte) | label pc (2byte) | 0x00  | 0x00  | arity (1byte) | loop (1byte)
