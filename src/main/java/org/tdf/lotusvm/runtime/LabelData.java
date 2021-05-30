@@ -14,7 +14,8 @@ final class LabelData {
 
     static final long LOOP_MASK = 0xffL;
 
-    private LabelData() {}
+    private LabelData() {
+    }
 
 
     static long withAll(int stackPc, int labelPc, boolean arity, boolean loop) {

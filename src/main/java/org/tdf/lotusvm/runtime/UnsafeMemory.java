@@ -3,7 +3,6 @@ package org.tdf.lotusvm.runtime;
 import lombok.Getter;
 import org.tdf.lotusvm.types.LimitType;
 
-import java.io.Closeable;
 import java.nio.ByteOrder;
 
 import static org.tdf.lotusvm.types.UnsafeUtil.UNSAFE;

@@ -29,7 +29,6 @@ public final class InstructionPool implements Closeable {
     private static final long INSTRUCTIONS_OFFSET_MASK = 0x7FFFFFFFL;
 
 
-
     private static final long NULL = 0xFFFFFFFFFFFFFFFFL;
 
     private final LongBuffer data;
@@ -40,7 +39,7 @@ public final class InstructionPool implements Closeable {
 
     public InstructionPool(int initialCap) {
         this.data = new UnsafeLongBuffer(
-                Math.min(initialCap & Integer.MAX_VALUE, MAX_INITIAL_CAP)
+            Math.min(initialCap & Integer.MAX_VALUE, MAX_INITIAL_CAP)
         );
         // push null pointer at offset 0;
         this.data.push(0L);
@@ -262,7 +261,7 @@ public final class InstructionPool implements Closeable {
         // align is intend to optimize memory access, currently unused
         int align = reader.readVarUint32();
         int m = reader.readVarUint32();
-        ins =  InstructionId.setLeft32(ins, m);
+        ins = InstructionId.setLeft32(ins, m);
         return InstructionId.setOperandSize(ins, 1);
     }
 

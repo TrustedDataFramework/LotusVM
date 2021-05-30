@@ -149,7 +149,7 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                     break;
                 }
                 long branch1 = pool.getBranch1(ins);
-                if(pool.isNullBranch(branch1))
+                if (pool.isNullBranch(branch1))
                     break;
                 pushLabel(InstructionId.getResultType(ins) != ResultType.EMPTY, branch1, false);
                 break;
