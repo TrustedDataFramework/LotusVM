@@ -45,12 +45,14 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         int p = this.labelBase + labelSize - 1;
         this.labelBody = labels.get(p);
         this.labelPc = getLabelPc(p);
+        this.stackPc = getStackPc(p);
     }
 
     private void saveLabel() {
         int p = this.labelBase + labelSize - 1;
         labels.set(p, this.labelBody);
         setLabelPc(p, this.labelPc);
+        setStackPc(p, this.stackPc);
     }
 
     public UnsafeStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
@@ -112,6 +114,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     private void setStackPc(int p, int pc) {
         UNSAFE.putShort(labelDataPtr + ((p * 8L)), (short) pc);
     }
+
+    private int stackPc;
 
     private int getStackPc(int p) {
         return UNSAFE.getShort(labelDataPtr + ((p * 8L))) & MAX_UNSIGNED_SHORT;
@@ -177,12 +181,8 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     // when args = null,
 
     private void storeCurrentFrame() {
-        long frameId = FrameId.setFunctionIndex(0L, functionIndex);
-        frameId = FrameId.setStackSize(frameId, stackSize);
-        frameId = FrameId.setLabelSize(frameId, labelSize);
-        frameId = FrameId.setLocalSize(frameId, localSize);
-        long offset = FrameDataOffset.setLabelBase(0L, labelBase);
-        offset = FrameDataOffset.setStackBase(offset, stackBase);
+        long frameId = FrameId.withAll(labelSize, localSize, stackSize, functionIndex);
+        long offset = FrameDataOffset.withAll(labelBase, stackBase);
         frameData.set(currentFrameIndex(), frameId);
         offsets.set(currentFrameIndex(), offset);
     }
@@ -356,10 +356,10 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         setArity(p, arity);
         setLoop(p, loop);
 
-        setStackPc(p, stackSize);
         if(this.labelSize != 0)
             saveLabel();
 
+        this.stackPc = stackSize;
         this.labelBody = body;
         this.labelPc = 0;
         this.labelSize++;
@@ -391,7 +391,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         long val = arity ? pop() : 0;
 
         // restore stack size after pop
-        this.stackSize = getStackPc(p);
+        this.stackSize = l == 0 ? this.stackPc : getStackPc(p);
 
         if (arity) {
             push(val);
@@ -411,7 +411,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
         this.labelPc = prevPc;
         setArity(p, arity);
         setLoop(p, loop);
-        setStackPc(p, stackSize);
+        this.stackPc = stackSize;
     }
 
     @Override

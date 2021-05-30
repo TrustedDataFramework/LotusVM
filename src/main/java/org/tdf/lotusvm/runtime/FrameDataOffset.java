@@ -11,19 +11,18 @@ final class FrameDataOffset {
     private FrameDataOffset() {
     }
 
-    static long setStackBase(long offset, int stackBase) {
-        return (offset & (~STACK_BASE_MASK)) | ((stackBase & MAX_SIGNED_INT) << STACK_BASE_SHIFTS);
-    }
-
     static int getStackBase(long offset) {
         return (int) ((offset & STACK_BASE_MASK) >>> STACK_BASE_SHIFTS);
     }
 
-    static long setLabelBase(long offset, int labelBase) {
-        return (offset & (~LABEL_BASE_MASK)) | ((labelBase & MAX_SIGNED_INT) << LABEL_BASE_SHIFTS);
-    }
 
     static int getLabelBase(long offset) {
         return (int) ((offset & LABEL_BASE_MASK) >>> LABEL_BASE_SHIFTS);
+    }
+
+    static long withAll(int labelBase, int stackBase) {
+        long r = labelBase & MAX_SIGNED_INT;
+        r = r << 32;
+        return r | (stackBase & MAX_SIGNED_INT);
     }
 }
