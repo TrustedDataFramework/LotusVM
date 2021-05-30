@@ -379,6 +379,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             prevPc = InstructionPool.getInstructionsSize(labels);
         }
 
+        System.out.printf("label body rebase to p = %d, labels = %d\n", p, labels);
         this.labelSize++;
         p = labelBase + labelSize - 1;
         setLabels(p, labels);
