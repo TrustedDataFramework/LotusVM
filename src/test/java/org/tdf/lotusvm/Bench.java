@@ -1,8 +1,9 @@
 package org.tdf.lotusvm;
 
+import org.tdf.lotusvm.runtime.BaseMemory;
+import org.tdf.lotusvm.runtime.BaseStackAllocator;
 import org.tdf.lotusvm.runtime.Memory;
 import org.tdf.lotusvm.runtime.UnsafeMemory;
-import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
 
 import java.net.URL;
 
@@ -26,12 +27,12 @@ public class Bench {
         byte[] data = file.openStream().readAllBytes();
 
         long start = System.currentTimeMillis();
-        UnsafeStackAllocator u = new UnsafeStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
+        BaseStackAllocator u = new BaseStackAllocator(MAX_STACK_SIZE, MAX_FRAMES, MAX_LABELS);
         Module md = Module.create(data);
 
         for (int i = 0; i < loop; i++) {
             u.clear();
-            Memory mem = new UnsafeMemory();
+            Memory mem = new BaseMemory();
             ModuleInstance ins = ModuleInstance
                 .builder()
                 .module(md)
@@ -39,7 +40,6 @@ public class Bench {
                 .stackAllocator(
                     u
                 ).build();
-
             ins.execute("bench");
             mem.close();
         }

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.SneakyThrows;
 import org.tdf.lotusvm.runtime.StackAllocator;
-import org.tdf.lotusvm.runtime.UnsafeStackAllocator;
+import org.tdf.lotusvm.runtime.BaseStackAllocator;
 
 import java.io.File;
 import java.io.InputStream;
@@ -19,7 +19,7 @@ public class Util {
 
 
     public static StackAllocator getAllocator() {
-        return new UnsafeStackAllocator(32768 * 128, 32768, 32768 * 128);
+        return new BaseStackAllocator(32768 * 128, 32768, 32768 * 128);
     }
 
     @SneakyThrows
