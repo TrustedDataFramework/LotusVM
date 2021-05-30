@@ -2,9 +2,10 @@ package org.tdf.lotusvm.runtime;
 
 import org.tdf.lotusvm.types.*;
 
+import static org.tdf.lotusvm.runtime.ResourceFactory.createBuffer;
 import static org.tdf.lotusvm.types.UnsafeUtil.MAX_UNSIGNED_SHORT;
 
-public class BaseStackAllocator extends AbstractStackAllocator {
+class StackAllocatorImpl extends AbstractStackAllocator {
     private final LongBuffer stackData;
 
     // label data = stack pc (2byte) | label pc (2byte) | 0x00  | 0x00  | arity (1byte) | loop (1byte)
@@ -39,11 +40,7 @@ public class BaseStackAllocator extends AbstractStackAllocator {
     private boolean loop;
     private int stackPc;
 
-    protected LongBuffer createBuffer(int cap) {
-        return new ArrayLongBuffer(cap);
-    }
-
-    public BaseStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
+    public StackAllocatorImpl(int maxStackSize, int maxFrames, int maxLabelSize) {
         super(maxStackSize, maxFrames, maxLabelSize);
 
         this.labels = createBuffer(maxLabelSize);

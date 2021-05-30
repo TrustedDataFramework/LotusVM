@@ -67,9 +67,9 @@ public class TestModule {
         TestConfig cfg = this.configs[index];
         String filename = Paths.get(directory, cfg.file).toString();
 
-        Memory m = new BaseMemory();
+        Memory m = ResourceFactory.createMemory();
         ModuleInstance instance;
-        BaseStackAllocator u = new BaseStackAllocator(32768 * 128, 32768, 32768 * 128);
+        StackAllocator u = ResourceFactory.createStack(32768 * 128, 32768, 32768 * 128);
         Module md;
             try {
                 md = Module.create(Util.readClassPathFile(filename));

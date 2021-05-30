@@ -4,8 +4,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.SneakyThrows;
+import org.tdf.lotusvm.runtime.ResourceFactory;
 import org.tdf.lotusvm.runtime.StackAllocator;
-import org.tdf.lotusvm.runtime.BaseStackAllocator;
 
 import java.io.File;
 import java.io.InputStream;
@@ -19,7 +19,7 @@ public class Util {
 
 
     public static StackAllocator getAllocator() {
-        return new BaseStackAllocator(32768 * 128, 32768, 32768 * 128);
+        return ResourceFactory.createStack(32768 * 128, 32768, 32768 * 128);
     }
 
     @SneakyThrows

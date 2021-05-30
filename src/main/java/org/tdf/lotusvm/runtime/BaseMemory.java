@@ -5,7 +5,7 @@ import org.tdf.lotusvm.types.LimitType;
 
 // TODO: limit memory size in block chain
 @Getter
-public class BaseMemory implements Memory {
+class BaseMemory implements Memory {
     private LimitType limit;
     private byte[] data;
     private int pages;

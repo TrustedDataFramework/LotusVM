@@ -3,7 +3,6 @@ package org.tdf.lotusvm;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.lotusvm.runtime.UnsafeMemory;
 import org.tdf.lotusvm.types.UnsafeUtil;
 import sun.misc.Unsafe;
 

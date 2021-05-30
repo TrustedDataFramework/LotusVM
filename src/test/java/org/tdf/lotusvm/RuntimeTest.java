@@ -3,7 +3,7 @@ package org.tdf.lotusvm;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.tdf.lotusvm.runtime.BaseMemory;
+import org.tdf.lotusvm.runtime.ResourceFactory;
 import org.tdf.lotusvm.runtime.StackAllocator;
 
 import java.math.BigDecimal;
@@ -28,7 +28,7 @@ public class RuntimeTest {
         StackAllocator allocator = Util.getAllocator();
         ModuleInstance instance =
             ModuleInstance.builder()
-                .memory(new BaseMemory())
+                .memory(ResourceFactory.createMemory())
                 .module(md)
                 .stackAllocator(allocator)
                 .build();
