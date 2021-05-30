@@ -42,7 +42,7 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
     public UnsafeStackAllocator(int maxStackSize, int maxFrames, int maxLabelSize) {
         super(maxStackSize, maxFrames, maxLabelSize);
 
-        this.labels = new ArrayLongBuffer(maxLabelSize);
+        this.labels = new UnsafeLongBuffer(maxLabelSize);
         this.labels.setSize(maxLabelSize);
 
         this.stackData = new UnsafeLongBuffer(maxStackSize);
@@ -368,7 +368,6 @@ public class UnsafeStackAllocator extends AbstractStackAllocator {
             push(val);
         }
 
-        System.out.printf("label body rebase to p = %d, labels = %d\n", p, labels);
         this.labelSize++;
         this.labelPc = loop ? 0 : InstructionPool.getInstructionsSize(labelBody);
         ;
