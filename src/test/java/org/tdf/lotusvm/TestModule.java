@@ -58,12 +58,12 @@ public class TestModule {
         return cfgs.get(0);
     }
 
-    public void testSpecFunctions(String filename, Collection<String> functions, int skip, int limit) throws Exception {
+    public void testSpecFunctions(String filename, Collection<? extends String> functions, int skip, int limit) throws Exception {
         int idx = getIndex(filename);
         testSpecFunctions(idx, functions, skip, limit);
     }
 
-    public synchronized void testSpecFunctions(int index, Collection<String> functions, int skip, int limit) throws Exception {
+    public synchronized void testSpecFunctions(int index, Collection<? extends String> functions, int skip, int limit) throws Exception {
         TestConfig cfg = this.configs[index];
         String filename = Paths.get(directory, cfg.file).toString();
 

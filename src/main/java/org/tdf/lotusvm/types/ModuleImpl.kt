@@ -99,7 +99,7 @@ internal class ModuleImpl(binary: ByteArray) : Module {
     init {
         try {
             parse(binary)
-        }catch (e: Exception) {
+        } catch (e: Exception) {
             insPool.close()
             throw e
         }

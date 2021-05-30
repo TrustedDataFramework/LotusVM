@@ -44,7 +44,28 @@ final class FrameId {
         return (frameId & (~STACK_SIZE_MASK)) | ((stackSize & MAX_UNSIGNED_SHORT) << STACK_SIZE_SHIFTS);
     }
 
-    static long setFunctionIndex(long frameId, int frameIndex) {
-        return (frameId & (~FUNCTION_INDEX_MASK)) | ((frameIndex & MAX_UNSIGNED_SHORT) << FUNCTION_INDEX_SHIFTS);
+    static long setFunctionIndex(long frameId, int functionIndex) {
+        return (frameId & (~FUNCTION_INDEX_MASK)) | ((functionIndex & MAX_UNSIGNED_SHORT) << FUNCTION_INDEX_SHIFTS);
+    }
+
+    static long withAll(int labelSize, int localSize, int stackSize, int functionIndex) {
+        long r = (labelSize & MAX_UNSIGNED_SHORT);
+        r = r << 16;
+        r |= (localSize & MAX_UNSIGNED_SHORT);
+        r = r << 16;
+        r |= (stackSize & MAX_UNSIGNED_SHORT);
+        r = r << 16;
+        r |= (functionIndex & MAX_UNSIGNED_SHORT);
+        return r;
+    }
+
+    public static void main(String[] args) {
+        long l = withAll(2558, 123, 12345, 7777);
+        System.out.printf("%s %s %s %s\n",
+            getLabelSize(l),
+            getLocalSize(l),
+            getStackSize(l),
+            getFunctionIndex(l)
+        );
     }
 }
