@@ -6,6 +6,7 @@ import org.tdf.lotusvm.types.UnsafeLongBuffer
 
 
 object ResourceFactory {
+    @JvmStatic
     var useUnsafe: Boolean = false
 
     @JvmStatic
