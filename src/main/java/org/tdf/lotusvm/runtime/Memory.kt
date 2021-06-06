@@ -18,10 +18,10 @@ interface Memory : AutoCloseable {
     fun load64(offset: Int): Long
     fun load8(offset: Int): Byte
     fun load16(offset: Int): Short
-    fun storeI32(offset: Int, value: Int)
-    fun storeI64(offset: Int, n: Long)
-    fun storeI16(offset: Int, num: Short)
-    fun storeI8(offset: Int, n: Byte)
+    fun store32(offset: Int, value: Int)
+    fun store64(offset: Int, n: Long)
+    fun store16(offset: Int, num: Short)
+    fun store8(offset: Int, n: Byte)
     fun grow(n: Int): Int
     val pages: Int
 
@@ -36,6 +36,6 @@ abstract class AbstractMemory: Memory{
 
     override fun write(memOff: Int, src: ByteArray, srcPos: Int, length: Int) {
         for(i in 0 until length)
-            storeI8(memOff + i, src[srcPos + i])
+            store8(memOff + i, src[srcPos + i])
     }
 }

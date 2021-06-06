@@ -45,22 +45,22 @@ internal class UnsafeMemory : AbstractMemory() {
         return UnsafeUtil.UNSAFE.getShort(pointer + offset)
     }
 
-    override fun storeI32(offset: Int, `val`: Int) {
+    override fun store32(offset: Int, `val`: Int) {
         if (offset + 4 > rawSize) throw RuntimeException("memory access overflow")
         UnsafeUtil.UNSAFE.putInt(pointer + offset, `val`)
     }
 
-    override fun storeI64(offset: Int, n: Long) {
+    override fun store64(offset: Int, n: Long) {
         if (offset + 8 > rawSize) throw RuntimeException("memory access overflow")
         UnsafeUtil.UNSAFE.putLong(pointer + offset, n)
     }
 
-    override fun storeI16(offset: Int, num: Short) {
+    override fun store16(offset: Int, num: Short) {
         if (offset + 2 > rawSize) throw RuntimeException("memory access overflow")
         UnsafeUtil.UNSAFE.putShort(pointer + offset, num)
     }
 
-    override fun storeI8(offset: Int, n: Byte) {
+    override fun store8(offset: Int, n: Byte) {
         if (offset >= rawSize) throw RuntimeException("memory access overflow")
         UnsafeUtil.UNSAFE.putByte(pointer + offset, n)
     }

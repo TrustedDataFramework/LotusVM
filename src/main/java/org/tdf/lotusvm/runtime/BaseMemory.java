@@ -43,14 +43,14 @@ class BaseMemory extends AbstractMemory {
         return (short) ((data[offset] & 0xff) | ((data[offset + 1] & 0xff) << 8));
     }
 
-    public void storeI32(int offset, int val) {
+    public void store32(int offset, int val) {
         data[offset] = (byte) (val & 0xff);
         data[offset + 1] = (byte) ((val >>> 8) & 0xff);
         data[offset + 2] = (byte) ((val >>> 16) & 0xff);
         data[offset + 3] = (byte) ((val >>> 24) & 0xff);
     }
 
-    public void storeI64(int offset, long n) {
+    public void store64(int offset, long n) {
         data[offset] = (byte) (n & 0xff);
         data[offset + 1] = (byte) ((n >>> 8) & 0xff);
         data[offset + 2] = (byte) ((n >>> 16) & 0xff);
@@ -61,12 +61,12 @@ class BaseMemory extends AbstractMemory {
         data[offset + 7] = (byte) ((n >>> 56) & 0xff);
     }
 
-    public void storeI16(int offset, short num) {
+    public void store16(int offset, short num) {
         data[offset] = (byte) (num & 0xff);
         data[offset + 1] = (byte) ((num >>> 8) & 0xff);
     }
 
-    public void storeI8(int offset, byte n) {
+    public void store8(int offset, byte n) {
         this.data[offset] = n;
     }
 

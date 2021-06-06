@@ -308,24 +308,24 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             case I32_STORE8:
             case I64_STORE8: {
                 byte c = (byte) pop();
-                mem.storeI8(getMemoryOffset(ins), c);
+                mem.store8(getMemoryOffset(ins), c);
                 break;
             }
             case I32_STORE16:
             case I64_STORE16: {
                 short c = (short) pop();
-                mem.storeI16(getMemoryOffset(ins), c);
+                mem.store16(getMemoryOffset(ins), c);
                 break;
             }
             case I32_STORE:
             case I64_STORE32: {
                 int c = popI32();
-                mem.storeI32(getMemoryOffset(ins), c);
+                mem.store32(getMemoryOffset(ins), c);
                 break;
             }
             case I64_STORE: {
                 long c = pop();
-                mem.storeI64(getMemoryOffset(ins), c);
+                mem.store64(getMemoryOffset(ins), c);
                 break;
             }
             case CURRENT_MEMORY:

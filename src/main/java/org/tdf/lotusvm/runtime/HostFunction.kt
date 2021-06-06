@@ -18,6 +18,9 @@ abstract class HostFunction(
         this.alias.addAll(listOf(*alias))
     }
 
+    protected val memory: Memory
+        get() = instance.memory
+
     override val paramSize: Int
         get() = type.parameterTypes.size
     override val arity: Int
