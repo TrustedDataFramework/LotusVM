@@ -1,11 +1,9 @@
 package org.tdf.lotusvm.runtime;
 
-import lombok.Getter;
 import org.tdf.lotusvm.types.LimitType;
 
 // TODO: limit memory size in block chain
-@Getter
-class BaseMemory implements Memory {
+class BaseMemory extends AbstractMemory {
     private LimitType limit;
     private byte[] data;
     private int pages;
@@ -21,30 +19,19 @@ class BaseMemory implements Memory {
         this.data = new byte[limit.getMinimum() * PAGE_SIZE];
     }
 
-    public void put(int offset, byte[] data) {
-        System.arraycopy(data, 0, this.data, offset, data.length);
-    }
-
-
-    public byte[] load(int offset, int n) {
-        byte[] ret = new byte[n];
-        System.arraycopy(data, offset, ret, 0, n);
-        return ret;
-    }
-
     public int load32(int offset) {
         return (data[offset] & 0xff) | ((data[offset + 1] & 0xff) << 8) | ((data[offset + 2] & 0xff) << 16) | ((data[offset + 3] & 0xff) << 24);
     }
 
     public long load64(int offset) {
-        return (((long) data[offset]) & 0xffL) |
-            (((long) data[offset + 1]) & 0xffL) << 8 |
-            (((long) data[offset + 2]) & 0xffL) << 16 |
-            (((long) data[offset + 3]) & 0xffL) << 24 |
-            (((long) data[offset + 4]) & 0xffL) << 32 |
-            (((long) data[offset + 5]) & 0xffL) << 40 |
-            (((long) data[offset + 6]) & 0xffL) << 48 |
-            (((long) data[offset + 7]) & 0xffL) << 56
+        return (data[offset] & 0xffL) |
+            (data[offset + 1] & 0xffL) << 8 |
+            (data[offset + 2] & 0xffL) << 16 |
+            (data[offset + 3] & 0xffL) << 24 |
+            (data[offset + 4] & 0xffL) << 32 |
+            (data[offset + 5] & 0xffL) << 40 |
+            (data[offset + 6] & 0xffL) << 48 |
+            (data[offset + 7] & 0xffL) << 56
             ;
     }
 
@@ -104,5 +91,17 @@ class BaseMemory implements Memory {
     @Override
     public void close() {
 
+    }
+
+    public LimitType getLimit() {
+        return this.limit;
+    }
+
+    public byte[] getData() {
+        return this.data;
+    }
+
+    public int getPages() {
+        return this.pages;
     }
 }

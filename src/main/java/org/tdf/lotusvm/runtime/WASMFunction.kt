@@ -17,7 +17,7 @@ internal class WASMFunction(
         return ret
     }
 
-    override fun execute(parameters: LongArray): Long {
+    override fun execute(args: LongArray): Long {
         throw UnsupportedOperationException()
     }
 

@@ -37,12 +37,4 @@ abstract class HostFunction(
     override fun hashCode(): Int {
         return Objects.hash(name)
     }
-
-    protected fun putMemory(offset: Int, data: ByteArray?) {
-        instance.memory.put(offset, data!!)
-    }
-
-    protected fun loadMemory(offset: Int, length: Int): ByteArray {
-        return instance.memory.load(offset, length)
-    }
 }

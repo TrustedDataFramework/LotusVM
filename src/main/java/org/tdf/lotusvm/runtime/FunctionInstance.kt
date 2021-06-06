@@ -6,6 +6,6 @@ interface FunctionInstance {
     val paramSize: Int
     val arity: Int
     val type: FunctionType
-    fun execute(parameters: LongArray): Long
+    fun execute(args: LongArray): Long
     val isHost: Boolean
 }

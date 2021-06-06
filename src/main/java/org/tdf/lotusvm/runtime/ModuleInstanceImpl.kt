@@ -198,7 +198,7 @@ class ModuleInstanceImpl(builder: Builder) : ModuleInstance {
         if (module.dataSection != null) {
             module.dataSection!!.dataSegments.forEach(Consumer { (_, expression, init) ->
                 val offset = executeExpression(expression, ValueType.I32)
-                memory.put(offset.toInt(), init)
+                memory.write(offset.toInt(), init)
             })
         }
 
