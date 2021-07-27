@@ -72,8 +72,7 @@ public final class InstructionPool implements Closeable {
     // push instruction into pool with prefixed operands/body offset
     public long pushWithBodyOffset(long ins) {
         int size = data.size();
-        ins = InstructionId.setLeft32(ins, size + 1);
-        data.push(ins);
+        ins = InstructionId.setLeft32(ins, size);
         return ins;
     }
 

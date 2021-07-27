@@ -1,6 +1,9 @@
 package org.tdf.lotusvm.runtime;
 
+import org.tdf.lotusvm.common.OpCode;
 import org.tdf.lotusvm.types.*;
+
+import java.io.PrintStream;
 
 import static org.tdf.lotusvm.runtime.ResourceFactory.createBuffer;
 import static org.tdf.lotusvm.types.UnsafeUtil.MAX_UNSIGNED_SHORT;
@@ -329,6 +332,7 @@ class StackAllocatorImpl extends AbstractStackAllocator {
 
     @Override
     public void popLabel() {
+        System.out.println("pop label");
         if (labelSize == 0)
             throw new RuntimeException("label underflow");
         labelSize--;
@@ -371,7 +375,6 @@ class StackAllocatorImpl extends AbstractStackAllocator {
 
         this.labelSize++;
         this.labelPc = loop ? 0 : InstructionPool.getInstructionsSize(labelBody);
-        ;
     }
 
     @Override
@@ -424,4 +427,38 @@ class StackAllocatorImpl extends AbstractStackAllocator {
         return resultType;
     }
 
+
+    @Override
+    protected void printStack(PrintStream stream) {
+        int stackBase = this.stackBase + this.localSize;
+        stream.print("stack = [");
+        for(int i = 0; i < this.stackSize; i++) {
+            stream.print(this.stackData.get(stackBase + i));
+            stream.print(",");
+        }
+        stream.print("] \n");
+
+        stackBase = this.stackBase;
+        stream.print("local = [");
+        for(int i = 0; i < this.localSize; i++) {
+            stream.print(this.stackData.get(stackBase + i));
+            stream.print(",");
+        }
+        stream.print("] \n");
+
+        stream.print("labels = [");
+        int labelBase = this.labelBase;
+        for(int i = 0; i < this.labelSize - 1; i++) {
+            int labelPc = LabelData.getLabelPc(this.labelData.get(labelBase + i));
+            long body = this.labels.get(labelBase + i);
+            int len = InstructionId.getOperandSize(body);
+            long ins = module.getInsPool().getInstructionInArray(body, labelPc - 1);
+
+            stream.print(OpCode.fromCode((int) ins));
+            stream.print(' ');
+            stream.print(len);
+            stream.print(",");
+        }
+        stream.print("]\n");
+    }
 }

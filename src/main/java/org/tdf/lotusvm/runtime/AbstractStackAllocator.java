@@ -9,6 +9,8 @@ import org.tdf.lotusvm.types.InstructionPool;
 import org.tdf.lotusvm.types.ResultType;
 import org.tdf.lotusvm.types.ValueType;
 
+import java.io.PrintStream;
+
 public abstract class AbstractStackAllocator implements StackAllocator {
     protected final int maxFrames;
     protected final int maxLabelSize;
@@ -58,6 +60,9 @@ public abstract class AbstractStackAllocator implements StackAllocator {
 
     protected abstract ValueType getResultType();
 
+    protected void printStack(PrintStream stream) {
+    }
+
     public abstract int currentFrameIndex();
 
     long[] popLongs(int n) {
@@ -105,6 +110,23 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 return returns();
             }
             setPc(pc + 1);
+
+//            switch (c) {
+//                case LOOP:
+//                case BLOCK: {
+//                    System.out.print("next = [");
+//                    long bd =  pool.getBranch0(ins);
+//                    int len = InstructionPool.getInstructionsSize(bd);
+//
+//                    for(int i = 0; i < 16 && i < len; i++) {
+//                        long inss = module.getInsPool().getInstructionInArray(bd, i);
+//                        System.out.print(InstructionId.getOpCode(inss));
+//                        System.out.print(",");
+//                    }
+//                    System.out.print("]\n");
+//                }
+//            }
+
             invoke(ins);
         }
         module.touchFrameExit();
@@ -120,8 +142,21 @@ public abstract class AbstractStackAllocator implements StackAllocator {
         return (int) l;
     }
 
+    private int count = 0;
+
     void invoke(long ins) throws RuntimeException {
+
+//        if(count == 100)
+//            throw new RuntimeException();
+
+        count++;
         OpCode code = InstructionId.getOpCode(ins);
+//        printStack(System.out);
+//        System.out.println();
+//        System.out.println(code);
+
+
+
         module.touchIns(code);
         InstructionPool pool = module.getInsPool();
         Memory mem = module.getMemory();
@@ -250,7 +285,8 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             }
             // variable instructions
             case GET_LOCAL:
-                push(getLocal(InstructionId.getLeft32(ins)));
+                int m = InstructionId.getLeft32(ins);
+                push(getLocal(m));
                 break;
             case SET_LOCAL:
                 setLocal(InstructionId.getLeft32(ins), pop());
@@ -270,10 +306,13 @@ public abstract class AbstractStackAllocator implements StackAllocator {
                 break;
             // memory instructions
             case I32_LOAD:
-            case I64_LOAD32_U:
-                pushI32(
-                    mem.load32(getMemoryOffset(ins))
-                );
+            case I64_LOAD32_U: {
+                int off = getMemoryOffset(ins);
+                int loaded = mem.load32(off);
+                pushI32(loaded);
+                System.out.printf("i32.load off = %d loaded = %d\n", off, loaded);
+            }
+
                 break;
             case I64_LOAD:
                 push(
@@ -325,7 +364,10 @@ public abstract class AbstractStackAllocator implements StackAllocator {
             }
             case I64_STORE: {
                 long c = pop();
-                mem.store64(getMemoryOffset(ins), c);
+                int off = getMemoryOffset(ins);
+                System.out.printf("i64.store off = %d store = %d\n", off, c);
+
+                mem.store64(off, c);
                 break;
             }
             case CURRENT_MEMORY:

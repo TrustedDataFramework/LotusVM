@@ -196,10 +196,10 @@ class ModuleInstanceImpl(builder: Builder) : ModuleInstance {
 
         // put data into memory
         if (module.dataSection != null) {
-            module.dataSection!!.dataSegments.forEach(Consumer { (_, expression, init) ->
+            module.dataSection!!.dataSegments.forEach { (_, expression, init) ->
                 val offset = executeExpression(expression, ValueType.I32)
                 memory.write(offset.toInt(), init)
-            })
+            }
         }
 
         // load and execute start function
